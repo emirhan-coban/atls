@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "atls.",
+    "slug": "atls",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "atls",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F1117"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.atls.passport",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIStatusBarStyle": "UIStatusBarStyleDarkContent",
+        "CFBundleDisplayName": "atls."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F1117",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "package": "com.atls.passport"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

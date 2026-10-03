@@ -1,0 +1,19 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# macOS
+.DS_Store
+
+# Native build artifacts
+ios/Pods/
+ios/build/
+*.xcworkspace/xcuserdata
+*.xcuserdatad
