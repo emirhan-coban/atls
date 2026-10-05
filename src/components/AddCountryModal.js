@@ -9,53 +9,112 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { X, Search, Check, Plus, MapPin, Home, Heart } from 'lucide-react-native';
-import { availableCatalog } from '../data/travelData';
+import { X, Search, Check, Plus, MapPin, Home, Heart, Sparkles } from 'lucide-react-native';
+import { availableCatalog, getLocalizedCountryName, getLocalizedContinent } from '../data/travelData';
 
 export default function AddCountryModal({
   isOpen,
   onClose,
   onAddCountry,
-  existingCountryIds,
+  onUpdateCountry,
+  existingCountryIds = [],
+  existingCountries = [],
   t,
+  currentLang,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('visited');
   const [notes, setNotes] = useState('');
 
-  const filteredCatalog = availableCatalog.filter(
-    (c) =>
-      !existingCountryIds.includes(c.id) &&
-      c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const normalizeText = (str) => {
+    if (!str) return '';
+    return str
+      .replace(/İ/g, 'i')
+      .replace(/I/g, 'ı')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  };
+
+  const filteredCatalog = availableCatalog.filter((c) => {
+    const existing = existingCountries.find((ec) => ec.id === c.id);
+    if (existing && existing.status !== 'want') return false;
+    if (!existing && existingCountries.length === 0 && existingCountryIds.includes(c.id)) return false;
+
+    const raw = searchTerm.trim();
+    if (!raw) return true;
+    const term = normalizeText(raw);
+    const code = c.id.toLowerCase();
+
+    // Common aliases
+    if ((term === 'abd' || term === 'amerika' || term === 'usa') && c.id === 'US') return true;
+    if ((term === 'uk' || term === 'ingiltere') && c.id === 'GB') return true;
+    if ((term === 'bae' || term === 'dubai') && c.id === 'AE') return true;
+
+    const matchCode = code.includes(term);
+    const matchEn = normalizeText(c.name).includes(term);
+    const matchTr = c.nameTr && normalizeText(c.nameTr).includes(term);
+    return matchCode || matchEn || matchTr;
+  });
 
   const handleSubmit = () => {
     if (!selectedCountry) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    onAddCountry({
+    const countryNameEn = selectedCountry.name;
+    const countryNameTr = selectedCountry.nameTr || selectedCountry.name;
+    const currentYear = new Date().getFullYear().toString();
+    const defaultNote = t.defaultMarkedNote
+      ? t.defaultMarkedNote.replace('{year}', currentYear)
+      : `Marked in ${currentYear}`;
+
+    const existing = existingCountries.find((ec) => ec.id === selectedCountry.id);
+    const isConverting = existing && existing.status === 'want' && selectedStatus !== 'want';
+
+    const payload = {
       id: selectedCountry.id,
-      name: selectedCountry.name,
+      name: countryNameEn,
+      nameTr: countryNameTr,
       flag: selectedCountry.flag,
       status: selectedStatus,
-      year: new Date().getFullYear().toString(),
-      notes: notes || `Marked in ${new Date().getFullYear()}`,
+      year: currentYear,
+      yearTr: currentYear,
+      notes: notes || defaultNote,
+      notesTr: notes || defaultNote,
       visits: selectedStatus === 'want' ? 0 : 1,
-    });
+    };
+
+    if (existing && onUpdateCountry) {
+      onUpdateCountry(payload);
+    } else {
+      onAddCountry(payload);
+    }
 
     setSelectedCountry(null);
     setSearchTerm('');
     setNotes('');
     onClose();
+
+    if (isConverting) {
+      setTimeout(() => {
+        Alert.alert(
+          currentLang === 'tr' ? '🎉 Pasaportuna Mühürlendi!' : '🎉 Stamped in Your Passport!',
+          currentLang === 'tr'
+            ? `Tebrikler! ${selectedCountry.flag} ${countryNameTr} hedeflerinden pasaportuna resmi ${selectedStatus === 'lived' ? 'ikamet' : 'giriş'} mührü olarak eklendi!`
+            : `Congratulations! ${selectedCountry.flag} ${countryNameEn} is now officially stamped into your passport!`
+        );
+      }, 300);
+    }
   };
 
   return (
     <Modal
       visible={isOpen}
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       onRequestClose={onClose}
     >
@@ -101,15 +160,30 @@ export default function AddCountryModal({
           </View>
 
           {/* Catalog Selection List */}
-          <ScrollView style={styles.catalogList} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={[
+              styles.catalogList,
+              selectedCountry ? styles.catalogListCompact : styles.catalogListExpanded,
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
             {filteredCatalog.map((c) => {
               const isSelected = selectedCountry?.id === c.id;
+              const displayName = getLocalizedCountryName(c, currentLang);
+              const displayContinent = getLocalizedContinent(c, currentLang);
+              const existing = existingCountries.find((ec) => ec.id === c.id);
+              const isWishlist = existing && existing.status === 'want';
+
               return (
                 <TouchableOpacity
                   key={c.id}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setSelectedCountry(c);
+                    if (isWishlist) {
+                      setSelectedStatus('visited');
+                      if (existing.notes) setNotes(existing.notes);
+                    }
                   }}
                   activeOpacity={0.7}
                   style={[
@@ -119,15 +193,26 @@ export default function AddCountryModal({
                 >
                   <View style={styles.catalogItemLeft}>
                     <Text style={styles.catalogFlag}>{c.flag}</Text>
-                    <Text
-                      style={[
-                        styles.catalogName,
-                        isSelected && styles.catalogNameSelected,
-                      ]}
-                    >
-                      {c.name}
-                    </Text>
-                    <Text style={styles.catalogContinent}>{c.continent}</Text>
+                    <View style={styles.catalogTextGroup}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text
+                          style={[
+                            styles.catalogName,
+                            isSelected && styles.catalogNameSelected,
+                          ]}
+                        >
+                          {displayName}
+                        </Text>
+                        {isWishlist && (
+                          <View style={styles.wishlistTagBadge}>
+                            <Text style={styles.wishlistTagText}>
+                              {t.inWishlistBadge || (currentLang === 'tr' ? 'HEDEFİNDE' : 'WISHLIST')}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.catalogContinent}>{displayContinent}</Text>
+                    </View>
                   </View>
                   {isSelected && <Check size={16} color="#5B4DFF" />}
                 </TouchableOpacity>
@@ -138,6 +223,16 @@ export default function AddCountryModal({
           {/* Status Options */}
           {selectedCountry && (
             <View style={styles.formSection}>
+              {existingCountries.some((ec) => ec.id === selectedCountry.id && ec.status === 'want') && (
+                <View style={styles.convertNoticeBox}>
+                  <Sparkles size={14} color="#2563EB" />
+                  <Text style={styles.convertNoticeText}>
+                    {currentLang === 'tr'
+                      ? 'Bu ülke hedeflerinizde kayıtlı. Şimdi resmi giriş mührü basabilirsiniz!'
+                      : 'This country is in your wishlist. You can now stamp it into your passport!'}
+                  </Text>
+                </View>
+              )}
               <Text style={styles.sectionLabel}>{t.travelStatus}</Text>
               <View style={styles.statusButtonsRow}>
                 <TouchableOpacity
@@ -309,8 +404,14 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   catalogList: {
-    maxHeight: 160,
     marginBottom: 14,
+  },
+  catalogListExpanded: {
+    maxHeight: 280,
+    minHeight: 180,
+  },
+  catalogListCompact: {
+    maxHeight: 140,
   },
   catalogItem: {
     flexDirection: 'row',
@@ -327,13 +428,18 @@ const styles = StyleSheet.create({
   catalogItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
+    flex: 1,
+  },
+  catalogTextGroup: {
+    flex: 1,
+    gap: 2,
   },
   catalogFlag: {
-    fontSize: 20,
+    fontSize: 22,
   },
   catalogName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1E293B',
   },
@@ -342,9 +448,43 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   catalogContinent: {
-    fontSize: 9,
+    fontSize: 10,
+    fontWeight: '600',
     color: '#94A3B8',
     textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  wishlistTagBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  wishlistTagText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: '#2563EB',
+    letterSpacing: 0.3,
+  },
+  convertNoticeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    marginBottom: 10,
+  },
+  convertNoticeText: {
+    fontSize: 11.5,
+    color: '#1D4ED8',
+    fontWeight: '700',
+    flex: 1,
   },
   formSection: {
     borderTopWidth: 1,

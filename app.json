@@ -7,14 +7,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "atls",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F1117"
-    },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.atls.passport",
+      "bundleIdentifier": "com.atlas.passport",
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -24,13 +19,24 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0F1117",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "com.atls.passport"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "./plugins/withAndroidProjectName",
+      "expo-sharing",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "227130ab-ebd9-49c3-b55c-33f40a547ebe"
+      }
+    },
+    "owner": "emirhancoban"
   }
 }

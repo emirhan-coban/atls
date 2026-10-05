@@ -3,24 +3,25 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
+  ScrollView,
   Platform,
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { 
-  X, 
   Mail, 
   Lock, 
   User, 
   ArrowRight,
   Eye,
   EyeOff,
-  CheckCircle,
+  Languages,
+  ShieldCheck,
   Apple,
 } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -48,11 +49,11 @@ const GoogleIcon = () => (
   </Svg>
 );
 
-export default function AuthModal({
-  isOpen,
-  onClose,
+export default function AuthScreen({
   onLoginSuccess,
   t,
+  currentLang,
+  onToggleLang,
 }) {
   const [tab, setTab] = useState('login'); // 'login' | 'register'
   const [name, setName] = useState('');
@@ -67,26 +68,26 @@ export default function AuthModal({
 
     if (tab === 'register' && !trimmedName) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Bilgi', 'Lütfen adınızı ve soyadınızı giriniz.');
+      Alert.alert('Bilgi', currentLang === 'tr' ? 'Lütfen adınızı ve soyadınızı giriniz.' : 'Please enter your full name.');
       return;
     }
 
     if (!trimmedEmail || !trimmedEmail.includes('@')) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Bilgi', 'Lütfen geçerli bir e-posta adresi giriniz.');
+      Alert.alert('Bilgi', currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi giriniz.' : 'Please enter a valid email address.');
       return;
     }
 
     if (!password || password.length < 6) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Bilgi', 'Şifreniz en az 6 karakter olmalıdır.');
+      Alert.alert('Bilgi', currentLang === 'tr' ? 'Şifreniz en az 6 karakter olmalıdır.' : 'Password must be at least 6 characters.');
       return;
     }
 
     try {
       setIsLoading(true);
       let authResult;
-      
+
       if (tab === 'register') {
         authResult = await authService.signUp({
           email: trimmedEmail,
@@ -101,10 +102,10 @@ export default function AuthModal({
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
+
       const cleanName = trimmedName || authResult?.user?.user_metadata?.name || trimmedEmail.split('@')[0] || 'Traveler';
       const cleanHandle = generateHandle(cleanName);
-      
+
       onLoginSuccess({
         name: cleanName,
         handle: cleanHandle,
@@ -112,23 +113,30 @@ export default function AuthModal({
         avatarInitials: cleanName.substring(0, 2).toUpperCase(),
       });
 
-      onClose();
+      // If user registered with trigger fallback
+      if (tab === 'register' && authResult?.isTriggerFallback) {
+        Alert.alert(
+          currentLang === 'tr' ? 'Hesap Oluşturuldu' : 'Account Created',
+          currentLang === 'tr'
+            ? 'Hesabınız başarıyla oluşturuldu! Supabase bulut veritabanını etkinleştirmek için Supabase SQL Editor üzerinden schema.sql dosyasını çalıştırmanız önerilir.'
+            : 'Account created! To enable cloud database sync, please run schema.sql in your Supabase SQL Editor.'
+        );
+      }
     } catch (err) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      
-      // Friendly localized error translations
-      let errorMsg = err.message || 'İşlem sırasında bir hata oluştu.';
+
+      let errorMsg = err.message || (currentLang === 'tr' ? 'İşlem sırasında bir hata oluştu.' : 'An error occurred.');
       if (errorMsg.includes('Invalid login credentials')) {
-        errorMsg = 'E-posta adresi veya şifre hatalı. Lütfen kontrol ediniz.';
+        errorMsg = currentLang === 'tr' ? 'E-posta adresi veya şifre hatalı. Lütfen kontrol ediniz.' : 'Invalid email or password.';
       } else if (errorMsg.includes('User already registered')) {
-        errorMsg = 'Bu e-posta adresiyle zaten kayıtlı bir hesap var. Lütfen giriş yapınız.';
+        errorMsg = currentLang === 'tr' ? 'Bu e-posta adresi ile zaten kayıtlı bir hesap var. Lütfen giriş yapınız.' : 'An account already exists with this email. Please log in.';
       } else if (errorMsg.includes('Email not confirmed')) {
-        errorMsg = 'E-posta adresiniz henüz doğrulanmamış. Lütfen e-postanızı kontrol ediniz.';
+        errorMsg = currentLang === 'tr' ? 'E-posta adresiniz henüz onaylanmamış. Lütfen e-postanızı kontrol ediniz.' : 'Email is not confirmed yet. Please check your inbox.';
       } else if (errorMsg.includes('Password should be at least')) {
-        errorMsg = 'Şifreniz en az 6 karakter olmalıdır.';
+        errorMsg = currentLang === 'tr' ? 'Şifreniz en az 6 karakter olmalıdır.' : 'Password must be at least 6 characters.';
       }
 
-      Alert.alert('İşlem Başarısız', errorMsg);
+      Alert.alert(currentLang === 'tr' ? 'İşlem Başarısız' : 'Action Failed', errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +146,7 @@ export default function AuthModal({
     try {
       setIsLoading(true);
       const res = await authService.signInWithApple();
-      if (!res) return;
+      if (!res) return; // Cancelled
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const cleanName = res?.profile?.name || res?.user?.user_metadata?.name || 'Traveler';
@@ -150,10 +158,12 @@ export default function AuthModal({
         email: res?.user?.email || res?.profile?.email || 'apple_traveler@icloud.com',
         avatarInitials: cleanName.substring(0, 2).toUpperCase(),
       });
-      onClose();
     } catch (err) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Apple ile Giriş', err.message || 'Lütfen tekrar deneyiniz.');
+      Alert.alert(
+        currentLang === 'tr' ? 'Apple Girişi' : 'Apple Sign-In',
+        err.message || 'Lütfen tekrar deneyiniz.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +173,7 @@ export default function AuthModal({
     try {
       setIsLoading(true);
       const res = await authService.signInWithGoogle();
-      if (!res) return;
+      if (!res) return; // Cancelled
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const cleanName = res?.profile?.name || res?.user?.user_metadata?.full_name || res?.user?.user_metadata?.name || 'Google Traveler';
@@ -175,46 +185,67 @@ export default function AuthModal({
         email: res?.user?.email || res?.profile?.email || 'traveler@gmail.com',
         avatarInitials: cleanName.substring(0, 2).toUpperCase(),
       });
-      onClose();
     } catch (err) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Google ile Giriş', err.message || 'Lütfen tekrar deneyiniz.');
+      Alert.alert(
+        currentLang === 'tr' ? 'Google Girişi' : 'Google Sign-In',
+        err.message || 'Lütfen tekrar deneyiniz.'
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGuest = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onClose();
-  };
-
-  if (!isOpen) return null;
-
   return (
-    <Modal visible={isOpen} animationType="fade" transparent={true}>
+    <SafeAreaView style={styles.container}>
+      {/* Top Header */}
+      <View style={styles.topBar}>
+        <View style={styles.logoRow}>
+          <Text style={styles.logoText}>atls</Text>
+          <Text style={styles.logoDot}>.</Text>
+        </View>
+
+        {onToggleLang && (
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.selectionAsync();
+              onToggleLang();
+            }}
+            activeOpacity={0.7}
+            style={styles.langPill}
+          >
+            <Languages size={13} color="#2563EB" />
+            <Text style={styles.langPillText}>
+              {t?.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.overlay}
+        style={styles.keyboardContainer}
       >
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-
-        <View style={styles.content}>
-          <View style={styles.handle} />
-
-          {/* Header */}
-          <View style={styles.header}>
-            <View>
-              <View style={styles.brandRow}>
-                <Text style={styles.title}>atls</Text>
-                <Text style={styles.dot}>.</Text>
-              </View>
-              <Text style={styles.subtitle}>{t?.authSubtitle || 'Pasaportunuzu eşitlemek için giriş yapın.'}</Text>
-            </View>
-
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-              <X size={16} color="#64748B" />
-            </TouchableOpacity>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Welcome Text */}
+          <View style={styles.headerTextCol}>
+            <Text style={styles.mainTitle}>
+              {tab === 'login' 
+                ? (currentLang === 'tr' ? 'Pasaportuna Giriş Yap' : 'Welcome Back')
+                : (currentLang === 'tr' ? 'Hesabını Oluştur' : 'Create Your Passport')}
+            </Text>
+            <Text style={styles.subTitle}>
+              {tab === 'login'
+                ? (currentLang === 'tr' 
+                    ? 'Ziyaret ettiğin ve yaşadığın tüm ülkeleri senkronize etmek için hesabına giriş yap.' 
+                    : 'Sign in to synchronize all your visited and lived countries securely.')
+                : (currentLang === 'tr'
+                    ? 'Kişisel dünya seyahat pasaportunu başlatmak için bilgilerini doldur.'
+                    : 'Fill in your details to start your personal world passport.')}
+            </Text>
           </View>
 
           {/* Tab Switcher */}
@@ -224,14 +255,10 @@ export default function AuthModal({
                 Haptics.selectionAsync();
                 setTab('login');
               }}
+              activeOpacity={0.8}
               style={[styles.tabItem, tab === 'login' && styles.tabItemActive]}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  tab === 'login' && styles.tabTextActive,
-                ]}
-              >
+              <Text style={[styles.tabText, tab === 'login' && styles.tabTextActive]}>
                 {t?.loginTab || 'Giriş Yap'}
               </Text>
             </TouchableOpacity>
@@ -241,14 +268,10 @@ export default function AuthModal({
                 Haptics.selectionAsync();
                 setTab('register');
               }}
+              activeOpacity={0.8}
               style={[styles.tabItem, tab === 'register' && styles.tabItemActive]}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  tab === 'register' && styles.tabTextActive,
-                ]}
-              >
+              <Text style={[styles.tabText, tab === 'register' && styles.tabTextActive]}>
                 {t?.registerTab || 'Kayıt Ol'}
               </Text>
             </TouchableOpacity>
@@ -332,7 +355,7 @@ export default function AuthModal({
             {/* Divider */}
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t?.or || 'VEYA'}</Text>
+              <Text style={styles.dividerText}>{currentLang === 'tr' ? 'VEYA' : 'OR'}</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -347,7 +370,7 @@ export default function AuthModal({
                 >
                   <Apple size={18} color="#000000" />
                   <Text style={styles.appleBtnText}>
-                    {t?.continueWithApple || 'Apple ile Devam Et'}
+                    {currentLang === 'tr' ? 'Apple ile Devam Et' : 'Continue with Apple'}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -360,109 +383,123 @@ export default function AuthModal({
               >
                 <GoogleIcon />
                 <Text style={styles.googleBtnText}>
-                  {t?.continueWithGoogle || 'Google ile Devam Et'}
+                  {currentLang === 'tr' ? 'Google ile Devam Et' : 'Continue with Google'}
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Guest Mode CTA */}
-          <TouchableOpacity
-            onPress={handleGuest}
-            activeOpacity={0.7}
-            style={styles.guestBtn}
-          >
-            <Text style={styles.guestBtnText}>{t?.guestMode || 'Misafir Olarak Devam Et'}</Text>
-          </TouchableOpacity>
-        </View>
+          {/* Security & Official Badge */}
+          <View style={styles.securityBadge}>
+            <ShieldCheck size={14} color="#2563EB" />
+            <Text style={styles.securityText}>
+              {currentLang === 'tr' 
+                ? 'Resmi Biyometrik Pasaport & Güvenli Bulut Eşitleme' 
+                : 'Verified Biometric Passport & Secure Cloud Sync'}
+            </Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
-    </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  content: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    paddingHorizontal: 22,
-    paddingTop: 14,
-    paddingBottom: 40,
   },
-  handle: {
-    width: 44,
-    height: 5,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 2.5,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  header: {
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 14,
   },
-  brandRow: {
+  logoRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
-  title: {
-    fontSize: 26,
+  logoText: {
+    fontSize: 28,
     fontWeight: '900',
-    color: '#0F172A',
-    letterSpacing: -0.6,
+    color: '#090B10',
+    letterSpacing: -0.8,
   },
-  dot: {
-    fontSize: 26,
+  logoDot: {
+    fontSize: 28,
     fontWeight: '900',
     color: '#2563EB',
   },
-  subtitle: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
+  langPill: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  langPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#2563EB',
+  },
+  keyboardContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 40,
+  },
+  headerTextCol: {
+    marginBottom: 24,
+  },
+  mainTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.6,
+    marginBottom: 8,
+  },
+  subTitle: {
+    fontSize: 14,
+    color: '#64748B',
+    lineHeight: 21,
+    fontWeight: '400',
   },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#F1F5F9',
     borderRadius: 16,
-    padding: 3,
-    marginBottom: 16,
+    padding: 4,
+    marginBottom: 20,
   },
   tabItem: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 11,
     alignItems: 'center',
-    borderRadius: 13,
+    borderRadius: 12,
   },
   tabItemActive: {
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
-    shadowRadius: 2,
+    shadowRadius: 3,
     elevation: 2,
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#64748B',
   },
@@ -471,16 +508,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   form: {
-    gap: 12,
+    gap: 13,
   },
   inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
@@ -496,36 +533,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#2563EB',
-    borderRadius: 20,
-    paddingVertical: 16,
-    marginTop: 6,
+    borderRadius: 22,
+    paddingVertical: 17,
+    marginTop: 8,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    elevation: 4,
   },
   primaryBtnText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
   },
-  guestBtn: {
+  securityBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    marginTop: 6,
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(37, 99, 235, 0.06)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    marginTop: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 99, 235, 0.12)',
   },
-  guestBtnText: {
-    fontSize: 13,
+  securityText: {
+    fontSize: 11,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#2563EB',
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 10,
+    marginBottom: 6,
   },
   dividerLine: {
     flex: 1,
@@ -533,7 +578,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2E8F0',
   },
   dividerText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#94A3B8',
     letterSpacing: 0.5,
@@ -549,12 +594,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#0F172A',
-    borderRadius: 20,
-    paddingVertical: 14,
+    borderRadius: 22,
+    paddingVertical: 15,
   },
   appleBtnText: {
     color: '#0F172A',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
   },
   googleBtn: {
@@ -565,17 +610,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 20,
-    paddingVertical: 14,
+    borderRadius: 22,
+    paddingVertical: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     elevation: 1,
   },
   googleBtnText: {
     color: '#0F172A',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
   },
 });

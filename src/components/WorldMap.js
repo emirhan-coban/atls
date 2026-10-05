@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { G, Path, Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { worldViewBox, worldMapFeatures } from '../data/worldMapPaths';
+import { getLocalizedCountryName } from '../data/travelData';
 
-export default function WorldMap({ countries, activeFilter, onSelectCountry }) {
+export default function WorldMap({ countries, activeFilter, onSelectCountry, t, currentLang }) {
   const [selectedCountryInfo, setSelectedCountryInfo] = useState(null);
 
   // Fast country lookup map by ISO-2 code
@@ -26,11 +27,11 @@ export default function WorldMap({ countries, activeFilter, onSelectCountry }) {
 
     switch (country.status) {
       case 'lived':
-        return '#4F46E5'; // Deep Indigo (Fremd)
+        return '#1D4ED8'; // Deep Royal Blue
       case 'visited':
-        return '#3B82F6'; // Bright Electric Blue
+        return '#2563EB'; // Vibrant Electric Blue
       case 'want':
-        return '#A855F7'; // Purple
+        return '#38BDF8'; // Sky Blue
       default:
         return '#E2E8F0';
     }
@@ -40,7 +41,13 @@ export default function WorldMap({ countries, activeFilter, onSelectCountry }) {
     const country = countryStatusMap[id];
     if (country) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setSelectedCountryInfo(`${country.flag} ${country.name} (${country.status.toUpperCase()})`);
+      const countryName = getLocalizedCountryName(country, currentLang);
+      const statusLabel = country.status === 'lived' 
+        ? (t ? t.livedIn : 'LIVED')
+        : country.status === 'want' 
+          ? (t ? t.wishlist : 'WISHLIST')
+          : (t ? t.visited : 'VISITED');
+      setSelectedCountryInfo(`${country.flag || '🌍'} ${countryName} (${statusLabel})`);
       if (onSelectCountry) onSelectCountry(country.id);
     }
   };
@@ -69,29 +76,19 @@ export default function WorldMap({ countries, activeFilter, onSelectCountry }) {
             );
           })}
         </G>
-
-        {/* Pulse beacon at Lisbon (Home) */}
-        <Circle cx="395" cy="370" r="6" fill="#4F46E5" opacity={0.4} />
-        <Circle cx="395" cy="370" r="3.5" fill="#4F46E5" />
-        <Circle cx="395" cy="370" r="1.5" fill="#FFFFFF" />
-
-        {/* Pulse beacon at Taiwan */}
-        <Circle cx="664" cy="425" r="4.5" fill="#4F46E5" opacity={0.4} />
-        <Circle cx="664" cy="425" r="2.8" fill="#4F46E5" />
-        <Circle cx="664" cy="425" r="1.2" fill="#FFFFFF" />
       </Svg>
 
-      {/* Floating Status Badge (like Fremd's VERIFIED tag) */}
+      {/* Floating Status Badge */}
       <View style={styles.badgeContainer}>
-        <View style={styles.greenDot} />
+        <View style={styles.blueDot} />
         <Text style={styles.badgeText}>
-          {selectedCountryInfo || `${countries.length} MARKED BORDERS`}
+          {selectedCountryInfo || (t && t.markedBorders ? t.markedBorders.replace('{count}', countries.length) : `${countries.length} MARKED BORDERS`)}
         </Text>
       </View>
 
-      {/* Live Coordinate tag top right */}
+      {/* Map scale badge top right */}
       <View style={styles.coordBadge}>
-        <Text style={styles.coordText}>38.72° N, 9.13° W</Text>
+        <Text style={styles.coordText}>WGS-84 • 195</Text>
       </View>
     </View>
   );
@@ -137,11 +134,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  greenDot: {
+  blueDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#10B981',
+    backgroundColor: '#2563EB',
   },
   badgeText: {
     fontSize: 9.5,

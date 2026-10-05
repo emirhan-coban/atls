@@ -13,7 +13,7 @@ export default function BottomNav({ activeTab, onTabChange, t }) {
     { 
       id: 'profile', 
       icon: User, 
-      label: t ? t.navProfile : 'Profile' 
+      label: t ? (t.navPassport || t.navProfile) : 'Passport' 
     },
   ];
 
@@ -43,7 +43,7 @@ export default function BottomNav({ activeTab, onTabChange, t }) {
             >
               <Icon
                 size={20}
-                color={isActive ? '#5B4DFF' : '#94A3B8'}
+                color={isActive ? '#2563EB' : '#94A3B8'}
                 strokeWidth={isActive ? 2.5 : 2}
               />
               <Text
@@ -80,11 +80,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     gap: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.16,
-    shadowRadius: 28,
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
     elevation: 8,
   },
   tabButton: {
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   tabButtonActive: {
-    backgroundColor: 'rgba(91, 77, 255, 0.12)',
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
   },
   tabLabel: {
     fontSize: 12,
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   tabLabelActive: {
-    color: '#5B4DFF',
+    color: '#2563EB',
     fontWeight: '800',
   },
 });

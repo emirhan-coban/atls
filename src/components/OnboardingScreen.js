@@ -15,7 +15,10 @@ import {
   Share2, 
   ChevronRight, 
   Languages, 
-  Sparkles 
+  Sparkles,
+  Compass,
+  MapPin,
+  CheckCircle2,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -26,27 +29,36 @@ export default function OnboardingScreen({ onComplete, t, currentLang, onToggleL
   const slides = [
     {
       icon: Globe2,
-      badge: "PLANETARY EXPLORATION",
+      badge: t.onboardingBadge1 || "KÜRESEL KEŞİF",
       title: t.onboarding1Title,
       description: t.onboarding1Desc,
-      colors: ['#4F46E5', '#7C3AED'],
-      accentColor: '#38BDF8',
+      gradientColors: ['#EFF6FF', '#DBEAFE'],
+      iconBg: '#DBEAFE',
+      iconColor: '#2563EB',
+      floatingTag: currentLang === 'tr' ? '195 Ülke & Harita' : '195 Countries & Map',
+      FloatingIcon: Compass,
     },
     {
       icon: ShieldCheck,
-      badge: "BIOMETRIC CREDENTIAL",
+      badge: t.onboardingBadge2 || "BİYOMETRİK KİMLİK",
       title: t.onboarding2Title,
       description: t.onboarding2Desc,
-      colors: ['#6366F1', '#EC4899'],
-      accentColor: '#FCD34D',
+      gradientColors: ['#F0FDF4', '#EEF2FF'],
+      iconBg: '#E0E7FF',
+      iconColor: '#2563EB',
+      floatingTag: currentLang === 'tr' ? 'Dijital Pasaport' : 'Digital Passport',
+      FloatingIcon: CheckCircle2,
     },
     {
-      icon: Share2,
-      badge: "SPOTIFY-STYLE STORY",
+      icon: Sparkles,
+      badge: t.onboardingBadge3 || (currentLang === 'tr' ? "PASAPORT FOTOĞRAF KARTI" : "PASSPORT PHOTO CARD"),
       title: t.onboarding3Title,
       description: t.onboarding3Desc,
-      colors: ['#1E1035', '#4338CA'],
-      accentColor: '#34D399',
+      gradientColors: ['#FAF5FF', '#EFF6FF'],
+      iconBg: '#E0E7FF',
+      iconColor: '#2563EB',
+      floatingTag: currentLang === 'tr' ? '4:3 Pasaport Kartı' : '4:3 Passport Card',
+      FloatingIcon: Share2,
     },
   ];
 
@@ -66,6 +78,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang, onToggleL
 
   const active = slides[currentSlide];
   const IconComponent = active.icon;
+  const FloatingIcon = active.FloatingIcon;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,37 +89,44 @@ export default function OnboardingScreen({ onComplete, t, currentLang, onToggleL
             Haptics.selectionAsync();
             onToggleLang();
           }}
-          activeOpacity={0.8}
+          activeOpacity={0.7}
           style={styles.langBtn}
         >
-          <Languages size={14} color="#5B4DFF" />
+          <Languages size={14} color="#2563EB" />
           <Text style={styles.langText}>{currentLang.toUpperCase()}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleSkip} style={styles.skipBtn}>
+        <TouchableOpacity onPress={handleSkip} style={styles.skipBtn} activeOpacity={0.6}>
           <Text style={styles.skipText}>{t.skip}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Main Slide Content */}
       <View style={styles.slideArea}>
-        {/* Animated Hero Icon Graphic */}
-        <LinearGradient
-          colors={active.colors}
-          style={styles.heroCircle}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {/* Subtle Outer Rings */}
-          <View style={styles.outerRing1} />
-          <View style={styles.outerRing2} />
+        {/* Visual Showcase Card */}
+        <View style={styles.heroCardWrapper}>
+          <LinearGradient
+            colors={active.gradientColors}
+            style={styles.heroCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            {/* Ambient Background Watermark Circles */}
+            <View style={styles.bgCircleLarge} />
+            <View style={styles.bgCircleSmall} />
 
-          <IconComponent size={64} color="#FFFFFF" strokeWidth={1.8} />
+            {/* Central Icon Bubble */}
+            <View style={[styles.mainIconBubble, { backgroundColor: '#FFFFFF' }]}>
+              <IconComponent size={56} color={active.iconColor} strokeWidth={1.8} />
+            </View>
 
-          <View style={[styles.floatingBadge, { backgroundColor: active.accentColor }]}>
-            <Sparkles size={12} color="#0F172A" />
-          </View>
-        </LinearGradient>
+            {/* Floating Info Pill */}
+            <View style={styles.floatingPill}>
+              <FloatingIcon size={12} color="#2563EB" strokeWidth={2.5} />
+              <Text style={styles.floatingPillText}>{active.floatingTag}</Text>
+            </View>
+          </LinearGradient>
+        </View>
 
         {/* Text Content */}
         <View style={styles.textContainer}>
@@ -141,7 +161,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang, onToggleL
           <Text style={styles.nextBtnText}>
             {currentSlide === slides.length - 1 ? t.getStarted : t.next}
           </Text>
-          <ChevronRight size={18} color="#FFFFFF" />
+          <ChevronRight size={18} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -151,7 +171,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang, onToggleL
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090B10',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'space-between',
   },
   topBar: {
@@ -165,17 +185,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   langText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#2563EB',
   },
   skipBtn: {
     paddingHorizontal: 12,
@@ -184,85 +209,118 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: '#64748B',
   },
   slideArea: {
     alignItems: 'center',
-    paddingHorizontal: 28,
+    paddingHorizontal: 26,
   },
-  heroCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+  heroCardWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 34,
+  },
+  heroCard: {
+    width: width * 0.78,
+    height: 220,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    marginBottom: 36,
-    shadowColor: '#5B4DFF',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.5,
-    shadowRadius: 30,
-    elevation: 8,
-  },
-  outerRing1: {
-    position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 120,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: '#E2E8F0',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 3,
+    overflow: 'hidden',
   },
-  outerRing2: {
+  bgCircleLarge: {
     position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    top: -40,
+    right: -40,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
   },
-  floatingBadge: {
+  bgCircleSmall: {
     position: 'absolute',
-    bottom: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    bottom: -30,
+    left: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  mainIconBubble: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#090B10',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  floatingPill: {
+    position: 'absolute',
+    bottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  floatingPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: 0.3,
   },
   textContainer: {
     alignItems: 'center',
   },
   pillBadge: {
-    backgroundColor: 'rgba(91, 77, 255, 0.18)',
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(91, 77, 255, 0.3)',
+    borderColor: 'rgba(37, 99, 235, 0.15)',
   },
   pillBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
-    color: '#818CF8',
+    color: '#2563EB',
     letterSpacing: 0.8,
   },
   slideTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#0F172A',
     letterSpacing: -0.6,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   slideDesc: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: '#64748B',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 21,
     fontWeight: '400',
     paddingHorizontal: 10,
   },
@@ -283,23 +341,23 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     width: 24,
-    backgroundColor: '#5B4DFF',
+    backgroundColor: '#2563EB',
   },
   dotInactive: {
     width: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#E2E8F0',
   },
   nextBtn: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#5B4DFF',
+    backgroundColor: '#2563EB',
     borderRadius: 24,
     paddingVertical: 18,
-    shadowColor: '#5B4DFF',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 4,
   },

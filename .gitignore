@@ -17,3 +17,9 @@ ios/Pods/
 ios/build/
 *.xcworkspace/xcuserdata
 *.xcuserdatad
+
+# Environment variables
+.env
+.env*.local
+!.env.example
+
