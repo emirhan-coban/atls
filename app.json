@@ -30,7 +30,15 @@
     "plugins": [
       "./plugins/withAndroidProjectName",
       "expo-sharing",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

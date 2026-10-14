@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "atlas.app"
-               BlueprintName = "atlas"
-               ReferencedContainer = "container:atlas.xcodeproj">
+               BuildableName = "atls.app"
+               BlueprintName = "atls"
+               ReferencedContainer = "container:atls.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "atlasTests.xctest"
-               BlueprintName = "atlasTests"
-               ReferencedContainer = "container:atlas.xcodeproj">
+               BuildableName = "atlsTests.xctest"
+               BlueprintName = "atlsTests"
+               ReferencedContainer = "container:atls.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "atlas.app"
-            BlueprintName = "atlas"
-            ReferencedContainer = "container:atlas.xcodeproj">
+            BuildableName = "atls.app"
+            BlueprintName = "atls"
+            ReferencedContainer = "container:atls.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "atlas.app"
-            BlueprintName = "atlas"
-            ReferencedContainer = "container:atlas.xcodeproj">
+            BuildableName = "atls.app"
+            BlueprintName = "atls"
+            ReferencedContainer = "container:atls.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
