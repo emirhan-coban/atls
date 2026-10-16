@@ -24,7 +24,7 @@ import {
   Sparkles,
 } from 'lucide-react-native';
 import WorldMap from './WorldMap';
-import { getLocalizedCountryName } from '../data/travelData';
+import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
 import { getCountryTrivia } from '../data/countryTrivia';
 
 export default function HomeScreen({
@@ -54,7 +54,7 @@ export default function HomeScreen({
       code: c.id,
       city: locName,
       country: locName,
-      date: c.year || c.visitedYear || new Date().getFullYear().toString(),
+      date: formatCountryDate(c, currentLang) || c.year || c.visitedYear || new Date().getFullYear().toString(),
       type: c.status === 'lived' ? (currentLang === 'tr' ? 'İKAMET' : 'RESIDENCE') : (currentLang === 'tr' ? 'GİRİŞ' : 'ENTRY'),
       accentColor: idx % 3 === 0 ? '#4F46E5' : idx % 3 === 1 ? '#059669' : '#2563EB',
       bg: idx % 3 === 0 ? '#EEF2FF' : idx % 3 === 1 ? '#ECFDF5' : '#EFF6FF',
@@ -190,7 +190,7 @@ export default function HomeScreen({
               <View style={styles.countryYearPill}>
                 <Calendar size={11} color="#2563EB" />
                 <Text style={styles.countryYearPillText}>
-                  {currentMarkedCountry.year || currentMarkedCountry.visitedYear || new Date().getFullYear()}
+                  {formatCountryDate(currentMarkedCountry, currentLang) || currentMarkedCountry.year || currentMarkedCountry.visitedYear || new Date().getFullYear()}
                 </Text>
               </View>
             </View>
@@ -200,10 +200,15 @@ export default function HomeScreen({
 
           {/* Country Name & Trivia */}
           <View style={styles.countryHeroTextContent}>
-            <Text style={styles.countryHeroTitle}>
+            <Text
+              style={styles.countryHeroTitle}
+              numberOfLines={2}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.75}
+            >
               {getLocalizedCountryName(currentMarkedCountry, currentLang)}
             </Text>
-            <Text style={styles.countryHeroDesc}>
+            <Text style={styles.countryHeroDesc} numberOfLines={3}>
               {getCountryTrivia(
                 currentMarkedCountry.id,
                 getLocalizedCountryName(currentMarkedCountry, currentLang),
@@ -282,7 +287,9 @@ export default function HomeScreen({
             </Text>
             <View style={styles.statLabelRow}>
               <View style={[styles.statusDot, { backgroundColor: '#2563EB' }]} />
-              <Text style={styles.statLabel}>{t.visited}</Text>
+              <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                {t.visited}
+              </Text>
             </View>
           </TouchableOpacity>
 
@@ -300,7 +307,9 @@ export default function HomeScreen({
             </Text>
             <View style={styles.statLabelRow}>
               <View style={[styles.statusDot, { backgroundColor: '#1D4ED8' }]} />
-              <Text style={styles.statLabel}>{t.livedIn}</Text>
+              <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                {t.livedIn}
+              </Text>
             </View>
           </TouchableOpacity>
 
@@ -318,7 +327,9 @@ export default function HomeScreen({
             </Text>
             <View style={styles.statLabelRow}>
               <View style={[styles.statusDot, { backgroundColor: '#38BDF8' }]} />
-              <Text style={styles.statLabel}>{t.wishlist}</Text>
+              <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                {t.wishlist}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -385,11 +396,17 @@ export default function HomeScreen({
                 </View>
               </View>
               <View style={styles.stampBody}>
-                <Text style={styles.cityText}>{stamp.city}</Text>
-                <Text style={styles.countryText}>{stamp.country}</Text>
+                <Text style={styles.cityText} numberOfLines={1} ellipsizeMode="tail">
+                  {stamp.city}
+                </Text>
+                <Text style={styles.countryText} numberOfLines={1} ellipsizeMode="tail">
+                  {stamp.country}
+                </Text>
               </View>
               <View style={styles.stampFooter}>
-                <Text style={styles.dateText}>{stamp.date}</Text>
+                <Text style={styles.dateText} numberOfLines={1} ellipsizeMode="tail">
+                  {stamp.date}
+                </Text>
                 <ArrowUpRight size={12} color="#94A3B8" />
               </View>
             </View>
@@ -589,13 +606,16 @@ const styles = StyleSheet.create({
   countryHeroTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 14,
+    gap: 10,
   },
   countryHeroBadges: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
+    flex: 1,
   },
   countryStatusPill: {
     backgroundColor: '#EFF6FF',
@@ -604,6 +624,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
+    flexShrink: 0,
   },
   countryStatusPillText: {
     fontSize: 9,
@@ -621,6 +642,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 14,
+    flexShrink: 0,
   },
   countryYearPillText: {
     fontSize: 10,
@@ -629,6 +651,8 @@ const styles = StyleSheet.create({
   },
   countryHeroFlag: {
     fontSize: 28,
+    flexShrink: 0,
+    marginTop: -2,
   },
   countryHeroTextContent: {
     marginBottom: 16,
@@ -639,6 +663,7 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     letterSpacing: -0.6,
     marginBottom: 6,
+    flexShrink: 1,
   },
   countryHeroDesc: {
     fontSize: 12.5,

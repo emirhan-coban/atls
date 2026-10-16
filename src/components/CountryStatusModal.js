@@ -23,8 +23,10 @@ import {
   Home,
   Target,
   ArrowRight,
+  Plus,
+  Minus,
 } from 'lucide-react-native';
-import { getLocalizedCountryName } from '../data/travelData';
+import { getLocalizedCountryName, MONTHS } from '../data/travelData';
 
 export default function CountryStatusModal({
   isOpen,
@@ -37,6 +39,7 @@ export default function CountryStatusModal({
 }) {
   const [selectedStatus, setSelectedStatus] = useState('visited');
   const [year, setYear] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -44,6 +47,7 @@ export default function CountryStatusModal({
       // If currently want, default recommendation is to convert to 'visited'
       setSelectedStatus(country.status === 'want' ? 'visited' : country.status);
       setYear(country.year || country.visitedYear || new Date().getFullYear().toString());
+      setSelectedMonth(country.month || country.visitedMonth || String(new Date().getMonth() + 1).padStart(2, '0'));
       setNotes(country.notes || '');
     }
   }, [isOpen, country]);
@@ -62,14 +66,25 @@ export default function CountryStatusModal({
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+    const isWant = selectedStatus === 'want';
+    const finalYear = isWant ? null : (year.trim() || new Date().getFullYear().toString());
+    const finalMonth = isWant ? null : selectedMonth;
+    const foundMonth = MONTHS.find((m) => m.id === finalMonth);
+    const monthShortTr = foundMonth ? foundMonth.shortTr : finalMonth;
+    const dateFormatted = finalMonth && finalYear ? `${finalMonth}/${finalYear}` : (finalYear || '');
+
     const updated = {
       ...country,
       status: selectedStatus,
-      year: year.trim() || new Date().getFullYear().toString(),
-      visitedYear: year.trim() || new Date().getFullYear().toString(),
+      year: finalYear,
+      visitedYear: finalYear,
+      month: finalMonth,
+      visitedMonth: finalMonth,
+      date: dateFormatted,
+      yearTr: isWant ? '' : `${monthShortTr} ${finalYear}`,
       notes: notes.trim(),
       notesTr: notes.trim(),
-      visits: selectedStatus === 'want' ? 0 : Math.max(1, country.visits || 1),
+      visits: isWant ? 0 : Math.max(1, country.visits || 1),
     };
 
     onUpdateCountry(updated);
@@ -130,8 +145,15 @@ export default function CountryStatusModal({
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Text style={styles.flagLarge}>{country.flag}</Text>
-              <View>
-                <Text style={styles.countryTitle}>{countryName}</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text
+                  style={styles.countryTitle}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.8}
+                >
+                  {countryName}
+                </Text>
                 <View style={styles.statusBadgeRow}>
                   <View
                     style={[
@@ -156,7 +178,7 @@ export default function CountryStatusModal({
                           : (currentLang === 'tr' ? 'GEZİLDİ' : 'VISITED')}
                     </Text>
                   </View>
-                  <Text style={styles.countryContinent}>
+                  <Text style={styles.countryContinent} numberOfLines={1} ellipsizeMode="tail">
                     {currentLang === 'tr' ? (country.continentTr || country.continent) : country.continent}
                   </Text>
                 </View>
@@ -220,6 +242,9 @@ export default function CountryStatusModal({
                       styles.statusOptionText,
                       selectedStatus === 'visited' && styles.statusOptionTextActiveVisited,
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
                   >
                     {t.visited || (currentLang === 'tr' ? 'Gezildi' : 'Visited')}
                   </Text>
@@ -243,6 +268,9 @@ export default function CountryStatusModal({
                       styles.statusOptionText,
                       selectedStatus === 'lived' && styles.statusOptionTextActiveLived,
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
                   >
                     {t.livedIn || (currentLang === 'tr' ? 'Yaşandı' : 'Lived')}
                   </Text>
@@ -266,6 +294,9 @@ export default function CountryStatusModal({
                       styles.statusOptionText,
                       selectedStatus === 'want' && styles.statusOptionTextActiveWant,
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
                   >
                     {t.wishlist || (currentLang === 'tr' ? 'Hedef' : 'Wishlist')}
                   </Text>
@@ -273,26 +304,91 @@ export default function CountryStatusModal({
               </View>
             </View>
 
-            {/* Year Input */}
-            <View style={styles.inputGroup}>
-              <View style={styles.labelRow}>
-                <Calendar size={12} color="#2563EB" />
-                <Text style={styles.sectionLabel}>
-                  {selectedStatus === 'want'
-                    ? (currentLang === 'tr' ? 'HEDEF YILI' : 'TARGET YEAR')
-                    : (currentLang === 'tr' ? 'ZİYARET / İKAMET YILI' : 'YEAR OF VISIT / RESIDENCE')}
-                </Text>
+            {/* Date Selection: Only for Visited & Lived (hidden for Want / Wishlist) */}
+            {selectedStatus !== 'want' && (
+              <View style={styles.inputGroup}>
+                <View style={styles.labelRow}>
+                  <Calendar size={12} color="#2563EB" />
+                  <Text style={styles.sectionLabel}>
+                    {currentLang === 'tr' ? 'SEYAHAT TARİHİ (AY / YIL)' : 'TRAVEL DATE (MONTH / YEAR)'}
+                  </Text>
+                </View>
+
+                {/* Year Stepper & Input */}
+                <View style={styles.yearRow}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      const y = parseInt(year, 10) || new Date().getFullYear();
+                      setYear(String(y - 1));
+                    }}
+                    style={styles.yearStepperBtn}
+                    activeOpacity={0.7}
+                  >
+                    <Minus size={13} color="#475569" strokeWidth={2.5} />
+                  </TouchableOpacity>
+
+                  <View style={styles.yearInputBox}>
+                    <TextInput
+                      value={year}
+                      onChangeText={(txt) => setYear(txt.replace(/[^0-9]/g, '').slice(0, 4))}
+                      keyboardType="numeric"
+                      maxLength={4}
+                      placeholder={t.selectYear || 'Yıl'}
+                      placeholderTextColor="#94A3B8"
+                      style={styles.yearInputText}
+                    />
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      const y = parseInt(year, 10) || new Date().getFullYear();
+                      setYear(String(y + 1));
+                    }}
+                    style={styles.yearStepperBtn}
+                    activeOpacity={0.7}
+                  >
+                    <Plus size={13} color="#475569" strokeWidth={2.5} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Months Horizontal Scroll */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.monthsScrollRow}
+                >
+                  {MONTHS.map((m) => {
+                    const isMonthSelected = selectedMonth === m.id;
+                    const monthLabel = currentLang === 'tr' ? m.shortTr : m.shortEn;
+                    return (
+                      <TouchableOpacity
+                        key={m.id}
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setSelectedMonth(m.id);
+                        }}
+                        activeOpacity={0.7}
+                        style={[
+                          styles.monthPill,
+                          isMonthSelected && styles.monthPillActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.monthPillText,
+                            isMonthSelected && styles.monthPillTextActive,
+                          ]}
+                        >
+                          {monthLabel}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
               </View>
-              <TextInput
-                value={year}
-                onChangeText={setYear}
-                placeholder="2026"
-                placeholderTextColor="#94A3B8"
-                keyboardType="numeric"
-                maxLength={4}
-                style={styles.textInput}
-              />
-            </View>
+            )}
 
             {/* Notes Input */}
             <View style={styles.inputGroup}>
@@ -398,6 +494,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    minWidth: 0,
+    marginRight: 10,
   },
   flagLarge: {
     fontSize: 34,
@@ -407,18 +506,21 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#0F172A',
     letterSpacing: -0.5,
+    flexShrink: 1,
   },
   statusBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginTop: 3,
+    flexWrap: 'wrap',
   },
   currentStatusBadge: {
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
     backgroundColor: '#EFF6FF',
+    flexShrink: 0,
   },
   badgeVisited: {
     backgroundColor: '#EFF6FF',
@@ -447,6 +549,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748B',
     fontWeight: '600',
+    flexShrink: 1,
   },
   closeBtn: {
     width: 34,
@@ -455,6 +558,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   scrollContent: {
     gap: 16,
@@ -616,5 +720,67 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 12,
     fontWeight: '700',
+  },
+  yearRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginVertical: 4,
+  },
+  yearStepperBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  yearInputBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    minWidth: 90,
+    alignItems: 'center',
+  },
+  yearInputText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+  },
+  monthsScrollRow: {
+    gap: 6,
+    paddingVertical: 6,
+  },
+  monthPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  monthPillActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
+  },
+  monthPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  monthPillTextActive: {
+    color: '#FFFFFF',
   },
 });

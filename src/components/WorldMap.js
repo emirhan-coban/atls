@@ -1,12 +1,173 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Svg, { G, Path, Circle } from 'react-native-svg';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  PanResponder,
+} from 'react-native';
+import Svg, { G, Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
+import { Plus, Minus, RotateCcw } from 'lucide-react-native';
 import { worldViewBox, worldMapFeatures } from '../data/worldMapPaths';
 import { getLocalizedCountryName } from '../data/travelData';
 
-export default function WorldMap({ countries, activeFilter, onSelectCountry, t, currentLang }) {
+// Base world coordinates
+const BASE_VIEWBOX = {
+  minX: 30.767,
+  minY: 241.591,
+  width: 784.077,
+  height: 458.627,
+};
+const CENTER_X = BASE_VIEWBOX.minX + BASE_VIEWBOX.width / 2;
+const CENTER_Y = BASE_VIEWBOX.minY + BASE_VIEWBOX.height / 2;
+
+export default function WorldMap({
+  countries = [],
+  activeFilter = 'all',
+  onSelectCountry,
+  t,
+  currentLang = 'tr',
+  selectedCountryId = null,
+  interactive = true,
+  style = null,
+}) {
   const [selectedCountryInfo, setSelectedCountryInfo] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [containerSize, setContainerSize] = useState({ width: 340, height: 200 });
+
+  // Refs for gesture tracking without stale closures
+  const zoomRef = useRef(1);
+  const panRef = useRef({ x: 0, y: 0 });
+  const initialPinchDist = useRef(null);
+  const baseZoomOnPinch = useRef(1);
+  const basePanOnDrag = useRef({ x: 0, y: 0 });
+  const dragStartTouch = useRef({ x: 0, y: 0 });
+  const lastTapTime = useRef(0);
+  const rafId = useRef(null);
+
+  // Sync refs with state
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    panRef.current = panOffset;
+  }, [panOffset]);
+
+  // Compute crisp vector viewBox
+  const computedViewBox = useMemo(() => {
+    const z = Math.max(1, zoom);
+    const w = BASE_VIEWBOX.width / z;
+    const h = BASE_VIEWBOX.height / z;
+
+    const maxPanX = (BASE_VIEWBOX.width - w) / 2;
+    const maxPanY = (BASE_VIEWBOX.height - h) / 2;
+
+    const clampedX = Math.max(-maxPanX, Math.min(maxPanX, panOffset.x));
+    const clampedY = Math.max(-maxPanY, Math.min(maxPanY, panOffset.y));
+
+    const minX = CENTER_X + clampedX - w / 2;
+    const minY = CENTER_Y + clampedY - h / 2;
+
+    return `${minX.toFixed(3)} ${minY.toFixed(3)} ${w.toFixed(3)} ${h.toFixed(3)}`;
+  }, [zoom, panOffset]);
+
+  const updateViewBoxThrottled = (newZoom, newPan) => {
+    if (rafId.current) cancelAnimationFrame(rafId.current);
+    rafId.current = requestAnimationFrame(() => {
+      setZoom(newZoom);
+      setPanOffset(newPan);
+    });
+  };
+
+  const resetZoom = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    zoomRef.current = 1;
+    panRef.current = { x: 0, y: 0 };
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const zoomIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const target = Math.min(5.5, zoomRef.current * 1.5);
+    zoomRef.current = target;
+    setZoom(target);
+  };
+
+  const zoomOut = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const target = Math.max(1, zoomRef.current / 1.5);
+    if (target <= 1.05) {
+      resetZoom();
+    } else {
+      zoomRef.current = target;
+      setZoom(target);
+    }
+  };
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gesture) => {
+          return (
+            gesture.numberActiveTouches === 2 ||
+            (zoomRef.current > 1.05 &&
+              (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4))
+          );
+        },
+        onPanResponderGrant: (evt, gesture) => {
+          if (evt.nativeEvent.touches.length === 2) {
+            const [t1, t2] = evt.nativeEvent.touches;
+            initialPinchDist.current = Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY);
+            baseZoomOnPinch.current = zoomRef.current;
+          } else if (evt.nativeEvent.touches.length === 1 && zoomRef.current > 1.05) {
+            dragStartTouch.current = { x: gesture.x0, y: gesture.y0 };
+            basePanOnDrag.current = { ...panRef.current };
+          }
+        },
+        onPanResponderMove: (evt, gesture) => {
+          if (evt.nativeEvent.touches.length === 2 && initialPinchDist.current) {
+            const [t1, t2] = evt.nativeEvent.touches;
+            const dist = Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY);
+            const factor = dist / initialPinchDist.current;
+            const nextZoom = Math.max(1, Math.min(5.5, baseZoomOnPinch.current * factor));
+            zoomRef.current = nextZoom;
+            updateViewBoxThrottled(nextZoom, panRef.current);
+          } else if (evt.nativeEvent.touches.length === 1 && zoomRef.current > 1.05) {
+            // Screen pixel to SVG unit ratio
+            const currentW = BASE_VIEWBOX.width / zoomRef.current;
+            const currentH = BASE_VIEWBOX.height / zoomRef.current;
+            const ratioX = currentW / Math.max(100, containerSize.width);
+            const ratioY = currentH / Math.max(100, containerSize.height);
+
+            const nextPanX = basePanOnDrag.current.x - gesture.dx * ratioX;
+            const nextPanY = basePanOnDrag.current.y - gesture.dy * ratioY;
+
+            const maxPanX = (BASE_VIEWBOX.width - currentW) / 2;
+            const maxPanY = (BASE_VIEWBOX.height - currentH) / 2;
+
+            const clampedPan = {
+              x: Math.max(-maxPanX, Math.min(maxPanX, nextPanX)),
+              y: Math.max(-maxPanY, Math.min(maxPanY, nextPanY)),
+            };
+
+            panRef.current = clampedPan;
+            updateViewBoxThrottled(zoomRef.current, clampedPan);
+          }
+        },
+        onPanResponderRelease: () => {
+          initialPinchDist.current = null;
+          if (zoomRef.current < 1) {
+            resetZoom();
+          }
+        },
+      }),
+    [containerSize]
+  );
 
   // Fast country lookup map by ISO-2 code
   const countryStatusMap = useMemo(() => {
@@ -38,6 +199,21 @@ export default function WorldMap({ countries, activeFilter, onSelectCountry, t, 
   };
 
   const handleCountryPress = (id) => {
+    if (!interactive) return;
+
+    // Double-tap zoom into country
+    const now = Date.now();
+    if (now - lastTapTime.current < 300) {
+      if (zoomRef.current > 1.4) {
+        resetZoom();
+      } else {
+        zoomIn();
+      }
+      lastTapTime.current = 0;
+      return;
+    }
+    lastTapTime.current = now;
+
     const country = countryStatusMap[id];
     if (country) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -52,25 +228,49 @@ export default function WorldMap({ countries, activeFilter, onSelectCountry, t, 
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Background coordinate grid watermark */}
-      <View style={styles.watermarkGrid} />
+  const isZoomed = zoom > 1.05;
+  const zoomDisplay = (Math.round(zoom * 10) / 10).toFixed(1);
 
+  return (
+    <View
+      style={[styles.container, style]}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        setContainerSize({ width, height });
+      }}
+      {...panResponder.panHandlers}
+    >
+      {/* Background coordinate grid watermark */}
+      <View style={styles.watermarkGrid} pointerEvents="none" />
+
+      {/* 
+        Native Vector SVG Canvas
+        ViewBox manipulation guarantees 100% vector sharpness at retina resolution without bitmap pixelation!
+      */}
       <Svg
-        viewBox={worldViewBox}
+        viewBox={computedViewBox}
         style={styles.svg}
       >
-        <G stroke="#FFFFFF" strokeWidth={0.6} strokeLinejoin="round" strokeLinecap="round">
+        <G
+          stroke="#FFFFFF"
+          strokeWidth={0.6}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        >
           {worldMapFeatures.map((feature, idx) => {
             const fill = getCountryColor(feature.id);
-            const isInteractive = Boolean(countryStatusMap[feature.id]);
+            const isInteractive = interactive && Boolean(countryStatusMap[feature.id]);
+            const isSelected = selectedCountryId && selectedCountryId.toUpperCase() === feature.id;
 
             return (
               <Path
                 key={`${feature.id}-${idx}`}
                 d={feature.d}
-                fill={fill}
+                fill={isSelected ? '#1E40AF' : fill}
+                stroke={isSelected ? '#1D4ED8' : '#FFFFFF'}
+                strokeWidth={isSelected ? 1.0 : 0.6}
+                vectorEffect="non-scaling-stroke"
                 onPress={() => isInteractive && handleCountryPress(feature.id)}
               />
             );
@@ -81,14 +281,49 @@ export default function WorldMap({ countries, activeFilter, onSelectCountry, t, 
       {/* Floating Status Badge */}
       <View style={styles.badgeContainer}>
         <View style={styles.blueDot} />
-        <Text style={styles.badgeText}>
+        <Text style={styles.badgeText} numberOfLines={1}>
           {selectedCountryInfo || (t && t.markedBorders ? t.markedBorders.replace('{count}', countries.length) : `${countries.length} MARKED BORDERS`)}
         </Text>
       </View>
 
-      {/* Map scale badge top right */}
-      <View style={styles.coordBadge}>
-        <Text style={styles.coordText}>WGS-84 • 195</Text>
+      {/* Mini Zoom & Scale Controls top right */}
+      <View style={styles.topRightControls}>
+        {isZoomed && (
+          <TouchableOpacity
+            onPress={resetZoom}
+            activeOpacity={0.75}
+            style={styles.resetButton}
+          >
+            <RotateCcw size={10} color="#2563EB" strokeWidth={2.5} />
+            <Text style={styles.resetText}>{`${zoomDisplay}x`}</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.zoomButtonsGroup}>
+          <TouchableOpacity
+            onPress={zoomIn}
+            activeOpacity={0.75}
+            style={styles.zoomBtn}
+          >
+            <Plus size={11} color="#0F172A" strokeWidth={2.5} />
+          </TouchableOpacity>
+
+          {isZoomed && (
+            <TouchableOpacity
+              onPress={zoomOut}
+              activeOpacity={0.75}
+              style={styles.zoomBtn}
+            >
+              <Minus size={11} color="#0F172A" strokeWidth={2.5} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {!isZoomed && (
+          <View style={styles.coordBadge}>
+            <Text style={styles.coordText}>WGS-84 • 195</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -133,6 +368,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    maxWidth: '75%',
   },
   blueDot: {
     width: 6,
@@ -146,13 +382,56 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     letterSpacing: 0.4,
   },
-  coordBadge: {
+  topRightControls: {
     position: 'absolute',
     top: 8,
     right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  resetText: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: '#2563EB',
+    fontVariant: ['tabular-nums'],
+  },
+  zoomButtonsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  zoomBtn: {
+    width: 22,
+    height: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  coordBadge: {
     backgroundColor: 'rgba(15, 23, 42, 0.05)',
     paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 6,
   },
   coordText: {

@@ -24,7 +24,7 @@ import {
   Compass,
   LogOut,
 } from 'lucide-react-native';
-import { getPassportStamps, getLocalizedCountryName, availableCatalog } from '../data/travelData';
+import { getPassportStamps, getLocalizedCountryName, availableCatalog, formatCountryDate } from '../data/travelData';
 import EditProfileModal from './EditProfileModal';
 import CountryStatusModal from './CountryStatusModal';
 
@@ -56,7 +56,7 @@ export default function PassportScreen({
     code: c.id,
     city: currentLang === 'tr' ? (c.nameTr || c.name) : c.name,
     country: currentLang === 'tr' ? (c.nameTr || c.name) : c.name,
-    date: c.year || new Date().getFullYear().toString(),
+    date: formatCountryDate(c, currentLang) || c.year || new Date().getFullYear().toString(),
     type: c.status === 'lived' ? (currentLang === 'tr' ? 'İKAMET' : 'RESIDENCE') : (currentLang === 'tr' ? 'GİRİŞ' : 'ENTRY'),
     accentColor: idx % 3 === 0 ? '#4F46E5' : idx % 3 === 1 ? '#059669' : '#2563EB',
     bg: idx % 3 === 0 ? '#EEF2FF' : idx % 3 === 1 ? '#ECFDF5' : '#EFF6FF',
@@ -272,15 +272,28 @@ export default function PassportScreen({
 
           {/* Name & Handle */}
           <View style={styles.profileDetails}>
-            <Text style={styles.profileName}>{profile.name}</Text>
-            <Text style={styles.profileHandle}>{profile.handle}</Text>
+            <Text
+              style={styles.profileName}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.75}
+            >
+              {profile.name}
+            </Text>
+            <Text style={styles.profileHandle} numberOfLines={1}>
+              {profile.handle}
+            </Text>
             <View style={styles.locationRow}>
               {locationInfo.flag ? (
                 <Text style={styles.locationFlag}>{locationInfo.flag}</Text>
               ) : (
                 <MapPin size={13} color="#2563EB" />
               )}
-              <Text style={styles.locationText}>
+              <Text
+                style={styles.locationText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {locationInfo.text}
               </Text>
             </View>
@@ -291,19 +304,34 @@ export default function PassportScreen({
         <View style={styles.metadataStrip}>
           <View style={styles.metaCol}>
             <Text style={styles.metaLabel}>{t.docNo}</Text>
-            <Text style={styles.metaValue} numberOfLines={1}>
+            <Text
+              style={styles.metaValue}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.8}
+            >
               {profile.passportNo}
             </Text>
           </View>
           <View style={styles.metaColMiddle}>
             <Text style={styles.metaLabel}>{t.borders}</Text>
-            <Text style={[styles.metaValue, { color: '#2563EB' }]} numberOfLines={1}>
+            <Text
+              style={[styles.metaValue, { color: '#2563EB' }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.8}
+            >
               {t.recorded ? t.recorded.replace('{count}', countries.length) : `${countries.length} Recorded`}
             </Text>
           </View>
           <View style={styles.metaColEnd}>
             <Text style={styles.metaLabel}>{t.status}</Text>
-            <Text style={[styles.metaValue, { color: '#10B981' }]} numberOfLines={1}>
+            <Text
+              style={[styles.metaValue, { color: '#10B981' }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.8}
+            >
               {t.active}
             </Text>
           </View>
@@ -311,7 +339,12 @@ export default function PassportScreen({
 
         {/* Security / MRZ Strip */}
         <View style={styles.mrzRow}>
-          <Text style={styles.mrzCode} numberOfLines={1}>
+          <Text
+            style={styles.mrzCode}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.7}
+          >
             {mrzCodeString}
           </Text>
           <QrCode size={22} color="#334155" />
@@ -329,7 +362,12 @@ export default function PassportScreen({
             activeTab === 'visited' && styles.statTileActiveVisited,
           ]}
         >
-          <Text style={styles.statNumber}>
+          <Text
+            style={styles.statNumber}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.8}
+          >
             {visitedCountries.length < 10
               ? `0${visitedCountries.length}`
               : visitedCountries.length}
@@ -346,6 +384,9 @@ export default function PassportScreen({
                 styles.statLabel,
                 activeTab === 'visited' && styles.statLabelActive,
               ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.8}
             >
               {t.visited}
             </Text>
@@ -361,7 +402,12 @@ export default function PassportScreen({
             activeTab === 'lived' && styles.statTileActiveLived,
           ]}
         >
-          <Text style={styles.statNumber}>
+          <Text
+            style={styles.statNumber}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.8}
+          >
             {livedCountries.length < 10
               ? `0${livedCountries.length}`
               : livedCountries.length}
@@ -378,6 +424,9 @@ export default function PassportScreen({
                 styles.statLabel,
                 activeTab === 'lived' && styles.statLabelActive,
               ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.8}
             >
               {t.livedIn}
             </Text>
@@ -393,7 +442,12 @@ export default function PassportScreen({
             activeTab === 'want' && styles.statTileActiveWant,
           ]}
         >
-          <Text style={styles.statNumber}>
+          <Text
+            style={styles.statNumber}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.8}
+          >
             {wantCountries.length < 10
               ? `0${wantCountries.length}`
               : wantCountries.length}
@@ -410,6 +464,9 @@ export default function PassportScreen({
                 styles.statLabel,
                 activeTab === 'want' && styles.statLabelActive,
               ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.8}
             >
               {t.wishlist}
             </Text>
@@ -474,7 +531,7 @@ export default function PassportScreen({
         ) : (
           getFilteredList().map((c) => {
             const countryName = getLocalizedCountryName(c, currentLang);
-            const countryYear = currentLang === 'tr' ? (c.yearTr || c.year) : c.year;
+            const countryDate = c.status === 'want' ? '' : (formatCountryDate(c, currentLang) || c.year || '');
             const countryNotes = currentLang === 'tr' ? (c.notesTr || c.notes) : c.notes;
 
             return (
@@ -489,12 +546,20 @@ export default function PassportScreen({
               >
                 <View style={styles.countryLeft}>
                   <Text style={styles.countryFlag}>{c.flag}</Text>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <View style={styles.countryNameRow}>
-                      <Text style={styles.countryName}>{countryName}</Text>
-                      <View style={styles.yearBadge}>
-                        <Text style={styles.countryYear}>{countryYear}</Text>
-                      </View>
+                      <Text
+                        style={styles.countryName}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {countryName}
+                      </Text>
+                      {Boolean(countryDate) && (
+                        <View style={styles.yearBadge}>
+                          <Text style={styles.countryYear}>{countryDate}</Text>
+                        </View>
+                      )}
                       {activeTab === 'all' && (
                         <View
                           style={[
@@ -591,16 +656,25 @@ export default function PassportScreen({
             {passportStampsList.map((stamp) => (
               <View key={stamp.id} style={styles.visaCard}>
                 <View style={styles.visaTop}>
-                  <Text style={styles.visaCode}>{stamp.code}</Text>
+                  <Text style={styles.visaCode} numberOfLines={1}>{stamp.code}</Text>
                   <View style={[styles.visaBadge, { backgroundColor: stamp.bg }]}>
-                    <Text style={[styles.visaBadgeText, { color: stamp.accentColor }]}>
+                    <Text
+                      style={[styles.visaBadgeText, { color: stamp.accentColor }]}
+                      numberOfLines={1}
+                    >
                       {stamp.type}
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.visaCity}>{stamp.city}</Text>
-                <Text style={styles.visaCountry}>{stamp.country}</Text>
-                <Text style={styles.visaDate}>{stamp.date}</Text>
+                <Text style={styles.visaCity} numberOfLines={1} ellipsizeMode="tail">
+                  {stamp.city}
+                </Text>
+                <Text style={styles.visaCountry} numberOfLines={1} ellipsizeMode="tail">
+                  {stamp.country}
+                </Text>
+                <Text style={styles.visaDate} numberOfLines={1}>
+                  {stamp.date}
+                </Text>
               </View>
             ))}
           </View>
@@ -1063,7 +1137,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flex: 1,
-    marginRight: 10,
+    minWidth: 0,
+    marginRight: 8,
   },
   countryFlag: {
     fontSize: 24,
@@ -1071,19 +1146,22 @@ const styles = StyleSheet.create({
   countryNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 6,
+    flexShrink: 1,
   },
   countryName: {
     fontSize: 13,
     fontWeight: '800',
     color: '#0F172A',
+    flexShrink: 1,
   },
   yearBadge: {
     backgroundColor: '#F1F5F9',
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 6,
-    marginLeft: 2,
+    flexShrink: 0,
   },
   countryYear: {
     fontSize: 10,
@@ -1094,8 +1172,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 6,
-    marginLeft: 4,
     backgroundColor: '#EFF6FF',
+    flexShrink: 0,
   },
   statusTagPillVisited: {
     backgroundColor: '#EFF6FF',
@@ -1130,6 +1208,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   stampNowBtn: {
     flexDirection: 'row',

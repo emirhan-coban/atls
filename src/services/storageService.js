@@ -20,7 +20,10 @@ export function enrichCountry(c) {
     continent: cat ? cat.continent : (c.continent || ''),
     continentTr: cat ? cat.continentTr : (c.continentTr || c.continent || ''),
     flag: cat ? cat.flag : (c.flag || '🌍'),
-    year: c.year || c.visitedYear || new Date().getFullYear().toString(),
+    year: c.year || c.visitedYear || (c.status === 'want' ? null : new Date().getFullYear().toString()),
+    visitedYear: c.visitedYear || c.year || (c.status === 'want' ? null : new Date().getFullYear().toString()),
+    month: c.month || c.visitedMonth || null,
+    visitedMonth: c.visitedMonth || c.month || null,
   };
 }
 

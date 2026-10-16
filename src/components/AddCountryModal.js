@@ -12,8 +12,25 @@ import {
   Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { X, Search, Check, Plus, MapPin, Home, Heart, Sparkles } from 'lucide-react-native';
-import { availableCatalog, getLocalizedCountryName, getLocalizedContinent } from '../data/travelData';
+import {
+  X,
+  Search,
+  Check,
+  Plus,
+  Minus,
+  MapPin,
+  Home,
+  Heart,
+  Sparkles,
+  Calendar,
+  RotateCcw,
+} from 'lucide-react-native';
+import {
+  availableCatalog,
+  getLocalizedCountryName,
+  getLocalizedContinent,
+  MONTHS,
+} from '../data/travelData';
 
 export default function AddCountryModal({
   isOpen,
@@ -25,9 +42,15 @@ export default function AddCountryModal({
   t,
   currentLang,
 }) {
+  const now = new Date();
+  const currentMonthId = String(now.getMonth() + 1).padStart(2, '0');
+  const currentYearStr = now.getFullYear().toString();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('visited');
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthId);
+  const [selectedYear, setSelectedYear] = useState(currentYearStr);
   const [notes, setNotes] = useState('');
 
   const normalizeText = (str) => {
@@ -61,16 +84,29 @@ export default function AddCountryModal({
     return matchCode || matchEn || matchTr;
   });
 
+  const handleStepYear = (delta) => {
+    Haptics.selectionAsync();
+    const cur = parseInt(selectedYear, 10) || now.getFullYear();
+    setSelectedYear(String(cur + delta));
+  };
+
   const handleSubmit = () => {
     if (!selectedCountry) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     const countryNameEn = selectedCountry.name;
     const countryNameTr = selectedCountry.nameTr || selectedCountry.name;
-    const currentYear = new Date().getFullYear().toString();
+    const isWant = selectedStatus === 'want';
+
+    const finalYear = isWant ? null : (selectedYear.trim() || currentYearStr);
+    const finalMonth = isWant ? null : selectedMonth;
+    const foundMonth = MONTHS.find((m) => m.id === finalMonth);
+    const monthShortTr = foundMonth ? foundMonth.shortTr : finalMonth;
+    const dateFormatted = finalMonth && finalYear ? `${finalMonth}/${finalYear}` : (finalYear || '');
+
     const defaultNote = t.defaultMarkedNote
-      ? t.defaultMarkedNote.replace('{year}', currentYear)
-      : `Marked in ${currentYear}`;
+      ? t.defaultMarkedNote.replace('{year}', isWant ? currentYearStr : (dateFormatted || currentYearStr))
+      : `Marked in ${dateFormatted || currentYearStr}`;
 
     const existing = existingCountries.find((ec) => ec.id === selectedCountry.id);
     const isConverting = existing && existing.status === 'want' && selectedStatus !== 'want';
@@ -81,11 +117,15 @@ export default function AddCountryModal({
       nameTr: countryNameTr,
       flag: selectedCountry.flag,
       status: selectedStatus,
-      year: currentYear,
-      yearTr: currentYear,
+      year: finalYear,
+      visitedYear: finalYear,
+      month: finalMonth,
+      visitedMonth: finalMonth,
+      date: dateFormatted,
+      yearTr: isWant ? '' : `${monthShortTr} ${finalYear}`,
       notes: notes || defaultNote,
       notesTr: notes || defaultNote,
-      visits: selectedStatus === 'want' ? 0 : 1,
+      visits: isWant ? 0 : 1,
     };
 
     if (existing && onUpdateCountry) {
@@ -97,6 +137,8 @@ export default function AddCountryModal({
     setSelectedCountry(null);
     setSearchTerm('');
     setNotes('');
+    setSelectedMonth(currentMonthId);
+    setSelectedYear(currentYearStr);
     onClose();
 
     if (isConverting) {
@@ -111,12 +153,19 @@ export default function AddCountryModal({
     }
   };
 
+  const handleCloseModal = () => {
+    setSelectedCountry(null);
+    setSearchTerm('');
+    setNotes('');
+    onClose();
+  };
+
   return (
     <Modal
       visible={isOpen}
       animationType="fade"
       transparent={true}
-      onRequestClose={onClose}
+      onRequestClose={handleCloseModal}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -125,7 +174,7 @@ export default function AddCountryModal({
         <TouchableOpacity
           style={styles.backdrop}
           activeOpacity={1}
-          onPress={onClose}
+          onPress={handleCloseModal}
         />
 
         <View style={styles.sheetContainer}>
@@ -139,90 +188,137 @@ export default function AddCountryModal({
                 <Text style={styles.title}>{t.markCountry}</Text>
                 <Text style={styles.titleDot}>.</Text>
               </View>
-              <Text style={styles.subtitle}>{t.markCountrySubtitle}</Text>
+              <Text style={styles.subtitle}>
+                {selectedCountry
+                  ? (currentLang === 'tr' ? 'Tarih ve seyahat durumunu belirle' : 'Set date and travel status')
+                  : t.markCountrySubtitle}
+              </Text>
             </View>
 
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleCloseModal} style={styles.closeButton}>
               <X size={16} color="#475569" />
             </TouchableOpacity>
           </View>
 
-          {/* Search Box */}
-          <View style={styles.searchBox}>
-            <Search size={16} color="#94A3B8" />
-            <TextInput
-              value={searchTerm}
-              onChangeText={setSearchTerm}
-              placeholder={t.searchPlaceholder}
-              placeholderTextColor="#94A3B8"
-              style={styles.searchInput}
-            />
-          </View>
+          {/* Step 1: Country Selection (Shown before country is selected) */}
+          {!selectedCountry && (
+            <>
+              {/* Search Box */}
+              <View style={styles.searchBox}>
+                <Search size={16} color="#94A3B8" />
+                <TextInput
+                  value={searchTerm}
+                  onChangeText={setSearchTerm}
+                  placeholder={t.searchPlaceholder}
+                  placeholderTextColor="#94A3B8"
+                  style={styles.searchInput}
+                />
+                {Boolean(searchTerm) && (
+                  <TouchableOpacity
+                    onPress={() => setSearchTerm('')}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <X size={14} color="#94A3B8" />
+                  </TouchableOpacity>
+                )}
+              </View>
 
-          {/* Catalog Selection List */}
-          <ScrollView
-            style={[
-              styles.catalogList,
-              selectedCountry ? styles.catalogListCompact : styles.catalogListExpanded,
-            ]}
-            showsVerticalScrollIndicator={false}
-          >
-            {filteredCatalog.map((c) => {
-              const isSelected = selectedCountry?.id === c.id;
-              const displayName = getLocalizedCountryName(c, currentLang);
-              const displayContinent = getLocalizedContinent(c, currentLang);
-              const existing = existingCountries.find((ec) => ec.id === c.id);
-              const isWishlist = existing && existing.status === 'want';
+              {/* Catalog Selection List */}
+              <ScrollView
+                style={styles.catalogList}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {filteredCatalog.map((c) => {
+                  const displayName = getLocalizedCountryName(c, currentLang);
+                  const displayContinent = getLocalizedContinent(c, currentLang);
+                  const existing = existingCountries.find((ec) => ec.id === c.id);
+                  const isWishlist = existing && existing.status === 'want';
 
-              return (
-                <TouchableOpacity
-                  key={c.id}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSelectedCountry(c);
-                    if (isWishlist) {
-                      setSelectedStatus('visited');
-                      if (existing.notes) setNotes(existing.notes);
-                    }
-                  }}
-                  activeOpacity={0.7}
-                  style={[
-                    styles.catalogItem,
-                    isSelected && styles.catalogItemSelected,
-                  ]}
-                >
-                  <View style={styles.catalogItemLeft}>
-                    <Text style={styles.catalogFlag}>{c.flag}</Text>
-                    <View style={styles.catalogTextGroup}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Text
-                          style={[
-                            styles.catalogName,
-                            isSelected && styles.catalogNameSelected,
-                          ]}
-                        >
-                          {displayName}
-                        </Text>
-                        {isWishlist && (
-                          <View style={styles.wishlistTagBadge}>
-                            <Text style={styles.wishlistTagText}>
-                              {t.inWishlistBadge || (currentLang === 'tr' ? 'HEDEFİNDE' : 'WISHLIST')}
+                  return (
+                    <TouchableOpacity
+                      key={c.id}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setSelectedCountry(c);
+                        if (isWishlist) {
+                          setSelectedStatus('visited');
+                          if (existing.notes) setNotes(existing.notes);
+                        }
+                      }}
+                      activeOpacity={0.7}
+                      style={styles.catalogItem}
+                    >
+                      <View style={styles.catalogItemLeft}>
+                        <Text style={styles.catalogFlag}>{c.flag}</Text>
+                        <View style={styles.catalogTextGroup}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                            <Text
+                              style={styles.catalogName}
+                              numberOfLines={1}
+                              ellipsizeMode="tail"
+                            >
+                              {displayName}
                             </Text>
+                            {isWishlist && (
+                              <View style={styles.wishlistTagBadge}>
+                                <Text style={styles.wishlistTagText}>
+                                  {t.inWishlistBadge || (currentLang === 'tr' ? 'HEDEFİNDE' : 'WISHLIST')}
+                                </Text>
+                              </View>
+                            )}
                           </View>
-                        )}
+                          <Text style={styles.catalogContinent}>{displayContinent}</Text>
+                        </View>
                       </View>
-                      <Text style={styles.catalogContinent}>{displayContinent}</Text>
-                    </View>
-                  </View>
-                  {isSelected && <Check size={16} color="#5B4DFF" />}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+                      <Plus size={16} color="#2563EB" strokeWidth={2.5} />
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </>
+          )}
 
-          {/* Status Options */}
+          {/* Step 2: Date & Status Form (Shown after country is selected) */}
           {selectedCountry && (
-            <View style={styles.formSection}>
+            <ScrollView
+              style={styles.formSectionScroll}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Selected Country Card (Positioned directly above Date & Status) */}
+              <View style={styles.selectedCountryCard}>
+                <View style={styles.selectedCountryLeft}>
+                  <Text style={styles.selectedCountryFlag}>{selectedCountry.flag}</Text>
+                  <View style={styles.selectedCountryInfo}>
+                    <Text
+                      style={styles.selectedCountryName}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {getLocalizedCountryName(selectedCountry, currentLang)}
+                    </Text>
+                    <Text style={styles.selectedCountrySub}>
+                      {getLocalizedContinent(selectedCountry, currentLang)}
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSelectedCountry(null);
+                  }}
+                  style={styles.changeCountryBtn}
+                  activeOpacity={0.7}
+                >
+                  <RotateCcw size={11} color="#2563EB" />
+                  <Text style={styles.changeCountryBtnText}>
+                    {t.changeCountry || (currentLang === 'tr' ? 'Değiştir' : 'Change')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               {existingCountries.some((ec) => ec.id === selectedCountry.id && ec.status === 'want') && (
                 <View style={styles.convertNoticeBox}>
                   <Sparkles size={14} color="#2563EB" />
@@ -233,10 +329,15 @@ export default function AddCountryModal({
                   </Text>
                 </View>
               )}
+
+              {/* Status Selector */}
               <Text style={styles.sectionLabel}>{t.travelStatus}</Text>
               <View style={styles.statusButtonsRow}>
                 <TouchableOpacity
-                  onPress={() => setSelectedStatus('visited')}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSelectedStatus('visited');
+                  }}
                   style={[
                     styles.statusBtn,
                     selectedStatus === 'visited' && styles.statusBtnActiveVisited,
@@ -251,13 +352,19 @@ export default function AddCountryModal({
                       styles.statusBtnText,
                       selectedStatus === 'visited' && styles.statusBtnTextActive,
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
                   >
                     {t.visited}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => setSelectedStatus('lived')}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSelectedStatus('lived');
+                  }}
                   style={[
                     styles.statusBtn,
                     selectedStatus === 'lived' && styles.statusBtnActiveLived,
@@ -272,13 +379,19 @@ export default function AddCountryModal({
                       styles.statusBtnText,
                       selectedStatus === 'lived' && styles.statusBtnTextActive,
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
                   >
                     {t.livedIn}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => setSelectedStatus('want')}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSelectedStatus('want');
+                  }}
                   style={[
                     styles.statusBtn,
                     selectedStatus === 'want' && styles.statusBtnActiveWant,
@@ -293,11 +406,92 @@ export default function AddCountryModal({
                       styles.statusBtnText,
                       selectedStatus === 'want' && styles.statusBtnTextActive,
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
                   >
                     {t.wishlist}
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Date Selection: Only for Visited & Lived (Hidden for Want / Target) */}
+              {selectedStatus !== 'want' && (
+                <View style={styles.datePickerSection}>
+                  <View style={styles.dateSectionHeaderRow}>
+                    <Calendar size={13} color="#2563EB" />
+                    <Text style={styles.sectionLabel}>
+                      {t.travelDate || (currentLang === 'tr' ? 'SEYAHAT TARİHİ (AY / YIL)' : 'TRAVEL DATE (MONTH / YEAR)')}
+                    </Text>
+                  </View>
+
+                  {/* Year Stepper & Input */}
+                  <View style={styles.yearRow}>
+                    <TouchableOpacity
+                      onPress={() => handleStepYear(-1)}
+                      style={styles.yearStepperBtn}
+                      activeOpacity={0.7}
+                    >
+                      <Minus size={13} color="#475569" strokeWidth={2.5} />
+                    </TouchableOpacity>
+
+                    <View style={styles.yearInputBox}>
+                      <TextInput
+                        value={selectedYear}
+                        onChangeText={(txt) => setSelectedYear(txt.replace(/[^0-9]/g, '').slice(0, 4))}
+                        keyboardType="numeric"
+                        maxLength={4}
+                        placeholder={t.selectYear || 'Yıl'}
+                        placeholderTextColor="#94A3B8"
+                        style={styles.yearInputText}
+                      />
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={() => handleStepYear(1)}
+                      style={styles.yearStepperBtn}
+                      activeOpacity={0.7}
+                    >
+                      <Plus size={13} color="#475569" strokeWidth={2.5} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Horizontal Months Scroll */}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.monthsScrollRow}
+                  >
+                    {MONTHS.map((m) => {
+                      const isMonthSelected = selectedMonth === m.id;
+                      const monthLabel = currentLang === 'tr' ? m.shortTr : m.shortEn;
+                      return (
+                        <TouchableOpacity
+                          key={m.id}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setSelectedMonth(m.id);
+                          }}
+                          activeOpacity={0.7}
+                          style={[
+                            styles.monthPill,
+                            isMonthSelected && styles.monthPillActive,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.monthPillText,
+                              isMonthSelected && styles.monthPillTextActive,
+                            ]}
+                          >
+                            {monthLabel}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
 
               {/* Note input */}
               <TextInput
@@ -317,7 +511,7 @@ export default function AddCountryModal({
                 <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
                 <Text style={styles.submitText}>{t.confirmStamp}</Text>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           )}
         </View>
       </KeyboardAvoidingView>
@@ -340,8 +534,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 36,
     paddingHorizontal: 22,
     paddingTop: 12,
-    paddingBottom: 40,
-    maxHeight: '88%',
+    paddingBottom: 36,
+    maxHeight: '92%',
   },
   handleBar: {
     width: 44,
@@ -404,14 +598,64 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   catalogList: {
+    maxHeight: 380,
+    marginBottom: 8,
+  },
+  selectedCountryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
     marginBottom: 14,
   },
-  catalogListExpanded: {
-    maxHeight: 280,
-    minHeight: 180,
+  selectedCountryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+    minWidth: 0,
+    marginRight: 8,
   },
-  catalogListCompact: {
-    maxHeight: 140,
+  selectedCountryFlag: {
+    fontSize: 28,
+  },
+  selectedCountryInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  selectedCountryName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    flexShrink: 1,
+  },
+  selectedCountrySub: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#3B82F6',
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  changeCountryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    flexShrink: 0,
+  },
+  changeCountryBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#2563EB',
   },
   catalogItem: {
     flexDirection: 'row',
@@ -430,9 +674,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flex: 1,
+    minWidth: 0,
+    marginRight: 8,
   },
   catalogTextGroup: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   catalogFlag: {
@@ -442,6 +689,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#1E293B',
+    flexShrink: 1,
   },
   catalogNameSelected: {
     color: '#5B4DFF',
@@ -461,6 +709,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
     borderColor: '#BFDBFE',
+    flexShrink: 0,
   },
   wishlistTagText: {
     fontSize: 8.5,
@@ -486,10 +735,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
   },
-  formSection: {
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 14,
+  formSectionScroll: {
+    maxHeight: 460,
   },
   sectionLabel: {
     fontSize: 9,
@@ -531,6 +778,81 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   statusBtnTextActive: {
+    color: '#FFFFFF',
+  },
+  datePickerSection: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
+    gap: 8,
+  },
+  dateSectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  yearRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  yearStepperBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  yearInputBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    minWidth: 90,
+    alignItems: 'center',
+  },
+  yearInputText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+  },
+  monthsScrollRow: {
+    gap: 6,
+    paddingVertical: 4,
+  },
+  monthPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  monthPillActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
+  },
+  monthPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  monthPillTextActive: {
     color: '#FFFFFF',
   },
   notesInput: {

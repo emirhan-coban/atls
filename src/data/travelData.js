@@ -1597,3 +1597,37 @@ export const getLocalizedContinent = (countryOrId, lang = 'en') => {
   }
   return catalogItem?.continent || (typeof countryOrId === 'object' ? countryOrId.continent || countryOrId.continentTr : catalogItem?.continentTr || '');
 };
+
+export const MONTHS = [
+  { id: '01', nameEn: 'January', nameTr: 'Ocak', shortEn: 'Jan', shortTr: 'Oca' },
+  { id: '02', nameEn: 'February', nameTr: 'Şubat', shortEn: 'Feb', shortTr: 'Şub' },
+  { id: '03', nameEn: 'March', nameTr: 'Mart', shortEn: 'Mar', shortTr: 'Mar' },
+  { id: '04', nameEn: 'April', nameTr: 'Nisan', shortEn: 'Apr', shortTr: 'Nis' },
+  { id: '05', nameEn: 'May', nameTr: 'Mayıs', shortEn: 'May', shortTr: 'May' },
+  { id: '06', nameEn: 'June', nameTr: 'Haziran', shortEn: 'Jun', shortTr: 'Haz' },
+  { id: '07', nameEn: 'July', nameTr: 'Temmuz', shortEn: 'Jul', shortTr: 'Tem' },
+  { id: '08', nameEn: 'August', nameTr: 'Ağustos', shortEn: 'Aug', shortTr: 'Ağu' },
+  { id: '09', nameEn: 'September', nameTr: 'Eylül', shortEn: 'Sep', shortTr: 'Eyl' },
+  { id: '10', nameEn: 'October', nameTr: 'Ekim', shortEn: 'Oct', shortTr: 'Eki' },
+  { id: '11', nameEn: 'November', nameTr: 'Kasım', shortEn: 'Nov', shortTr: 'Kas' },
+  { id: '12', nameEn: 'December', nameTr: 'Aralık', shortEn: 'Dec', shortTr: 'Ara' },
+];
+
+export function formatCountryDate(country, lang = 'tr') {
+  if (!country) return '';
+  if (country.status === 'want') return '';
+
+  const m = country.month || country.visitedMonth;
+  const y = country.year || country.visitedYear;
+
+  if (m && y) {
+    const foundMonth = MONTHS.find((item) => item.id === m || String(Number(item.id)) === String(Number(m)));
+    if (foundMonth) {
+      const monthLabel = lang === 'tr' ? foundMonth.shortTr : foundMonth.shortEn;
+      return `${monthLabel} ${y}`;
+    }
+    return `${m}/${y}`;
+  }
+
+  return y || '';
+}

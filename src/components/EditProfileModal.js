@@ -228,8 +228,12 @@ export default function EditProfileModal({
                 <View style={styles.selectedCountryCard}>
                   <View style={styles.countryInfoRow}>
                     <Text style={styles.countryFlagLarge}>{selectedCountry.flag}</Text>
-                    <View>
-                      <Text style={styles.countryNameSelected}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text
+                        style={styles.countryNameSelected}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
                         {currentLang === 'tr'
                           ? selectedCountry.nameTr || selectedCountry.name
                           : selectedCountry.name}
@@ -317,7 +321,11 @@ export default function EditProfileModal({
                         ]}
                       >
                         <Text style={styles.countryOptionFlag}>{country.flag}</Text>
-                        <Text style={styles.countryOptionName}>
+                        <Text
+                          style={styles.countryOptionName}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
                           {currentLang === 'tr'
                             ? country.nameTr || country.name
                             : country.name}
@@ -509,6 +517,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    flex: 1,
+    minWidth: 0,
+    marginRight: 8,
   },
   countryFlagLarge: {
     fontSize: 26,
@@ -517,6 +528,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     color: '#0F172A',
+    flexShrink: 1,
   },
   countryCodeBadge: {
     fontSize: 10,
@@ -528,6 +540,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   changeCountryBtn: {
     backgroundColor: '#DBEAFE',
@@ -594,6 +607,7 @@ const styles = StyleSheet.create({
   },
   countryOptionName: {
     flex: 1,
+    minWidth: 0,
     fontSize: 13,
     fontWeight: '700',
     color: '#0F172A',
@@ -602,6 +616,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#94A3B8',
     fontWeight: '700',
+    flexShrink: 0,
   },
   previewBox: {
     backgroundColor: '#F8FAFC',
