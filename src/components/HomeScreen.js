@@ -97,14 +97,9 @@ export default function HomeScreen({
     >
       {/* Header Bar */}
       <View style={styles.header}>
-        <View>
-          <View style={styles.logoRow}>
-            <Text style={styles.logoText}>atls</Text>
-            <Text style={styles.logoDot}>.</Text>
-          </View>
-          <Text style={styles.subtitleText}>
-            {t.appSubtitle.replace('{count}', totalMarked)}
-          </Text>
+        <View style={styles.logoRow}>
+          <Text style={styles.logoText}>atls</Text>
+          <Text style={styles.logoDot}>.</Text>
         </View>
 
         {/* Right Actions: Language Switcher & Biometric Auth Button */}

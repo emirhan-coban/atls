@@ -8,6 +8,7 @@ import {
   Share,
   Alert,
   Platform,
+  Modal,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {
@@ -24,6 +25,9 @@ import {
   Compass,
   LogOut,
   ShieldAlert,
+  User,
+  X,
+  ChevronRight,
 } from 'lucide-react-native';
 import { getPassportStamps, getLocalizedCountryName, availableCatalog, formatCountryDate } from '../data/travelData';
 import EditProfileModal from './EditProfileModal';
@@ -46,6 +50,7 @@ export default function PassportScreen({
   const [activeTab, setActiveTab] = useState('all');
   const [isEditing, setIsEditing] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [selectedCountryToEdit, setSelectedCountryToEdit] = useState(null);
 
   const visitedCountries = countries.filter((c) => c.status === 'visited');
@@ -201,31 +206,16 @@ export default function PassportScreen({
             </TouchableOpacity>
           )}
 
-          {onLogout && (
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                Alert.alert(
-                  t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out'),
-                  currentLang === 'tr'
-                    ? 'Hesabınızdan çıkış yapmak istediğinize emin misiniz?'
-                    : 'Are you sure you want to log out of your account?',
-                  [
-                    { text: t.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
-                    {
-                      text: t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out'),
-                      style: 'destructive',
-                      onPress: onLogout,
-                    },
-                  ]
-                );
-              }}
-              activeOpacity={0.7}
-              style={styles.headerLogoutBtn}
-            >
-              <LogOut size={16} color="#64748B" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIsAccountModalOpen(true);
+            }}
+            activeOpacity={0.7}
+            style={styles.headerAccountBtn}
+          >
+            <User size={18} color="#0F172A" strokeWidth={2.2} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -694,17 +684,45 @@ export default function PassportScreen({
         <Share2 size={16} color="rgba(255, 255, 255, 0.7)" />
       </TouchableOpacity>
 
-      {/* ACCOUNT & DATA MANAGEMENT (App Store Guideline 5.1.1(v) Compliant) */}
-      <View style={styles.accountSection}>
-        <View style={styles.accountHeaderRow}>
-          <ShieldAlert size={13} color="#94A3B8" />
-          <Text style={styles.accountSectionTitle}>
-            {t.accountManagement || (currentLang === 'tr' ? 'HESAP YÖNETİMİ' : 'ACCOUNT MANAGEMENT')}
-          </Text>
-        </View>
+    </ScrollView>
 
-        <View style={styles.accountCard}>
-          <View style={styles.accountInfoRow}>
+    {/* ACCOUNT MANAGEMENT MODAL (App Store Guideline 5.1.1(v) Compliant) */}
+    <Modal
+      visible={isAccountModalOpen}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={() => setIsAccountModalOpen(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setIsAccountModalOpen(false)}
+        />
+        <View style={styles.accountSheet}>
+          <View style={styles.sheetHandle} />
+
+          {/* Modal Header */}
+          <View style={styles.accountSheetHeader}>
+            <View>
+              <Text style={styles.accountSheetTitle}>
+                {t.accountManagement || (currentLang === 'tr' ? 'Hesap Yönetimi' : 'Account Management')}
+              </Text>
+              <Text style={styles.accountSheetSubtitle}>
+                {currentLang === 'tr' ? 'Profil ve oturum ayarlarınız' : 'Your profile and session settings'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setIsAccountModalOpen(false)}
+              style={styles.sheetCloseBtn}
+              activeOpacity={0.7}
+            >
+              <X size={18} color="#64748B" />
+            </TouchableOpacity>
+          </View>
+
+          {/* User Profile Summary Card */}
+          <View style={styles.accountModalCard}>
             <View style={styles.accountAvatar}>
               <Text style={styles.accountAvatarText}>{profile.avatarInitials || 'AT'}</Text>
             </View>
@@ -713,10 +731,40 @@ export default function PassportScreen({
               <Text style={styles.accountHandleText} numberOfLines={1}>
                 {profile.email || profile.handle || (currentLang === 'tr' ? 'Biyometrik Pasaport Hesabı' : 'Biometric Passport Account')}
               </Text>
+              {Boolean(profile.passportNo) && (
+                <View style={styles.accountDocBadge}>
+                  <Text style={styles.accountDocText}>NO: {profile.passportNo}</Text>
+                </View>
+              )}
             </View>
           </View>
 
-          <View style={styles.accountActionsRow}>
+          {/* Account Actions */}
+          <View style={styles.accountActionsList}>
+            {/* Edit Profile */}
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setIsAccountModalOpen(false);
+                setTimeout(() => {
+                  setIsEditProfileOpen(true);
+                }, 250);
+              }}
+              activeOpacity={0.7}
+              style={styles.accountListItem}
+            >
+              <View style={styles.accountListItemLeft}>
+                <View style={[styles.accountActionIconBox, { backgroundColor: '#EEF2FF' }]}>
+                  <Edit3 size={17} color="#2563EB" />
+                </View>
+                <Text style={styles.accountListItemLabel}>
+                  {t.editProfile || (currentLang === 'tr' ? 'Profili Düzenle' : 'Edit Profile')}
+                </Text>
+              </View>
+              <ChevronRight size={17} color="#94A3B8" />
+            </TouchableOpacity>
+
+            {/* Log Out */}
             {onLogout && (
               <TouchableOpacity
                 onPress={() => {
@@ -730,23 +778,45 @@ export default function PassportScreen({
                       { text: t.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
                       {
                         text: t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out'),
-                        style: 'default',
-                        onPress: onLogout,
+                        style: 'destructive',
+                        onPress: () => {
+                          setIsAccountModalOpen(false);
+                          onLogout();
+                        },
                       },
                     ]
                   );
                 }}
                 activeOpacity={0.7}
-                style={styles.logoutBtn}
+                style={styles.accountListItem}
               >
-                <LogOut size={13} color="#475569" />
-                <Text style={styles.logoutBtnText}>
-                  {t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out')}
-                </Text>
+                <View style={styles.accountListItemLeft}>
+                  <View style={[styles.accountActionIconBox, { backgroundColor: '#F1F5F9' }]}>
+                    <LogOut size={17} color="#475569" />
+                  </View>
+                  <Text style={styles.accountListItemLabel}>
+                    {t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out')}
+                  </Text>
+                </View>
+                <ChevronRight size={17} color="#94A3B8" />
               </TouchableOpacity>
             )}
+          </View>
 
-            {onDeleteAccount && (
+          {/* Danger Zone: Delete Account */}
+          {onDeleteAccount && (
+            <View style={styles.dangerZoneBox}>
+              <View style={styles.dangerZoneHeader}>
+                <ShieldAlert size={14} color="#EF4444" />
+                <Text style={styles.dangerZoneTitle}>
+                  {t.dangerZone || (currentLang === 'tr' ? 'Tehlikeli Bölge' : 'Danger Zone')}
+                </Text>
+              </View>
+              <Text style={styles.dangerZoneDesc}>
+                {currentLang === 'tr'
+                  ? 'Hesabınızı ve kaydedilmiş tüm seyahat verilerinizi kalıcı olarak silin.'
+                  : 'Permanently delete your account and all associated travel records.'}
+              </Text>
               <TouchableOpacity
                 onPress={() => {
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -761,24 +831,27 @@ export default function PassportScreen({
                       {
                         text: t.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account'),
                         style: 'destructive',
-                        onPress: onDeleteAccount,
+                        onPress: () => {
+                          setIsAccountModalOpen(false);
+                          onDeleteAccount();
+                        },
                       },
                     ]
                   );
                 }}
                 activeOpacity={0.7}
-                style={styles.deleteAccountBtn}
+                style={styles.modalDeleteBtn}
               >
-                <Trash2 size={13} color="#DC2626" />
-                <Text style={styles.deleteAccountBtnText}>
+                <Trash2 size={16} color="#DC2626" />
+                <Text style={styles.modalDeleteBtnText}>
                   {t.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account')}
                 </Text>
               </TouchableOpacity>
-            )}
-          </View>
+            </View>
+          )}
         </View>
       </View>
-    </ScrollView>
+    </Modal>
 
     <EditProfileModal
       isOpen={isEditProfileOpen}
@@ -864,7 +937,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#2563EB',
   },
-  headerLogoutBtn: {
+  headerAccountBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
@@ -1463,53 +1536,85 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontWeight: '600',
   },
-  accountSection: {
-    marginTop: 20,
-    marginBottom: 12,
+  // Account Modal / Bottom Sheet
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
   },
-  accountHeaderRow: {
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  accountSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 12,
+    paddingHorizontal: 22,
+    paddingBottom: Platform.OS === 'ios' ? 38 : 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  accountSheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-    paddingHorizontal: 2,
+    justifyContent: 'space-between',
+    marginBottom: 18,
   },
-  accountSectionTitle: {
-    fontSize: 10,
+  accountSheetTitle: {
+    fontSize: 20,
     fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 0.8,
+    color: '#0F172A',
+    letterSpacing: -0.4,
   },
-  accountCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+  accountSheetSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  sheetCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  accountModalCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    gap: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  accountInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    marginBottom: 16,
   },
   accountAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#BFDBFE',
   },
   accountAvatarText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
     color: '#2563EB',
   },
@@ -1517,7 +1622,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   accountNameText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0F172A',
   },
@@ -1525,47 +1630,97 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     fontWeight: '500',
-    marginTop: 1,
+    marginTop: 2,
   },
-  accountActionsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 12,
+  accountDocBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#E2E8F0',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 5,
   },
-  logoutBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  logoutBtnText: {
-    fontSize: 12,
+  accountDocText: {
+    fontSize: 10,
     fontWeight: '700',
     color: '#475569',
+    letterSpacing: 0.5,
   },
-  deleteAccountBtn: {
-    flex: 1,
+  accountActionsList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  accountListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  accountListItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  accountActionIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  accountListItemLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  dangerZoneBox: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    gap: 10,
+  },
+  dangerZoneHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dangerZoneTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#DC2626',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  dangerZoneDesc: {
+    fontSize: 12,
+    color: '#991B1B',
+    lineHeight: 17,
+    fontWeight: '500',
+  },
+  modalDeleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#FCA5A5',
     borderRadius: 14,
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
+    paddingVertical: 11,
+    marginTop: 2,
   },
-  deleteAccountBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
+  modalDeleteBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
     color: '#DC2626',
   },
 });
