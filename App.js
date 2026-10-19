@@ -82,17 +82,26 @@ export default function App() {
     }
   };
 
-  const handleLoginSuccess = (userData) => {
-    setProfile((prev) => {
-      const updated = {
-        ...prev,
-        ...userData,
-      };
-      storageService.saveProfile(updated);
-      return updated;
-    });
+  const handleLoginSuccess = async (userData) => {
     setIsAuthenticated(true);
-    storageService.saveAuth(true);
+    await storageService.saveAuth(true);
+
+    const sessionData = await storageService.loadUserSessionData(userData);
+    if (sessionData) {
+      if (sessionData.profile) setProfile(sessionData.profile);
+      setCountries(sessionData.countries || []);
+    } else {
+      setProfile((prev) => {
+        const updated = {
+          ...prev,
+          ...userData,
+        };
+        storageService.saveProfile(updated);
+        return updated;
+      });
+      setCountries([]);
+      await storageService.saveCountries([]);
+    }
   };
 
   const handleUpdateProfile = (updatedProfile) => {
@@ -102,6 +111,8 @@ export default function App() {
 
   const handleLogout = async () => {
     setIsAuthenticated(false);
+    setProfile(initialProfile);
+    setCountries([]);
     await storageService.clearAuth();
   };
 
@@ -112,7 +123,7 @@ export default function App() {
     } catch (e) {
       console.warn('[App] deleteAccount notice:', e);
     } finally {
-      setCountries(initialCountries);
+      setCountries([]);
       setProfile(initialProfile);
       setIsAuthenticated(false);
       setTimeout(() => {

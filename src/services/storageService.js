@@ -139,35 +139,40 @@ export const storageService = {
             .select('*')
             .eq('user_id', session.user.id);
 
+          const userSpecificCountries = (cloudCountries || []).map((c) => enrichCountry({
+            id: c.country_id,
+            name: c.name,
+            flag: c.flag,
+            continent: c.continent,
+            status: c.status,
+            visitedYear: c.visited_year,
+            year: c.visited_year,
+            notes: c.notes,
+          }));
+
+          // Sync local cache strictly with this cloud user's data
+          await AsyncStorage.setItem(KEYS.COUNTRIES, JSON.stringify(userSpecificCountries));
+
           return {
-            lang,
-            hasCompletedOnboarding,
-            isAuthenticated: true,
-            profile: cloudProfile ? {
-              name: cloudProfile.name,
-              handle: cloudProfile.handle,
-              avatarInitials: cloudProfile.avatar_initials,
-              email: cloudProfile.email,
-              location: cloudProfile.location,
-              locationTr: cloudProfile.location_tr,
-              customLocation: cloudProfile.location || profile?.customLocation || null,
-              nationality: cloudProfile.nationality,
-              passportNo: cloudProfile.passport_no,
-              issueDate: cloudProfile.issue_date,
-              expiryDate: cloudProfile.expiry_date,
-              bio: cloudProfile.bio,
-            } : profile,
-            countries: cloudCountries && cloudCountries.length > 0 ? cloudCountries.map((c) => enrichCountry({
-              id: c.country_id,
-              name: c.name,
-              flag: c.flag,
-              continent: c.continent,
-              status: c.status,
-              visitedYear: c.visited_year,
-              year: c.visited_year,
-              notes: c.notes,
-            })) : (countries || []).map(enrichCountry),
-          };
+              lang,
+              hasCompletedOnboarding,
+              isAuthenticated: true,
+              profile: cloudProfile ? {
+                name: cloudProfile.name,
+                handle: cloudProfile.handle,
+                avatarInitials: cloudProfile.avatar_initials,
+                email: cloudProfile.email,
+                location: cloudProfile.location,
+                locationTr: cloudProfile.location_tr,
+                customLocation: cloudProfile.location || profile?.customLocation || null,
+                nationality: cloudProfile.nationality,
+                passportNo: cloudProfile.passport_no,
+                issueDate: cloudProfile.issue_date,
+                expiryDate: cloudProfile.expiry_date,
+                bio: cloudProfile.bio,
+              } : profile,
+              countries: userSpecificCountries,
+            };
         }
       }
 
@@ -218,13 +223,74 @@ export const storageService = {
 
   async clearAuth() {
     try {
-      await AsyncStorage.removeItem(KEYS.AUTH);
+      await AsyncStorage.multiRemove([KEYS.AUTH, KEYS.PROFILE, KEYS.COUNTRIES]);
       if (isSupabaseConfigured && supabase) {
         await supabase.auth.signOut();
       }
     } catch (err) {
-      console.warn('[storageService] Failed to clear auth state:', err);
+      console.log('[storageService] Failed to clear auth state:', err);
     }
+  },
+
+  async loadUserSessionData(fallbackUserData) {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: cloudProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          const { data: cloudCountries } = await supabase
+            .from('user_countries')
+            .select('*')
+            .eq('user_id', session.user.id);
+
+          const formattedCountries = (cloudCountries || []).map((c) => enrichCountry({
+            id: c.country_id,
+            name: c.name,
+            flag: c.flag,
+            continent: c.continent,
+            status: c.status,
+            visitedYear: c.visited_year,
+            year: c.visited_year,
+            notes: c.notes,
+          }));
+
+          // Sync local storage strictly with this user's data
+          await AsyncStorage.setItem(KEYS.COUNTRIES, JSON.stringify(formattedCountries));
+
+          let profile = fallbackUserData;
+          if (cloudProfile) {
+            profile = {
+              name: cloudProfile.name,
+              handle: cloudProfile.handle,
+              avatarInitials: cloudProfile.avatar_initials,
+              email: cloudProfile.email,
+              location: cloudProfile.location,
+              locationTr: cloudProfile.location_tr,
+              customLocation: cloudProfile.location || null,
+              nationality: cloudProfile.nationality,
+              passportNo: cloudProfile.passport_no,
+              issueDate: cloudProfile.issue_date,
+              expiryDate: cloudProfile.expiry_date,
+              bio: cloudProfile.bio,
+            };
+            await AsyncStorage.setItem(KEYS.PROFILE, JSON.stringify(profile));
+          }
+
+          return {
+            profile,
+            countries: formattedCountries,
+          };
+        }
+      } catch (err) {
+        console.log('[storageService] loadUserSessionData notice:', err?.message);
+      }
+    }
+    return null;
   },
 
   async saveProfile(profile) {
