@@ -14,7 +14,15 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIStatusBarStyle": "UIStatusBarStyleDarkContent",
-        "CFBundleDisplayName": "atls."
+        "CFBundleDisplayName": "atls.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "atls",
+              "com.googleusercontent.apps.903672843406-236ejm0d5r0tcrg762jm1od1uu181a87"
+            ]
+          }
+        ]
       }
     },
     "android": {
@@ -40,7 +48,12 @@
           }
         }
       ],
-      "@react-native-google-signin/google-signin"
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.903672843406-236ejm0d5r0tcrg762jm1od1uu181a87"
+        }
+      ]
     ],
     "extra": {
       "eas": {
