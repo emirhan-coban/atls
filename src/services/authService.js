@@ -185,50 +185,52 @@ export const authService = {
   // Sign in with Google (Native iOS Sheet first, Web OAuth fallback)
   async signInWithGoogle() {
     try {
-      // 1. Try Native Google Sign-In (no browser, no redirect, native sheet)
-      try {
-        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: false });
-        const response = await GoogleSignin.signIn();
+      // 1. Try Native Google Sign-In if client ID is configured (no browser, no redirect)
+      if (GOOGLE_IOS_CLIENT_ID || GOOGLE_WEB_CLIENT_ID) {
+        try {
+          await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: false });
+          const response = await GoogleSignin.signIn();
 
-        if (response?.type === 'cancelled') {
-          return null; // User cancelled
-        }
-
-        const idToken = response?.data?.idToken || response?.idToken;
-        const googleUser = response?.data?.user || response?.user;
-
-        if (idToken && isSupabaseConfigured && supabase) {
-          const { data, error } = await supabase.auth.signInWithIdToken({
-            provider: 'google',
-            token: idToken,
-          });
-
-          if (error) throw error;
-
-          if (data?.user) {
-            const cleanName = googleUser?.name || data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Traveler';
-            const localProfile = buildNewProfile({ name: cleanName, email: data.user.email });
-            await supabase.from('profiles').upsert({
-              id: data.user.id,
-              email: data.user.email,
-              name: cleanName,
-              handle: localProfile.handle,
-              avatar_initials: localProfile.avatarInitials,
-              passport_no: localProfile.passportNo,
-            });
-            return data;
+          if (response?.type === 'cancelled') {
+            return null; // User cancelled
           }
-        } else if (googleUser) {
-          const cleanName = googleUser.name || 'Traveler';
-          const profile = buildNewProfile({ name: cleanName, email: googleUser.email });
-          await storageService.saveProfile(profile);
-          return { user: { email: googleUser.email, id: googleUser.id || 'google-user' }, profile };
+
+          const idToken = response?.data?.idToken || response?.idToken;
+          const googleUser = response?.data?.user || response?.user;
+
+          if (idToken && isSupabaseConfigured && supabase) {
+            const { data, error } = await supabase.auth.signInWithIdToken({
+              provider: 'google',
+              token: idToken,
+            });
+
+            if (error) throw error;
+
+            if (data?.user) {
+              const cleanName = googleUser?.name || data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Traveler';
+              const localProfile = buildNewProfile({ name: cleanName, email: data.user.email });
+              await supabase.from('profiles').upsert({
+                id: data.user.id,
+                email: data.user.email,
+                name: cleanName,
+                handle: localProfile.handle,
+                avatar_initials: localProfile.avatarInitials,
+                passport_no: localProfile.passportNo,
+              });
+              return data;
+            }
+          } else if (googleUser) {
+            const cleanName = googleUser.name || 'Traveler';
+            const profile = buildNewProfile({ name: cleanName, email: googleUser.email });
+            await storageService.saveProfile(profile);
+            return { user: { email: googleUser.email, id: googleUser.id || 'google-user' }, profile };
+          }
+        } catch (nativeErr) {
+          if (nativeErr?.code === 'SIGN_IN_CANCELLED' || nativeErr?.code === '12501') {
+            return null;
+          }
+          console.log('[authService] Native Google Sign-In note:', nativeErr?.message);
         }
-      } catch (nativeErr) {
-        if (nativeErr?.code === 'SIGN_IN_CANCELLED' || nativeErr?.code === '12501') {
-          return null;
-        }
-        console.log('[authService] Native Google Sign-In note:', nativeErr?.message);
       }
 
       // 2. Fallback: Web OAuth
