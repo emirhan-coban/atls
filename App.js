@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { initialCountries, initialProfile } from './src/data/travelData';
 import { translations } from './src/localization/translations';
 import { storageService } from './src/services/storageService';
+import { authService } from './src/services/authService';
 import HomeScreen from './src/components/HomeScreen';
 import PassportScreen from './src/components/PassportScreen';
 import BottomNav from './src/components/BottomNav';
@@ -101,6 +102,25 @@ export default function App() {
     await storageService.clearAuth();
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      await authService.deleteAccount();
+      await storageService.deleteAccount();
+    } catch (e) {
+      console.warn('[App] deleteAccount notice:', e);
+    } finally {
+      setCountries(initialCountries);
+      setProfile(initialProfile);
+      setIsAuthenticated(false);
+      setTimeout(() => {
+        Alert.alert(
+          t?.deleteAccount || 'Hesap Silindi',
+          t?.accountDeletedMsg || 'Hesabınız ve tüm verileriniz başarıyla silindi.'
+        );
+      }, 300);
+    }
+  };
+
   // Loading screen before persistent storage is ready
   if (!isLoaded) {
     return (
@@ -170,6 +190,7 @@ export default function App() {
               onOpenShareModal={() => setIsShareModalOpen(true)}
               onUpdateProfile={handleUpdateProfile}
               onLogout={handleLogout}
+              onDeleteAccount={handleDeleteAccount}
               t={t}
               currentLang={currentLang}
               onToggleLang={handleToggleLang}

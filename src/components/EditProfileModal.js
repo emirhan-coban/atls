@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {
@@ -21,6 +22,7 @@ import {
   Search,
   ChevronDown,
   Sparkles,
+  Trash2,
 } from 'lucide-react-native';
 import { availableCatalog } from '../data/travelData';
 import { generateHandle } from '../services/storageService';
@@ -30,6 +32,7 @@ export default function EditProfileModal({
   onClose,
   profile,
   onSaveProfile,
+  onDeleteAccount,
   t,
   currentLang,
 }) {
@@ -393,6 +396,40 @@ export default function EditProfileModal({
                 {t.saveChanges || 'Değişiklikleri Kaydet'}
               </Text>
             </TouchableOpacity>
+
+            {/* Account Deletion (App Store Guideline 5.1.1(v) Compliant) */}
+            {onDeleteAccount && (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                  Alert.alert(
+                    t?.deleteAccountConfirmTitle || (currentLang === 'tr' ? 'Hesabı Kalıcı Olarak Sil' : 'Permanently Delete Account'),
+                    t?.deleteAccountConfirmMsg ||
+                      (currentLang === 'tr'
+                        ? 'Hesabınızı silmek istediğinize emin misiniz? Tüm seyahatleriniz, pasaport mühürleriniz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.'
+                        : 'Are you sure you want to delete your account? All your travels, stamps, and profile data will be permanently wiped. This action cannot be undone.'),
+                    [
+                      { text: t?.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
+                      {
+                        text: t?.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account'),
+                        style: 'destructive',
+                        onPress: () => {
+                          onClose();
+                          onDeleteAccount();
+                        },
+                      },
+                    ]
+                  );
+                }}
+                activeOpacity={0.7}
+                style={styles.modalDeleteAccountBtn}
+              >
+                <Trash2 size={13} color="#DC2626" />
+                <Text style={styles.modalDeleteAccountText}>
+                  {t?.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account')}
+                </Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -681,5 +718,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
+  },
+  modalDeleteAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 16,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  modalDeleteAccountText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#DC2626',
   },
 });

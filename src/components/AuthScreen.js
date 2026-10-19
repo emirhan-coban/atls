@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { 
   Mail, 
   Lock, 
@@ -22,7 +23,6 @@ import {
   EyeOff,
   Languages,
   ShieldCheck,
-  Apple,
 } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { authService } from '../services/authService';
@@ -362,17 +362,13 @@ export default function AuthScreen({
             {/* Social Logins */}
             <View style={styles.socialCol}>
               {Platform.OS === 'ios' && (
-                <TouchableOpacity
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                  cornerRadius={22}
+                  style={styles.appleAuthBtn}
                   onPress={handleAppleSignIn}
-                  activeOpacity={0.85}
-                  disabled={isLoading}
-                  style={styles.appleBtn}
-                >
-                  <Apple size={18} color="#000000" />
-                  <Text style={styles.appleBtnText}>
-                    {currentLang === 'tr' ? 'Apple ile Devam Et' : 'Continue with Apple'}
-                  </Text>
-                </TouchableOpacity>
+                />
               )}
 
               <TouchableOpacity
@@ -586,21 +582,9 @@ const styles = StyleSheet.create({
   socialCol: {
     gap: 10,
   },
-  appleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#0F172A',
-    borderRadius: 22,
-    paddingVertical: 15,
-  },
-  appleBtnText: {
-    color: '#0F172A',
-    fontSize: 14,
-    fontWeight: '800',
+  appleAuthBtn: {
+    width: '100%',
+    height: 52,
   },
   googleBtn: {
     flexDirection: 'row',

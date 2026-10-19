@@ -330,4 +330,36 @@ export const storageService = {
       console.warn('[storageService] Failed to clear storage:', err);
     }
   },
+
+  async deleteAccount() {
+    try {
+      if (isSupabaseConfigured && supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          try {
+            await supabase.from('user_countries').delete().match({ user_id: session.user.id });
+          } catch (e) {
+            console.warn('[storageService] delete user_countries notice:', e);
+          }
+          try {
+            await supabase.from('profiles').delete().match({ id: session.user.id });
+          } catch (e) {
+            console.warn('[storageService] delete profile notice:', e);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[storageService] Failed to clean cloud data:', err);
+    }
+
+    try {
+      await AsyncStorage.multiRemove([
+        KEYS.AUTH,
+        KEYS.PROFILE,
+        KEYS.COUNTRIES,
+      ]);
+    } catch (err) {
+      console.warn('[storageService] Failed to clear local storage on delete:', err);
+    }
+  },
 };

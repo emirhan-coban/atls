@@ -164,6 +164,14 @@ export const translations = {
     stampIntoPassport: "Stamp into Passport ✈️",
     inWishlistBadge: "IN WISHLIST",
     removeFromPassport: "Remove from Passport",
+
+    // Account Management
+    deleteAccount: "Delete Account",
+    deleteAccountConfirmTitle: "Permanently Delete Account",
+    deleteAccountConfirmMsg: "Are you sure you want to delete your account? All your travels, stamps, and profile data will be permanently wiped. This action cannot be undone.",
+    accountDeletedMsg: "Your account and all associated data have been permanently deleted.",
+    accountManagement: "ACCOUNT MANAGEMENT",
+    dangerZone: "ACCOUNT MANAGEMENT",
   },
   tr: {
     // Branding & Common
@@ -330,5 +338,13 @@ export const translations = {
     stampIntoPassport: "Mührü Pasaporta İşle ✈️",
     inWishlistBadge: "HEDEFİNDE",
     removeFromPassport: "Pasaporttan Kaldır",
+
+    // Account Management
+    deleteAccount: "Hesabı Sil",
+    deleteAccountConfirmTitle: "Hesabı Kalıcı Olarak Sil",
+    deleteAccountConfirmMsg: "Hesabınızı silmek istediğinize emin misiniz? Tüm seyahatleriniz, pasaport mühürleriniz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.",
+    accountDeletedMsg: "Hesabınız ve tüm verileriniz başarıyla silindi.",
+    accountManagement: "HESAP YÖNETİMİ",
+    dangerZone: "HESAP YÖNETİMİ",
   },
 };

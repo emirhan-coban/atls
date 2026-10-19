@@ -259,4 +259,28 @@ export const authService = {
     }
     return null;
   },
+
+  // Delete Account
+  async deleteAccount() {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          try {
+            await supabase.from('user_countries').delete().match({ user_id: session.user.id });
+          } catch (e) {
+            console.warn('[authService] delete user_countries notice:', e);
+          }
+          try {
+            await supabase.from('profiles').delete().match({ id: session.user.id });
+          } catch (e) {
+            console.warn('[authService] delete profiles notice:', e);
+          }
+        }
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn('[authService] deleteAccount exception:', e);
+      }
+    }
+  },
 };

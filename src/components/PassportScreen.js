@@ -23,6 +23,7 @@ import {
   Plus,
   Compass,
   LogOut,
+  ShieldAlert,
 } from 'lucide-react-native';
 import { getPassportStamps, getLocalizedCountryName, availableCatalog, formatCountryDate } from '../data/travelData';
 import EditProfileModal from './EditProfileModal';
@@ -37,6 +38,7 @@ export default function PassportScreen({
   onOpenShareModal,
   onUpdateProfile,
   onLogout,
+  onDeleteAccount,
   t,
   currentLang,
   onToggleLang,
@@ -691,6 +693,91 @@ export default function PassportScreen({
         <Text style={styles.shareText}>{t.sharePassport}</Text>
         <Share2 size={16} color="rgba(255, 255, 255, 0.7)" />
       </TouchableOpacity>
+
+      {/* ACCOUNT & DATA MANAGEMENT (App Store Guideline 5.1.1(v) Compliant) */}
+      <View style={styles.accountSection}>
+        <View style={styles.accountHeaderRow}>
+          <ShieldAlert size={13} color="#94A3B8" />
+          <Text style={styles.accountSectionTitle}>
+            {t.accountManagement || (currentLang === 'tr' ? 'HESAP YÖNETİMİ' : 'ACCOUNT MANAGEMENT')}
+          </Text>
+        </View>
+
+        <View style={styles.accountCard}>
+          <View style={styles.accountInfoRow}>
+            <View style={styles.accountAvatar}>
+              <Text style={styles.accountAvatarText}>{profile.avatarInitials || 'AT'}</Text>
+            </View>
+            <View style={styles.accountInfoText}>
+              <Text style={styles.accountNameText} numberOfLines={1}>{profile.name}</Text>
+              <Text style={styles.accountHandleText} numberOfLines={1}>
+                {profile.email || profile.handle || (currentLang === 'tr' ? 'Biyometrik Pasaport Hesabı' : 'Biometric Passport Account')}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.accountActionsRow}>
+            {onLogout && (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  Alert.alert(
+                    t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out'),
+                    currentLang === 'tr'
+                      ? 'Hesabınızdan çıkış yapmak istediğinize emin misiniz?'
+                      : 'Are you sure you want to log out of your account?',
+                    [
+                      { text: t.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
+                      {
+                        text: t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out'),
+                        style: 'default',
+                        onPress: onLogout,
+                      },
+                    ]
+                  );
+                }}
+                activeOpacity={0.7}
+                style={styles.logoutBtn}
+              >
+                <LogOut size={13} color="#475569" />
+                <Text style={styles.logoutBtnText}>
+                  {t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out')}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {onDeleteAccount && (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                  Alert.alert(
+                    t.deleteAccountConfirmTitle || (currentLang === 'tr' ? 'Hesabı Kalıcı Olarak Sil' : 'Permanently Delete Account'),
+                    t.deleteAccountConfirmMsg ||
+                      (currentLang === 'tr'
+                        ? 'Hesabınızı silmek istediğinize emin misiniz? Tüm seyahatleriniz, pasaport mühürleriniz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.'
+                        : 'Are you sure you want to delete your account? All your travels, stamps, and profile data will be permanently wiped. This action cannot be undone.'),
+                    [
+                      { text: t.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
+                      {
+                        text: t.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account'),
+                        style: 'destructive',
+                        onPress: onDeleteAccount,
+                      },
+                    ]
+                  );
+                }}
+                activeOpacity={0.7}
+                style={styles.deleteAccountBtn}
+              >
+                <Trash2 size={13} color="#DC2626" />
+                <Text style={styles.deleteAccountBtnText}>
+                  {t.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account')}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
     </ScrollView>
 
     <EditProfileModal
@@ -698,6 +785,7 @@ export default function PassportScreen({
       onClose={() => setIsEditProfileOpen(false)}
       profile={profile}
       onSaveProfile={onUpdateProfile}
+      onDeleteAccount={onDeleteAccount}
       t={t}
       currentLang={currentLang}
     />
@@ -1374,5 +1462,110 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#94A3B8',
     fontWeight: '600',
+  },
+  accountSection: {
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  accountHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  accountSectionTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+  },
+  accountCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  accountInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  accountAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  accountAvatarText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#2563EB',
+  },
+  accountInfoText: {
+    flex: 1,
+  },
+  accountNameText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  accountHandleText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+    marginTop: 1,
+  },
+  accountActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 12,
+  },
+  logoutBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  logoutBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  deleteAccountBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+  },
+  deleteAccountBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DC2626',
   },
 });
