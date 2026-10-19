@@ -3,8 +3,23 @@ import { storageService, buildNewProfile } from './storageService';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Configure Native Google Sign-In (no web redirect or browser domain needed)
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '';
+
+try {
+  GoogleSignin.configure({
+    webClientId: GOOGLE_WEB_CLIENT_ID || undefined,
+    iosClientId: GOOGLE_IOS_CLIENT_ID || undefined,
+    scopes: ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
+  });
+} catch (e) {
+  console.log('[authService] GoogleSignin configure notice:', e?.message);
+}
 
 export const authService = {
   // Sign up with Email & Password
@@ -167,9 +182,56 @@ export const authService = {
     }
   },
 
-  // Sign in with Google
+  // Sign in with Google (Native iOS Sheet first, Web OAuth fallback)
   async signInWithGoogle() {
     try {
+      // 1. Try Native Google Sign-In (no browser, no redirect, native sheet)
+      try {
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: false });
+        const response = await GoogleSignin.signIn();
+
+        if (response?.type === 'cancelled') {
+          return null; // User cancelled
+        }
+
+        const idToken = response?.data?.idToken || response?.idToken;
+        const googleUser = response?.data?.user || response?.user;
+
+        if (idToken && isSupabaseConfigured && supabase) {
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: idToken,
+          });
+
+          if (error) throw error;
+
+          if (data?.user) {
+            const cleanName = googleUser?.name || data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Traveler';
+            const localProfile = buildNewProfile({ name: cleanName, email: data.user.email });
+            await supabase.from('profiles').upsert({
+              id: data.user.id,
+              email: data.user.email,
+              name: cleanName,
+              handle: localProfile.handle,
+              avatar_initials: localProfile.avatarInitials,
+              passport_no: localProfile.passportNo,
+            });
+            return data;
+          }
+        } else if (googleUser) {
+          const cleanName = googleUser.name || 'Traveler';
+          const profile = buildNewProfile({ name: cleanName, email: googleUser.email });
+          await storageService.saveProfile(profile);
+          return { user: { email: googleUser.email, id: googleUser.id || 'google-user' }, profile };
+        }
+      } catch (nativeErr) {
+        if (nativeErr?.code === 'SIGN_IN_CANCELLED' || nativeErr?.code === '12501') {
+          return null;
+        }
+        console.log('[authService] Native Google Sign-In note:', nativeErr?.message);
+      }
+
+      // 2. Fallback: Web OAuth
       const redirectUrl = makeRedirectUri({ scheme: 'atls' });
 
       if (isSupabaseConfigured && supabase) {
@@ -230,7 +292,7 @@ export const authService = {
         }
       }
 
-      // Local / Offline fallback
+      // 3. Local / Offline fallback
       const profile = buildNewProfile({ name: 'Google Traveler', email: 'traveler@gmail.com' });
       await storageService.saveProfile(profile);
       return { user: { email: 'traveler@gmail.com', id: 'google-user' }, profile };

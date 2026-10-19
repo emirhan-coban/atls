@@ -4,6 +4,7 @@
   "main": "index.js",
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-google-signin/google-signin": "^16.1.5",
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.26",
     "expo-apple-authentication": "~57.0.2",
