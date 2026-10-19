@@ -193,29 +193,33 @@ export const authService = {
               const queryIndex = url.indexOf('?');
               const paramString = hashIndex !== -1 ? url.substring(hashIndex + 1) : (queryIndex !== -1 ? url.substring(queryIndex + 1) : '');
               const params = new URLSearchParams(paramString);
+              const code = params.get('code');
               const accessToken = params.get('access_token');
               const refreshToken = params.get('refresh_token');
 
-              if (accessToken && refreshToken) {
-                const sessionRes = await supabase.auth.setSession({
+              let sessionRes = null;
+              if (code) {
+                sessionRes = await supabase.auth.exchangeCodeForSession(code);
+              } else if (accessToken && refreshToken) {
+                sessionRes = await supabase.auth.setSession({
                   access_token: accessToken,
                   refresh_token: refreshToken,
                 });
+              }
 
-                if (sessionRes.data?.user) {
-                  const user = sessionRes.data.user;
-                  const cleanName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Traveler';
-                  const localProfile = buildNewProfile({ name: cleanName, email: user.email });
-                  await supabase.from('profiles').upsert({
-                    id: user.id,
-                    email: user.email,
-                    name: cleanName,
-                    handle: localProfile.handle,
-                    avatar_initials: localProfile.avatarInitials,
-                    passport_no: localProfile.passportNo,
-                  });
-                  return sessionRes.data;
-                }
+              if (sessionRes?.data?.user) {
+                const user = sessionRes.data.user;
+                const cleanName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Traveler';
+                const localProfile = buildNewProfile({ name: cleanName, email: user.email });
+                await supabase.from('profiles').upsert({
+                  id: user.id,
+                  email: user.email,
+                  name: cleanName,
+                  handle: localProfile.handle,
+                  avatar_initials: localProfile.avatarInitials,
+                  passport_no: localProfile.passportNo,
+                });
+                return sessionRes.data;
               }
             } else if (authResult.type === 'cancel' || authResult.type === 'dismiss') {
               return null; // User cancelled
