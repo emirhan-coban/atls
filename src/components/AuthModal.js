@@ -48,6 +48,15 @@ const GoogleIcon = () => (
   </Svg>
 );
 
+const AppleIcon = () => (
+  <Svg width={15} height={18} viewBox="0 0 384 512">
+    <Path
+      fill="#FFFFFF"
+      d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"
+    />
+  </Svg>
+);
+
 export default function AuthModal({
   isOpen,
   onClose,
@@ -339,20 +348,24 @@ export default function AuthModal({
             {/* Social Logins */}
             <View style={styles.socialCol}>
               {Platform.OS === 'ios' && (
-                <AppleAuthentication.AppleAuthenticationButton
-                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                  cornerRadius={20}
-                  style={styles.appleAuthBtn}
+                <TouchableOpacity
                   onPress={handleAppleSignIn}
-                />
+                  activeOpacity={0.85}
+                  disabled={isLoading}
+                  style={[styles.socialBtn, styles.appleBtn]}
+                >
+                  <AppleIcon />
+                  <Text style={styles.appleBtnText}>
+                    {t?.continueWithApple || 'Apple ile Devam Et'}
+                  </Text>
+                </TouchableOpacity>
               )}
 
               <TouchableOpacity
                 onPress={handleGoogleSignIn}
                 activeOpacity={0.85}
                 disabled={isLoading}
-                style={styles.googleBtn}
+                style={[styles.socialBtn, styles.googleBtn]}
               >
                 <GoogleIcon />
                 <Text style={styles.googleBtnText}>
@@ -487,24 +500,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   primaryBtn: {
+    height: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#2563EB',
     borderRadius: 20,
-    paddingVertical: 16,
     marginTop: 6,
     shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowRadius: 10,
     elevation: 3,
   },
   primaryBtnText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   guestBtn: {
     alignItems: 'center',
@@ -537,20 +551,32 @@ const styles = StyleSheet.create({
   socialCol: {
     gap: 10,
   },
-  appleAuthBtn: {
-    width: '100%',
+  socialBtn: {
     height: 50,
-  },
-  googleBtn: {
+    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
+  },
+  appleBtn: {
+    backgroundColor: '#000000',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  appleBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  googleBtn: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    borderWidth: 1.2,
     borderColor: '#E2E8F0',
-    borderRadius: 20,
-    paddingVertical: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -559,7 +585,8 @@ const styles = StyleSheet.create({
   },
   googleBtnText: {
     color: '#0F172A',
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
 });
