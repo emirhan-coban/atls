@@ -146,12 +146,12 @@ export const authService = {
                 passport_no: localProfile.passportNo,
               });
             } catch (pErr) {
-              console.warn('[authService] Profile upsert notice:', pErr);
+              console.log('[authService] Profile upsert notice:', pErr);
             }
           }
           return data;
         } catch (supabaseErr) {
-          console.warn('[authService] Supabase Apple Auth note:', supabaseErr.message);
+          console.log('[authService] Supabase Apple Auth note:', supabaseErr.message);
         }
       }
 

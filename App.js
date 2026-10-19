@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Alert, LogBox } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { initialCountries, initialProfile } from './src/data/travelData';
@@ -13,6 +13,9 @@ import AddCountryModal from './src/components/AddCountryModal';
 import OnboardingScreen from './src/components/OnboardingScreen';
 import AuthScreen from './src/components/AuthScreen';
 import PassportShareModal from './src/components/PassportShareModal';
+
+// Silence on-screen warning popups/banners during screen recording and demos
+LogBox.ignoreAllLogs(true);
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
