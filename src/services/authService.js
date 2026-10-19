@@ -222,7 +222,7 @@ export const authService = {
             }
           }
         } catch (oauthErr) {
-          console.warn('[authService] Supabase Google OAuth note:', oauthErr.message);
+          console.log('[authService] Supabase Google OAuth note:', oauthErr.message);
         }
       }
 
