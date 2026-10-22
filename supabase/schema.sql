@@ -156,26 +156,9 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 8. Auto-Confirm Email (No mail confirmation needed)
--- Automatically mark any existing users as confirmed
-UPDATE auth.users 
-SET email_confirmed_at = COALESCE(email_confirmed_at, NOW())
-WHERE email_confirmed_at IS NULL;
-
--- Automatically mark newly created users as confirmed at database level
-CREATE OR REPLACE FUNCTION public.handle_auto_confirm_user()
-RETURNS TRIGGER
-SECURITY DEFINER
-SET search_path = public, auth
-AS $$
-BEGIN
-  NEW.email_confirmed_at := COALESCE(NEW.email_confirmed_at, NOW());
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
+-- 8. Email Verification (OTP Security)
+-- Removes the auto-confirm bypass so Supabase can deliver 6-digit verification codes (OTP)
 DROP TRIGGER IF EXISTS on_auth_user_auto_confirm ON auth.users;
-CREATE TRIGGER on_auth_user_auto_confirm
-  BEFORE INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_auto_confirm_user();
+DROP FUNCTION IF EXISTS public.handle_auto_confirm_user();
+
 

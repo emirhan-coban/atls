@@ -11,6 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { Plus, Minus, RotateCcw } from 'lucide-react-native';
 import { worldViewBox, worldMapFeatures } from '../data/worldMapPaths';
 import { getLocalizedCountryName } from '../data/travelData';
+import { translations } from '../localization/translations';
 
 // Base world coordinates
 const BASE_VIEWBOX = {
@@ -30,12 +31,16 @@ export default function WorldMap({
   currentLang = 'tr',
   selectedCountryId = null,
   interactive = true,
+  showControls = null,
+  onInteractionChange = null,
   style = null,
 }) {
   const [selectedCountryInfo, setSelectedCountryInfo] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [containerSize, setContainerSize] = useState({ width: 340, height: 200 });
+
+  const activeT = t || translations[currentLang] || translations.tr;
 
   // Refs for gesture tracking without stale closures
   const zoomRef = useRef(1);
@@ -88,6 +93,7 @@ export default function WorldMap({
     panRef.current = { x: 0, y: 0 };
     setZoom(1);
     setPanOffset({ x: 0, y: 0 });
+    if (onInteractionChange) onInteractionChange(false);
   };
 
   const zoomIn = () => {
@@ -113,22 +119,27 @@ export default function WorldMap({
       PanResponder.create({
         onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: (_, gesture) => {
+          if (!interactive) return false;
           return (
             gesture.numberActiveTouches === 2 ||
             (zoomRef.current > 1.05 &&
-              (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4))
+              (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4)) ||
+            (Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5)
           );
         },
         onPanResponderGrant: (evt, gesture) => {
+          if (onInteractionChange) onInteractionChange(true);
           if (evt.nativeEvent.touches.length === 2) {
             const [t1, t2] = evt.nativeEvent.touches;
             initialPinchDist.current = Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY);
             baseZoomOnPinch.current = zoomRef.current;
-          } else if (evt.nativeEvent.touches.length === 1 && zoomRef.current > 1.05) {
+          } else if (evt.nativeEvent.touches.length === 1) {
             dragStartTouch.current = { x: gesture.x0, y: gesture.y0 };
             basePanOnDrag.current = { ...panRef.current };
           }
         },
+        onPanResponderTerminationRequest: () => false,
+        onShouldBlockAppResponder: () => true,
         onPanResponderMove: (evt, gesture) => {
           if (evt.nativeEvent.touches.length === 2 && initialPinchDist.current) {
             const [t1, t2] = evt.nativeEvent.touches;
@@ -137,7 +148,7 @@ export default function WorldMap({
             const nextZoom = Math.max(1, Math.min(5.5, baseZoomOnPinch.current * factor));
             zoomRef.current = nextZoom;
             updateViewBoxThrottled(nextZoom, panRef.current);
-          } else if (evt.nativeEvent.touches.length === 1 && zoomRef.current > 1.05) {
+          } else if (evt.nativeEvent.touches.length === 1 && (zoomRef.current > 1.05 || Math.abs(gesture.dx) > 6)) {
             // Screen pixel to SVG unit ratio
             const currentW = BASE_VIEWBOX.width / zoomRef.current;
             const currentH = BASE_VIEWBOX.height / zoomRef.current;
@@ -161,12 +172,17 @@ export default function WorldMap({
         },
         onPanResponderRelease: () => {
           initialPinchDist.current = null;
+          if (onInteractionChange) onInteractionChange(false);
           if (zoomRef.current < 1) {
             resetZoom();
           }
         },
+        onPanResponderTerminate: () => {
+          initialPinchDist.current = null;
+          if (onInteractionChange) onInteractionChange(false);
+        },
       }),
-    [containerSize]
+    [containerSize, interactive, onInteractionChange]
   );
 
   // Fast country lookup map by ISO-2 code
@@ -219,10 +235,10 @@ export default function WorldMap({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const countryName = getLocalizedCountryName(country, currentLang);
       const statusLabel = country.status === 'lived' 
-        ? (t ? t.livedIn : 'LIVED')
+        ? (activeT?.livedIn || (currentLang === 'tr' ? 'YAŞANAN' : 'LIVED'))
         : country.status === 'want' 
-          ? (t ? t.wishlist : 'WISHLIST')
-          : (t ? t.visited : 'VISITED');
+          ? (activeT?.wishlist || (currentLang === 'tr' ? 'HEDEF' : 'WISHLIST'))
+          : (activeT?.visited || (currentLang === 'tr' ? 'GEZİLEN' : 'VISITED'));
       setSelectedCountryInfo(`${country.flag || '🌍'} ${countryName} (${statusLabel})`);
       if (onSelectCountry) onSelectCountry(country.id);
     }
@@ -230,6 +246,7 @@ export default function WorldMap({
 
   const isZoomed = zoom > 1.05;
   const zoomDisplay = (Math.round(zoom * 10) / 10).toFixed(1);
+  const shouldShowControls = showControls !== null ? showControls : interactive;
 
   return (
     <View
@@ -238,7 +255,7 @@ export default function WorldMap({
         const { width, height } = e.nativeEvent.layout;
         setContainerSize({ width, height });
       }}
-      {...panResponder.panHandlers}
+      {...(interactive ? panResponder.panHandlers : {})}
     >
       {/* Background coordinate grid watermark */}
       <View style={styles.watermarkGrid} pointerEvents="none" />
@@ -249,6 +266,7 @@ export default function WorldMap({
       */}
       <Svg
         viewBox={computedViewBox}
+        preserveAspectRatio="xMidYMid meet"
         style={styles.svg}
       >
         <G
@@ -278,53 +296,63 @@ export default function WorldMap({
         </G>
       </Svg>
 
-      {/* Floating Status Badge */}
-      <View style={styles.badgeContainer}>
-        <View style={styles.blueDot} />
-        <Text style={styles.badgeText} numberOfLines={1}>
-          {selectedCountryInfo || (t && t.markedBorders ? t.markedBorders.replace('{count}', countries.length) : `${countries.length} MARKED BORDERS`)}
-        </Text>
-      </View>
+      {/* Floating Status Badge (Shown only if controls are enabled) */}
+      {shouldShowControls && (
+        <View style={styles.badgeContainer}>
+          <View style={styles.blueDot} />
+          <Text style={styles.badgeText} numberOfLines={1}>
+            {selectedCountryInfo || (
+              countries.length === 0
+                ? (currentLang === 'tr' ? 'DÜNYA HARİTASI' : 'WORLD MAP')
+                : (activeT?.markedBorders
+                    ? activeT.markedBorders.replace('{count}', countries.length)
+                    : (currentLang === 'tr' ? `${countries.length} İŞARETLİ ÜLKE` : `${countries.length} MARKED COUNTRIES`))
+            )}
+          </Text>
+        </View>
+      )}
 
       {/* Mini Zoom & Scale Controls top right */}
-      <View style={styles.topRightControls}>
-        {isZoomed && (
-          <TouchableOpacity
-            onPress={resetZoom}
-            activeOpacity={0.75}
-            style={styles.resetButton}
-          >
-            <RotateCcw size={10} color="#2563EB" strokeWidth={2.5} />
-            <Text style={styles.resetText}>{`${zoomDisplay}x`}</Text>
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.zoomButtonsGroup}>
-          <TouchableOpacity
-            onPress={zoomIn}
-            activeOpacity={0.75}
-            style={styles.zoomBtn}
-          >
-            <Plus size={11} color="#0F172A" strokeWidth={2.5} />
-          </TouchableOpacity>
-
+      {shouldShowControls && (
+        <View style={styles.topRightControls}>
           {isZoomed && (
             <TouchableOpacity
-              onPress={zoomOut}
+              onPress={resetZoom}
+              activeOpacity={0.75}
+              style={styles.resetButton}
+            >
+              <RotateCcw size={10} color="#2563EB" strokeWidth={2.5} />
+              <Text style={styles.resetText}>{`${zoomDisplay}x`}</Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.zoomButtonsGroup}>
+            <TouchableOpacity
+              onPress={zoomIn}
               activeOpacity={0.75}
               style={styles.zoomBtn}
             >
-              <Minus size={11} color="#0F172A" strokeWidth={2.5} />
+              <Plus size={11} color="#0F172A" strokeWidth={2.5} />
             </TouchableOpacity>
+
+            {isZoomed && (
+              <TouchableOpacity
+                onPress={zoomOut}
+                activeOpacity={0.75}
+                style={styles.zoomBtn}
+              >
+                <Minus size={11} color="#0F172A" strokeWidth={2.5} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {!isZoomed && (
+            <View style={styles.coordBadge}>
+              <Text style={styles.coordText}>WGS-84 • 195</Text>
+            </View>
           )}
         </View>
-
-        {!isZoomed && (
-          <View style={styles.coordBadge}>
-            <Text style={styles.coordText}>WGS-84 • 195</Text>
-          </View>
-        )}
-      </View>
+      )}
     </View>
   );
 }

@@ -54,9 +54,36 @@ export default function App() {
     });
   };
 
-  const handleCompleteOnboarding = () => {
+  const handleCompleteOnboarding = async (onboardingPayload = {}) => {
     setHasCompletedOnboarding(true);
-    storageService.saveOnboarding(true);
+    await storageService.saveOnboarding(true);
+
+    const { onboardingCountries = [], homeLocation = null, userData = null } = onboardingPayload;
+
+    if (userData) {
+      setIsAuthenticated(true);
+      await storageService.saveAuth(true);
+
+      const sessionData = await storageService.loadUserSessionData(userData);
+      if (sessionData && sessionData.countries && sessionData.countries.length > 0) {
+        if (sessionData.profile) setProfile(sessionData.profile);
+        setCountries(sessionData.countries);
+      } else {
+        const cleanProfile = {
+          ...initialProfile,
+          ...userData,
+          ...(homeLocation ? { location: homeLocation, locationTr: homeLocation } : {}),
+        };
+        setProfile(cleanProfile);
+        setCountries(onboardingCountries);
+        await storageService.saveProfile(cleanProfile);
+        await storageService.saveCountries(onboardingCountries);
+        // Sync to Supabase in background
+        for (const c of onboardingCountries) {
+          storageService.addCountry(c).catch(() => {});
+        }
+      }
+    }
   };
 
   const handleAddCountry = (newCountry) => {

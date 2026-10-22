@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { 
   Mail, 
   Lock, 
@@ -23,6 +22,12 @@ import {
   EyeOff,
   Languages,
   ShieldCheck,
+  Check,
+  CheckCircle2,
+  Circle,
+  KeyRound,
+  RefreshCw,
+  Edit3,
 } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { authService } from '../services/authService';
@@ -58,6 +63,12 @@ const AppleIcon = () => (
   </Svg>
 );
 
+// Email validation regex (standard RFC 5322 compatible)
+const isValidEmailAddress = (email) => {
+  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return re.test(String(email).trim().toLowerCase());
+};
+
 export default function AuthScreen({
   onLoginSuccess,
   t,
@@ -69,67 +80,177 @@ export default function AuthScreen({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // OTP Verification state
+  const [isOtpStep, setIsOtpStep] = useState(false);
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpTimer, setOtpTimer] = useState(60);
+  const [canResendOtp, setCanResendOtp] = useState(false);
+  const otpInputsRef = useRef([]);
+
+  // Password Strength Evaluation
+  const hasMinLength = password.length >= 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+
+  const getPasswordStrength = () => {
+    if (!password) return { score: 0, label: '', color: '#E2E8F0' };
+    let score = 0;
+    if (hasMinLength) score++;
+    if (hasUppercase) score++;
+    if (hasNumber) score++;
+
+    if (score <= 1) {
+      return { score: 1, label: t?.strengthWeak || 'Zayıf', color: '#EF4444' };
+    }
+    if (score === 2) {
+      return { score: 2, label: t?.strengthMedium || 'Orta', color: '#F59E0B' };
+    }
+    return { score: 3, label: t?.strengthStrong || 'Güçlü', color: '#10B981' };
+  };
+
+  const strength = getPasswordStrength();
+
+  // OTP Countdown Timer
+  useEffect(() => {
+    let interval = null;
+    if (isOtpStep && otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (otpTimer === 0) {
+      setCanResendOtp(true);
+    }
+    return () => clearInterval(interval);
+  }, [isOtpStep, otpTimer]);
+
+  // Handle OTP digit entry with auto-forward and backspace
+  const handleOtpChange = (val, index) => {
+    const clean = val.replace(/[^0-9]/g, '');
+    const updated = [...otpDigits];
+
+    // If user pastes full 6 digit code
+    if (clean.length > 1) {
+      const chars = clean.slice(0, 6).split('');
+      chars.forEach((c, i) => {
+        updated[i] = c;
+      });
+      setOtpDigits(updated);
+      otpInputsRef.current[Math.min(chars.length, 5)]?.focus();
+      return;
+    }
+
+    updated[index] = clean;
+    setOtpDigits(updated);
+
+    if (clean && index < 5) {
+      otpInputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyPress = (e, index) => {
+    if (e.nativeEvent.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  // Submit Sign-In or Sign-Up
   const handleSubmit = async () => {
     const trimmedEmail = email.trim();
     const trimmedName = name.trim();
 
     if (tab === 'register' && !trimmedName) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Bilgi', currentLang === 'tr' ? 'Lütfen adınızı ve soyadınızı giriniz.' : 'Please enter your full name.');
+      Alert.alert(
+        currentLang === 'tr' ? 'Eksik Bilgi' : 'Information Missing',
+        currentLang === 'tr' ? 'Lütfen adınızı ve soyadınızı giriniz.' : 'Please enter your full name.'
+      );
       return;
     }
 
-    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+    if (!isValidEmailAddress(trimmedEmail)) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Bilgi', currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi giriniz.' : 'Please enter a valid email address.');
+      Alert.alert(
+        currentLang === 'tr' ? 'Geçersiz E-posta' : 'Invalid Email',
+        t?.invalidEmail || (currentLang === 'tr' ? 'Lütfen geçerli bir e-posta adresi giriniz.' : 'Please enter a valid email address.')
+      );
       return;
     }
 
-    if (!password || password.length < 6) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Bilgi', currentLang === 'tr' ? 'Şifreniz en az 6 karakter olmalıdır.' : 'Password must be at least 6 characters.');
-      return;
+    if (tab === 'register') {
+      if (!hasMinLength || !hasUppercase || !hasNumber) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert(
+          currentLang === 'tr' ? 'Güvensiz Şifre' : 'Insecure Password',
+          t?.passwordTooWeak || (currentLang === 'tr' ? 'Şifreniz en az 8 karakter olmalı, 1 büyük harf ve 1 rakam içermelidir.' : 'Password must be at least 8 chars with 1 uppercase and 1 number.')
+        );
+        return;
+      }
+    } else {
+      if (!password || password.length < 6) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert(
+          currentLang === 'tr' ? 'Eksik Bilgi' : 'Information Missing',
+          currentLang === 'tr' ? 'Lütfen şifrenizi giriniz.' : 'Please enter your password.'
+        );
+        return;
+      }
     }
 
     try {
       setIsLoading(true);
-      let authResult;
 
       if (tab === 'register') {
-        authResult = await authService.signUp({
+        const authResult = await authService.signUp({
           email: trimmedEmail,
           password,
           name: trimmedName,
         });
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // If email confirmation is required, transition to OTP view
+        if (authResult?.needsOtp) {
+          setIsOtpStep(true);
+          setOtpTimer(60);
+          setCanResendOtp(false);
+          setOtpDigits(['', '', '', '', '', '']);
+          setTimeout(() => {
+            otpInputsRef.current[0]?.focus();
+          }, 400);
+          return;
+        }
+
+        // Direct session created (or trigger fallback)
+        const cleanName = trimmedName || authResult?.user?.user_metadata?.name || trimmedEmail.split('@')[0] || 'Traveler';
+        const cleanHandle = generateHandle(cleanName);
+
+        onLoginSuccess({
+          name: cleanName,
+          handle: cleanHandle,
+          email: trimmedEmail,
+          avatarInitials: cleanName.substring(0, 2).toUpperCase(),
+        });
       } else {
-        authResult = await authService.signIn({
+        // Sign In
+        const authResult = await authService.signIn({
           email: trimmedEmail,
           password,
         });
-      }
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      const cleanName = trimmedName || authResult?.user?.user_metadata?.name || trimmedEmail.split('@')[0] || 'Traveler';
-      const cleanHandle = generateHandle(cleanName);
+        const cleanName = authResult?.user?.user_metadata?.name || trimmedEmail.split('@')[0] || 'Traveler';
+        const cleanHandle = generateHandle(cleanName);
 
-      onLoginSuccess({
-        name: cleanName,
-        handle: cleanHandle,
-        email: trimmedEmail,
-        avatarInitials: cleanName.substring(0, 2).toUpperCase(),
-      });
-
-      // If user registered with trigger fallback
-      if (tab === 'register' && authResult?.isTriggerFallback) {
-        Alert.alert(
-          currentLang === 'tr' ? 'Hesap Oluşturuldu' : 'Account Created',
-          currentLang === 'tr'
-            ? 'Hesabınız başarıyla oluşturuldu! Supabase bulut veritabanını etkinleştirmek için Supabase SQL Editor üzerinden schema.sql dosyasını çalıştırmanız önerilir.'
-            : 'Account created! To enable cloud database sync, please run schema.sql in your Supabase SQL Editor.'
-        );
+        onLoginSuccess({
+          name: cleanName,
+          handle: cleanHandle,
+          email: trimmedEmail,
+          avatarInitials: cleanName.substring(0, 2).toUpperCase(),
+        });
       }
     } catch (err) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -140,9 +261,11 @@ export default function AuthScreen({
       } else if (errorMsg.includes('User already registered')) {
         errorMsg = currentLang === 'tr' ? 'Bu e-posta adresi ile zaten kayıtlı bir hesap var. Lütfen giriş yapınız.' : 'An account already exists with this email. Please log in.';
       } else if (errorMsg.includes('Email not confirmed')) {
-        errorMsg = currentLang === 'tr' ? 'E-posta adresiniz henüz onaylanmamış. Lütfen e-postanızı kontrol ediniz.' : 'Email is not confirmed yet. Please check your inbox.';
-      } else if (errorMsg.includes('Password should be at least')) {
-        errorMsg = currentLang === 'tr' ? 'Şifreniz en az 6 karakter olmalıdır.' : 'Password must be at least 6 characters.';
+        // Switch to OTP step if existing account unconfirmed
+        setIsOtpStep(true);
+        setOtpTimer(60);
+        setCanResendOtp(false);
+        return;
       }
 
       Alert.alert(currentLang === 'tr' ? 'İşlem Başarısız' : 'Action Failed', errorMsg);
@@ -151,11 +274,78 @@ export default function AuthScreen({
     }
   };
 
+  // Verify OTP submission
+  const handleVerifyOtp = async () => {
+    const token = otpDigits.join('');
+    if (token.length !== 6) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert(
+        currentLang === 'tr' ? 'Eksik Kod' : 'Incomplete Code',
+        currentLang === 'tr' ? 'Lütfen 6 haneli kodu eksiksiz giriniz.' : 'Please enter the full 6-digit code.'
+      );
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const res = await authService.verifyOtp({
+        email: email.trim(),
+        token,
+        name: name.trim(),
+      });
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      const cleanName = name.trim() || res?.user?.user_metadata?.name || email.split('@')[0] || 'Traveler';
+      const cleanHandle = generateHandle(cleanName);
+
+      onLoginSuccess({
+        name: cleanName,
+        handle: cleanHandle,
+        email: email.trim(),
+        avatarInitials: cleanName.substring(0, 2).toUpperCase(),
+      });
+    } catch (err) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        currentLang === 'tr' ? 'Doğrulama Başarısız' : 'Verification Failed',
+        t?.otpInvalidCode || (currentLang === 'tr' ? 'Geçersiz veya süresi dolmuş kod. Lütfen tekrar deneyiniz.' : 'Invalid code. Please try again.')
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Resend OTP Code
+  const handleResendOtp = async () => {
+    if (!canResendOtp) return;
+    try {
+      setIsLoading(true);
+      await authService.resendOtp({ email: email.trim() });
+      setOtpTimer(60);
+      setCanResendOtp(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert(
+        currentLang === 'tr' ? 'Kod Gönderildi' : 'Code Sent',
+        t?.otpCodeSent || (currentLang === 'tr' ? 'Yeni bir güvenlik kodu e-posta adresinize gönderildi.' : 'A new verification code has been sent.')
+      );
+    } catch (err) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        currentLang === 'tr' ? 'Hata' : 'Error',
+        err.message || 'Kod tekrar gönderilemedi.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Apple Sign In
   const handleAppleSignIn = async () => {
     try {
       setIsLoading(true);
       const res = await authService.signInWithApple();
-      if (!res) return; // Cancelled
+      if (!res) return;
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const cleanName = res?.profile?.name || res?.user?.user_metadata?.name || 'Traveler';
@@ -178,11 +368,12 @@ export default function AuthScreen({
     }
   };
 
+  // Google Sign In
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
       const res = await authService.signInWithGoogle();
-      if (!res) return; // Cancelled
+      if (!res) return;
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const cleanName = res?.profile?.name || res?.user?.user_metadata?.full_name || res?.user?.user_metadata?.name || 'Google Traveler';
@@ -205,6 +396,135 @@ export default function AuthScreen({
     }
   };
 
+  // If OTP Step is active
+  if (isOtpStep) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.topBar}>
+          <View style={styles.logoRow}>
+            <Text style={styles.logoText}>atls</Text>
+            <Text style={styles.logoDot}>.</Text>
+          </View>
+        </View>
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardContainer}
+        >
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <View style={styles.headerTextCol}>
+              <View style={styles.otpIconBadge}>
+                <KeyRound size={28} color="#2563EB" strokeWidth={2} />
+              </View>
+
+              <Text style={styles.mainTitle}>
+                {t?.otpTitle || (currentLang === 'tr' ? 'E-postanızı Doğrulayın' : 'Verify Your Email')}
+              </Text>
+              
+              <Text style={styles.subTitle}>
+                {currentLang === 'tr' 
+                  ? 'Kişisel pasaportunuzu güvenceye almak için gönderilen 6 haneli güvenlik kodunu girin.' 
+                  : 'Enter the 6-digit security code sent to protect your passport.'}
+              </Text>
+
+              {/* Target Email Capsule with Edit Button */}
+              <View style={styles.emailBadge}>
+                <Mail size={14} color="#2563EB" />
+                <Text style={styles.emailBadgeText} numberOfLines={1}>{email}</Text>
+                <TouchableOpacity
+                  onPress={() => setIsOtpStep(false)}
+                  style={styles.editEmailBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Edit3 size={13} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* 6 Digit Input Boxes */}
+            <View style={styles.otpBoxesRow}>
+              {otpDigits.map((digit, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    styles.otpBox,
+                    digit ? styles.otpBoxFilled : null,
+                    focusedField === `otp_${idx}` ? styles.otpBoxFocused : null,
+                  ]}
+                >
+                  <TextInput
+                    ref={(el) => (otpInputsRef.current[idx] = el)}
+                    value={digit}
+                    onChangeText={(val) => handleOtpChange(val, idx)}
+                    onKeyPress={(e) => handleOtpKeyPress(e, idx)}
+                    onFocus={() => setFocusedField(`otp_${idx}`)}
+                    onBlur={() => setFocusedField(null)}
+                    keyboardType="number-pad"
+                    maxLength={idx === 0 ? 6 : 1}
+                    selectTextOnFocus
+                    style={styles.otpInput}
+                  />
+                </View>
+              ))}
+            </View>
+
+            {/* Verify Button */}
+            <TouchableOpacity
+              onPress={handleVerifyOtp}
+              activeOpacity={0.85}
+              disabled={isLoading}
+              style={[styles.primaryBtn, isLoading && { opacity: 0.7 }]}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <>
+                  <Text style={styles.primaryBtnText}>
+                    {t?.otpVerifyBtn || (currentLang === 'tr' ? 'Doğrula ve Pasaporta Gir' : 'Verify & Enter Passport')}
+                  </Text>
+                  <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Resend Code Section */}
+            <View style={styles.resendRow}>
+              {canResendOtp ? (
+                <TouchableOpacity
+                  onPress={handleResendOtp}
+                  style={styles.resendBtn}
+                  activeOpacity={0.7}
+                  disabled={isLoading}
+                >
+                  <RefreshCw size={14} color="#2563EB" />
+                  <Text style={styles.resendBtnText}>
+                    {t?.otpResend || (currentLang === 'tr' ? 'Kodu Tekrar Gönder' : 'Resend Code')}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={styles.timerText}>
+                  {t?.otpResendIn?.replace('{seconds}', otpTimer) || `${otpTimer}s sonra tekrar gönder`}
+                </Text>
+              )}
+            </View>
+
+            {/* Back to Edit Button */}
+            <TouchableOpacity
+              onPress={() => setIsOtpStep(false)}
+              style={styles.backBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backBtnText}>
+                {t?.otpChangeEmail || (currentLang === 'tr' ? 'Farklı bir e-posta ile dene' : 'Try with different email')}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  // Standard Login / Register View
   return (
     <SafeAreaView style={styles.container}>
       {/* Top Header */}
@@ -289,11 +609,18 @@ export default function AuthScreen({
           {/* Form */}
           <View style={styles.form}>
             {tab === 'register' && (
-              <View style={styles.inputBox}>
-                <User size={18} color="#94A3B8" />
+              <View
+                style={[
+                  styles.inputBox,
+                  focusedField === 'name' && styles.inputBoxFocused,
+                ]}
+              >
+                <User size={18} color={focusedField === 'name' ? '#2563EB' : '#94A3B8'} />
                 <TextInput
                   value={name}
                   onChangeText={setName}
+                  onFocus={() => setFocusedField('name')}
+                  onBlur={() => setFocusedField(null)}
                   placeholder={t?.fullName || 'Ad Soyad'}
                   placeholderTextColor="#94A3B8"
                   autoCapitalize="words"
@@ -303,11 +630,18 @@ export default function AuthScreen({
               </View>
             )}
 
-            <View style={styles.inputBox}>
-              <Mail size={18} color="#94A3B8" />
+            <View
+              style={[
+                styles.inputBox,
+                focusedField === 'email' && styles.inputBoxFocused,
+              ]}
+            >
+              <Mail size={18} color={focusedField === 'email' ? '#2563EB' : '#94A3B8'} />
               <TextInput
                 value={email}
                 onChangeText={setEmail}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
                 placeholder={t?.email || 'E-posta adresi'}
                 placeholderTextColor="#94A3B8"
                 keyboardType="email-address"
@@ -318,12 +652,19 @@ export default function AuthScreen({
               />
             </View>
 
-            <View style={styles.inputBox}>
-              <Lock size={18} color="#94A3B8" />
+            <View
+              style={[
+                styles.inputBox,
+                focusedField === 'password' && styles.inputBoxFocused,
+              ]}
+            >
+              <Lock size={18} color={focusedField === 'password' ? '#2563EB' : '#94A3B8'} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder={t?.password || 'Şifre (en az 6 karakter)'}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
+                placeholder={tab === 'register' ? (t?.password || 'Şifre (en az 8 karakter)') : (t?.password || 'Şifre')}
                 placeholderTextColor="#94A3B8"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
@@ -342,6 +683,78 @@ export default function AuthScreen({
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* Password Strength Indicator (Register Tab Only) */}
+            {tab === 'register' && password.length > 0 && (
+              <View style={styles.strengthCard}>
+                <View style={styles.strengthHeaderRow}>
+                  <Text style={styles.strengthTitle}>
+                    {t?.passwordStrength || 'Şifre Gücü'}:{' '}
+                    <Text style={{ color: strength.color, fontWeight: '800' }}>
+                      {strength.label}
+                    </Text>
+                  </Text>
+                </View>
+
+                {/* 3 Step Colored Progress Bar */}
+                <View style={styles.strengthBarRow}>
+                  <View
+                    style={[
+                      styles.strengthBarSegment,
+                      { backgroundColor: strength.score >= 1 ? strength.color : '#E2E8F0' },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.strengthBarSegment,
+                      { backgroundColor: strength.score >= 2 ? strength.color : '#E2E8F0' },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.strengthBarSegment,
+                      { backgroundColor: strength.score >= 3 ? strength.color : '#E2E8F0' },
+                    ]}
+                  />
+                </View>
+
+                {/* Requirements Checklist */}
+                <View style={styles.criteriaList}>
+                  <View style={styles.criteriaRow}>
+                    {hasMinLength ? (
+                      <CheckCircle2 size={13} color="#10B981" />
+                    ) : (
+                      <Circle size={13} color="#94A3B8" />
+                    )}
+                    <Text style={[styles.criteriaText, hasMinLength && styles.criteriaTextMet]}>
+                      {t?.reqMinChars || 'En az 8 karakter'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.criteriaRow}>
+                    {hasUppercase ? (
+                      <CheckCircle2 size={13} color="#10B981" />
+                    ) : (
+                      <Circle size={13} color="#94A3B8" />
+                    )}
+                    <Text style={[styles.criteriaText, hasUppercase && styles.criteriaTextMet]}>
+                      {t?.reqUppercase || 'En az 1 büyük harf'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.criteriaRow}>
+                    {hasNumber ? (
+                      <CheckCircle2 size={13} color="#10B981" />
+                    ) : (
+                      <Circle size={13} color="#94A3B8" />
+                    )}
+                    <Text style={[styles.criteriaText, hasNumber && styles.criteriaTextMet]}>
+                      {t?.reqNumber || 'En az 1 rakam'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
 
             <TouchableOpacity
               onPress={handleSubmit}
@@ -527,14 +940,72 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#E2E8F0',
+  },
+  inputBoxFocused: {
+    borderColor: '#2563EB',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   input: {
     flex: 1,
     fontSize: 14,
     color: '#0F172A',
     fontWeight: '600',
+  },
+  strengthCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 8,
+    marginTop: -4,
+  },
+  strengthHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  strengthTitle: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  strengthBarRow: {
+    flexDirection: 'row',
+    gap: 6,
+    height: 4,
+  },
+  strengthBarSegment: {
+    flex: 1,
+    height: '100%',
+    borderRadius: 2,
+  },
+  criteriaList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    paddingTop: 4,
+  },
+  criteriaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  criteriaText: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  criteriaTextMet: {
+    color: '#0F172A',
+    fontWeight: '700',
   },
   primaryBtn: {
     height: 52,
@@ -633,5 +1104,108 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: -0.2,
+  },
+
+  // OTP Styles
+  otpIconBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+  },
+  emailBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  emailBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  editEmailBtn: {
+    padding: 2,
+  },
+  otpBoxesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 24,
+    gap: 8,
+  },
+  otpBox: {
+    flex: 1,
+    height: 58,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  otpBoxFilled: {
+    borderColor: '#94A3B8',
+    backgroundColor: '#FFFFFF',
+  },
+  otpBoxFocused: {
+    borderColor: '#2563EB',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  otpInput: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0F172A',
+    textAlign: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  resendRow: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  resendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  resendBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
+  timerText: {
+    fontSize: 13,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  backBtn: {
+    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  backBtnText: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '600',
   },
 });

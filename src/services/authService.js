@@ -56,23 +56,10 @@ export const authService = {
           }
         }
 
-        // If session was not returned directly from signUp, attempt immediate sign-in
-        if (!data?.session) {
-          try {
-            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-              email,
-              password,
-            });
-            if (!signInErr && signInData?.session) {
-              data.session = signInData.session;
-              data.user = signInData.user || data.user;
-            }
-          } catch (autoSignErr) {
-            // Ignore if email confirmation is temporarily enforced on server
-          }
-        }
+        // If session was not created immediately, an OTP confirmation email has been dispatched
+        const needsOtp = Boolean(data?.user && !data?.session);
 
-        return data;
+        return { ...data, needsOtp };
       } catch (err) {
         // If Supabase has a database trigger error (schema not executed yet)
         if (err.message && err.message.includes('Database error saving new user')) {
@@ -80,7 +67,7 @@ export const authService = {
           // Graceful local fallback so user is never blocked from app testing
           const profile = buildNewProfile({ name, email });
           await storageService.saveProfile(profile);
-          return { user: { email, id: 'local-user' }, profile, isTriggerFallback: true };
+          return { user: { email, id: 'local-user' }, profile, isTriggerFallback: true, needsOtp: false };
         }
         throw err;
       }
@@ -89,7 +76,58 @@ export const authService = {
     // Offline / Local fallback: Build fresh profile
     const profile = buildNewProfile({ name, email });
     await storageService.saveProfile(profile);
-    return { user: { email, id: 'local-user' }, profile };
+    return { user: { email, id: 'local-user' }, profile, needsOtp: false };
+  },
+
+  // Verify OTP Code for Sign-Up Confirmation
+  async verifyOtp({ email, token, name }) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: token.trim(),
+        type: 'signup',
+      });
+
+      if (error) throw error;
+
+      // Ensure profile in database has name and handle
+      if (data?.user) {
+        try {
+          const cleanName = name || data.user.user_metadata?.name || email.split('@')[0] || 'Traveler';
+          const localProfile = buildNewProfile({ name: cleanName, email });
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            email: email,
+            name: cleanName,
+            handle: localProfile.handle,
+            avatar_initials: localProfile.avatarInitials,
+            passport_no: localProfile.passportNo,
+          });
+        } catch (pErr) {
+          console.warn('[authService] verifyOtp profile upsert notice:', pErr);
+        }
+      }
+
+      return data;
+    }
+
+    // Offline fallback
+    const profile = buildNewProfile({ name: name || email.split('@')[0], email });
+    await storageService.saveProfile(profile);
+    return { user: { email, id: 'local-user' }, profile, session: { user: { email } } };
+  },
+
+  // Resend OTP Code
+  async resendOtp({ email }) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+      if (error) throw error;
+      return data;
+    }
+    return true;
   },
 
   // Sign in with Email & Password
