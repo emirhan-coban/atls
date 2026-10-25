@@ -489,15 +489,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     borderRadius: 16,
     paddingHorizontal: 14,
-    paddingVertical: 13,
+    height: 52,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   input: {
     flex: 1,
+    height: '100%',
     fontSize: 14,
     color: '#0F172A',
     fontWeight: '600',
+    paddingVertical: 0,
   },
   primaryBtn: {
     height: 50,

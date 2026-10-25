@@ -129,6 +129,9 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   const [otpTimer, setOtpTimer] = useState(60);
   const [canResendOtp, setCanResendOtp] = useState(false);
   const otpInputsRef = useRef([]);
+  const nameInputRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
 
   // Password rules
   const hasMinLength = password.length >= 8;
@@ -1155,7 +1158,12 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
         {renderTopBar(5, 5)}
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex1}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.stepScrollContent}>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.stepScrollContent}
+          >
             {/* Value Preview Pill */}
             <View style={styles.savePassportHeaderCard}>
               <View style={styles.passportChip}>
@@ -1202,9 +1210,14 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             {/* Form */}
             <View style={styles.formCol}>
               {authTab === 'register' && (
-                <View style={[styles.inputBox, focusedField === 'name' && styles.inputBoxFocused]}>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={() => nameInputRef.current?.focus()}
+                  style={[styles.inputBox, focusedField === 'name' && styles.inputBoxFocused]}
+                >
                   <User size={18} color={focusedField === 'name' ? '#2563EB' : '#94A3B8'} />
                   <TextInput
+                    ref={nameInputRef}
                     value={name}
                     onChangeText={setName}
                     onFocus={() => setFocusedField('name')}
@@ -1215,12 +1228,17 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                     autoCorrect={false}
                     style={styles.input}
                   />
-                </View>
+                </TouchableOpacity>
               )}
 
-              <View style={[styles.inputBox, focusedField === 'email' && styles.inputBoxFocused]}>
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => emailInputRef.current?.focus()}
+                style={[styles.inputBox, focusedField === 'email' && styles.inputBoxFocused]}
+              >
                 <Mail size={18} color={focusedField === 'email' ? '#2563EB' : '#94A3B8'} />
                 <TextInput
+                  ref={emailInputRef}
                   value={email}
                   onChangeText={setEmail}
                   onFocus={() => setFocusedField('email')}
@@ -1230,13 +1248,19 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  textContentType="emailAddress"
                   style={styles.input}
                 />
-              </View>
+              </TouchableOpacity>
 
-              <View style={[styles.inputBox, focusedField === 'password' && styles.inputBoxFocused]}>
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => passwordInputRef.current?.focus()}
+                style={[styles.inputBox, focusedField === 'password' && styles.inputBoxFocused]}
+              >
                 <Lock size={18} color={focusedField === 'password' ? '#2563EB' : '#94A3B8'} />
                 <TextInput
+                  ref={passwordInputRef}
                   value={password}
                   onChangeText={setPassword}
                   onFocus={() => setFocusedField('password')}
@@ -1246,12 +1270,13 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  textContentType="password"
                   style={styles.input}
                 />
-                <TouchableOpacity onPress={() => setShowPassword((p) => !p)}>
+                <TouchableOpacity onPress={() => setShowPassword((p) => !p)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
                   {showPassword ? <EyeOff size={18} color="#94A3B8" /> : <Eye size={18} color="#94A3B8" />}
                 </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
 
               {/* Password Strength Checklist */}
               {authTab === 'register' && password.length > 0 && (
@@ -2095,7 +2120,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     borderRadius: 18,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    height: 54,
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
   },
@@ -2110,9 +2135,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    height: '100%',
     fontSize: 14,
     color: '#0F172A',
     fontWeight: '600',
+    paddingVertical: 0,
   },
   strengthCard: {
     backgroundColor: '#F8FAFC',

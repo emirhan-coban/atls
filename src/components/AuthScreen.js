@@ -89,6 +89,9 @@ export default function AuthScreen({
   const [otpTimer, setOtpTimer] = useState(60);
   const [canResendOtp, setCanResendOtp] = useState(false);
   const otpInputsRef = useRef([]);
+  const nameInputRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
 
   // Password Strength Evaluation
   const hasMinLength = password.length >= 8;
@@ -556,6 +559,8 @@ export default function AuthScreen({
         style={styles.keyboardContainer}
       >
         <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
@@ -609,7 +614,9 @@ export default function AuthScreen({
           {/* Form */}
           <View style={styles.form}>
             {tab === 'register' && (
-              <View
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => nameInputRef.current?.focus()}
                 style={[
                   styles.inputBox,
                   focusedField === 'name' && styles.inputBoxFocused,
@@ -617,6 +624,7 @@ export default function AuthScreen({
               >
                 <User size={18} color={focusedField === 'name' ? '#2563EB' : '#94A3B8'} />
                 <TextInput
+                  ref={nameInputRef}
                   value={name}
                   onChangeText={setName}
                   onFocus={() => setFocusedField('name')}
@@ -627,10 +635,12 @@ export default function AuthScreen({
                   autoCorrect={false}
                   style={styles.input}
                 />
-              </View>
+              </TouchableOpacity>
             )}
 
-            <View
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={() => emailInputRef.current?.focus()}
               style={[
                 styles.inputBox,
                 focusedField === 'email' && styles.inputBoxFocused,
@@ -638,6 +648,7 @@ export default function AuthScreen({
             >
               <Mail size={18} color={focusedField === 'email' ? '#2563EB' : '#94A3B8'} />
               <TextInput
+                ref={emailInputRef}
                 value={email}
                 onChangeText={setEmail}
                 onFocus={() => setFocusedField('email')}
@@ -650,9 +661,11 @@ export default function AuthScreen({
                 textContentType="emailAddress"
                 style={styles.input}
               />
-            </View>
+            </TouchableOpacity>
 
-            <View
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={() => passwordInputRef.current?.focus()}
               style={[
                 styles.inputBox,
                 focusedField === 'password' && styles.inputBoxFocused,
@@ -660,6 +673,7 @@ export default function AuthScreen({
             >
               <Lock size={18} color={focusedField === 'password' ? '#2563EB' : '#94A3B8'} />
               <TextInput
+                ref={passwordInputRef}
                 value={password}
                 onChangeText={setPassword}
                 onFocus={() => setFocusedField('password')}
@@ -674,7 +688,7 @@ export default function AuthScreen({
               />
               <TouchableOpacity
                 onPress={() => setShowPassword((prev) => !prev)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               >
                 {showPassword ? (
                   <EyeOff size={18} color="#94A3B8" />
@@ -682,7 +696,7 @@ export default function AuthScreen({
                   <Eye size={18} color="#94A3B8" />
                 )}
               </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
 
             {/* Password Strength Indicator (Register Tab Only) */}
             {tab === 'register' && password.length > 0 && (
@@ -939,7 +953,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     borderRadius: 18,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    height: 54,
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
   },
@@ -954,9 +968,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    height: '100%',
     fontSize: 14,
     color: '#0F172A',
     fontWeight: '600',
+    paddingVertical: 0,
   },
   strengthCard: {
     backgroundColor: '#F8FAFC',
