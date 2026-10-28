@@ -196,21 +196,21 @@ export default function WorldMap({
 
   const getCountryColor = (id) => {
     const country = countryStatusMap[id];
-    if (!country) return '#E2E8F0'; // Base landmass
+    if (!country) return '#182235'; // Deep obsidian-navy landmass
 
     if (activeFilter && activeFilter !== 'all' && country.status !== activeFilter) {
-      return '#CBD5E1'; // Dimmed if not in active filter
+      return '#101624'; // Dimmed if not in active filter
     }
 
     switch (country.status) {
       case 'lived':
-        return '#1D4ED8'; // Deep Royal Blue
+        return '#10B981'; // Emerald beacon
       case 'visited':
-        return '#2563EB'; // Vibrant Electric Blue
+        return '#3B82F6'; // Electric sapphire
       case 'want':
-        return '#38BDF8'; // Sky Blue
+        return '#FF6B35'; // Solar flare orange
       default:
-        return '#E2E8F0';
+        return '#182235';
     }
   };
 
@@ -270,8 +270,8 @@ export default function WorldMap({
         style={styles.svg}
       >
         <G
-          stroke="#FFFFFF"
-          strokeWidth={0.6}
+          stroke="#25324B"
+          strokeWidth={0.5}
           strokeLinejoin="round"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
@@ -285,9 +285,9 @@ export default function WorldMap({
               <Path
                 key={`${feature.id}-${idx}`}
                 d={feature.d}
-                fill={isSelected ? '#1E40AF' : fill}
-                stroke={isSelected ? '#1D4ED8' : '#FFFFFF'}
-                strokeWidth={isSelected ? 1.0 : 0.6}
+                fill={isSelected ? '#6366F1' : fill}
+                stroke={isSelected ? '#FFFFFF' : '#25324B'}
+                strokeWidth={isSelected ? 1.0 : 0.5}
                 vectorEffect="non-scaling-stroke"
                 onPress={() => isInteractive && handleCountryPress(feature.id)}
               />
@@ -332,7 +332,7 @@ export default function WorldMap({
               activeOpacity={0.75}
               style={styles.zoomBtn}
             >
-              <Plus size={11} color="#0F172A" strokeWidth={2.5} />
+              <Plus size={11} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
 
             {isZoomed && (
@@ -341,7 +341,7 @@ export default function WorldMap({
                 activeOpacity={0.75}
                 style={styles.zoomBtn}
               >
-                <Minus size={11} color="#0F172A" strokeWidth={2.5} />
+                <Minus size={11} color="#FFFFFF" strokeWidth={2.5} />
               </TouchableOpacity>
             )}
           </View>
@@ -361,10 +361,10 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     aspectRatio: 16 / 9.5,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#07090E',
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#EDF2F7',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     overflow: 'hidden',
     position: 'relative',
     justifyContent: 'center',
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   },
   watermarkGrid: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.1,
+    opacity: 0.06,
   },
   svg: {
     width: '100%',
@@ -382,32 +382,32 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     left: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(11, 15, 25, 0.90)',
     paddingHorizontal: 10,
-    paddingVertical: 4.5,
+    paddingVertical: 5,
     borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     maxWidth: '75%',
   },
   blueDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#3B82F6',
   },
   badgeText: {
     fontSize: 9.5,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#F1F5F9',
     letterSpacing: 0.4,
   },
   topRightControls: {
@@ -422,31 +422,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: 'rgba(59, 130, 246, 0.16)',
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: 'rgba(59, 130, 246, 0.35)',
   },
   resetText: {
     fontSize: 8.5,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#60A5FA',
     fontVariant: ['tabular-nums'],
   },
   zoomButtonsGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(15, 20, 32, 0.90)',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
     elevation: 2,
   },
   zoomBtn: {
@@ -454,18 +454,20 @@ const styles = StyleSheet.create({
     height: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
   },
   coordBadge: {
-    backgroundColor: 'rgba(15, 23, 42, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   coordText: {
     fontSize: 8.5,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#94A3B8',
     fontVariant: ['tabular-nums'],
   },
 });

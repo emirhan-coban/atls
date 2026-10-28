@@ -2,18 +2,18 @@
   "expo": {
     "name": "atls.",
     "slug": "atls",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "scheme": "atls",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.atlas.passport",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "UIStatusBarStyle": "UIStatusBarStyleDarkContent",
+        "UIStatusBarStyle": "UIStatusBarStyleLightContent",
         "CFBundleDisplayName": "atls.",
         "CFBundleURLTypes": [
           {

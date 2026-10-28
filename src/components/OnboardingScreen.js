@@ -46,6 +46,7 @@ import {
 } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import WorldMap from './WorldMap';
+import GlowSphere from './GlowSphere';
 import { availableCatalog } from '../data/travelData';
 import { authService } from '../services/authService';
 import { generateHandle } from '../services/storageService';
@@ -464,7 +465,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             style={styles.backBtn}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+            <ChevronLeft size={22} color="#F8FAFC" strokeWidth={2.5} />
           </TouchableOpacity>
         ) : (
           <View style={styles.logoRow}>
@@ -492,7 +493,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
           style={styles.langPill}
           activeOpacity={0.7}
         >
-          <Languages size={12} color="#2563EB" />
+          <Languages size={12} color="#E2F952" />
           <Text style={styles.langPillText}>{currentLang.toUpperCase()}</Text>
         </TouchableOpacity>
       </View>
@@ -519,7 +520,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             style={styles.langPill}
             activeOpacity={0.7}
           >
-            <Languages size={12} color="#2563EB" />
+            <Languages size={12} color="#E2F952" />
             <Text style={styles.langPillText}>{currentLang.toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
@@ -541,7 +542,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
           {/* Headline & Value Proposition */}
           <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.hookTextCol}>
             <View style={styles.hookBadge}>
-              <Compass size={12} color="#2563EB" strokeWidth={2.5} />
+              <Compass size={12} color="#FF6B35" strokeWidth={2.5} />
               <Text style={styles.hookBadgeText}>
                 {currentLang === 'tr' ? 'DİJİTAL DÜNYA PASAPORTU' : 'DIGITAL WORLD PASSPORT'}
               </Text>
@@ -757,7 +758,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             {/* Prominent Step 3 Title & Purpose */}
             <View style={styles.visitedTitleSection}>
               <View style={styles.visitedStepBadge}>
-                <Compass size={12} color="#2563EB" strokeWidth={2.5} />
+                <Compass size={12} color="#60A5FA" strokeWidth={2.5} />
                 <Text style={styles.visitedStepBadgeText}>
                   {currentLang === 'tr' ? 'SEYAHAT GEÇMİŞİN' : 'TRAVEL FOOTPRINT'}
                 </Text>
@@ -789,7 +790,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             {/* Live Stats Pill */}
             <View style={styles.visitedStatsRow}>
               <View style={styles.statPill}>
-                <Globe2 size={13} color="#2563EB" />
+                <Globe2 size={13} color="#E2F952" />
                 <Text style={styles.statPillText}>
                   {totalCount} {currentLang === 'tr' ? 'Ülke İşaretlendi' : 'Countries Marked'}
                 </Text>
@@ -876,7 +877,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                       {isHome ? (
                         <MapPin size={14} color="#10B981" />
                       ) : isSelected ? (
-                        <Check size={14} color="#2563EB" strokeWidth={3} />
+                        <Check size={14} color="#2E5CFF" strokeWidth={3} />
                       ) : null}
                     </View>
                   </TouchableOpacity>
@@ -921,7 +922,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.payoffScrollContent}>
           <Animated.View entering={FadeInDown.duration(600)} style={styles.payoffHeader}>
             <View style={styles.celebrationBadge}>
-              <Sparkles size={14} color="#2563EB" />
+              <Sparkles size={14} color="#E2F952" />
               <Text style={styles.celebrationBadgeText}>PASAPORTUN HAZIRLANIYOR</Text>
             </View>
 
@@ -1081,7 +1082,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
         <SafeAreaView style={styles.container}>
           <View style={styles.topBarRow}>
             <TouchableOpacity onPress={() => setIsOtpStep(false)} style={styles.backBtn}>
-              <ChevronLeft size={22} color="#0F172A" />
+              <ChevronLeft size={22} color="#F8FAFC" />
             </TouchableOpacity>
             <Text style={styles.logoText}>atls<Text style={styles.logoDot}>.</Text></Text>
             <View style={{ width: 40 }} />
@@ -1091,7 +1092,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.stepScrollContent}>
               <View style={styles.otpHeader}>
                 <View style={styles.otpIconBadge}>
-                  <KeyRound size={28} color="#2563EB" />
+                  <KeyRound size={28} color="#FF6B35" />
                 </View>
                 <Text style={styles.stepTitle}>{t?.otpTitle || 'E-postanızı Doğrulayın'}</Text>
                 <Text style={styles.stepSub}>
@@ -1167,7 +1168,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             {/* Value Preview Pill */}
             <View style={styles.savePassportHeaderCard}>
               <View style={styles.passportChip}>
-                <Globe2 size={13} color="#2563EB" />
+                <Globe2 size={13} color="#FF6B35" />
                 <Text style={styles.passportChipText}>
                   {totalCount} Ülke • %{exploredPercent} Dünya Keşfi
                 </Text>
@@ -1215,7 +1216,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   onPress={() => nameInputRef.current?.focus()}
                   style={[styles.inputBox, focusedField === 'name' && styles.inputBoxFocused]}
                 >
-                  <User size={18} color={focusedField === 'name' ? '#2563EB' : '#94A3B8'} />
+                  <User size={18} color={focusedField === 'name' ? '#FF6B35' : '#64748B'} />
                   <TextInput
                     ref={nameInputRef}
                     value={name}
@@ -1223,7 +1224,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                     onFocus={() => setFocusedField('name')}
                     onBlur={() => setFocusedField(null)}
                     placeholder={t?.fullName || 'Ad Soyad'}
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#64748B"
                     autoCapitalize="words"
                     autoCorrect={false}
                     style={styles.input}
@@ -1236,7 +1237,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                 onPress={() => emailInputRef.current?.focus()}
                 style={[styles.inputBox, focusedField === 'email' && styles.inputBoxFocused]}
               >
-                <Mail size={18} color={focusedField === 'email' ? '#2563EB' : '#94A3B8'} />
+                <Mail size={18} color={focusedField === 'email' ? '#FF6B35' : '#64748B'} />
                 <TextInput
                   ref={emailInputRef}
                   value={email}
@@ -1244,7 +1245,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
                   placeholder={t?.email || 'E-posta adresi'}
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#64748B"
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -1258,7 +1259,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                 onPress={() => passwordInputRef.current?.focus()}
                 style={[styles.inputBox, focusedField === 'password' && styles.inputBoxFocused]}
               >
-                <Lock size={18} color={focusedField === 'password' ? '#2563EB' : '#94A3B8'} />
+                <Lock size={18} color={focusedField === 'password' ? '#FF6B35' : '#64748B'} />
                 <TextInput
                   ref={passwordInputRef}
                   value={password}
@@ -1266,7 +1267,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   onFocus={() => setFocusedField('password')}
                   onBlur={() => setFocusedField(null)}
                   placeholder={authTab === 'register' ? 'Şifre (en az 8 karakter)' : 'Şifre'}
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#64748B"
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -1287,21 +1288,21 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                     </Text>
                   </View>
                   <View style={styles.strengthBarRow}>
-                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 1 ? strength.color : '#E2E8F0' }]} />
-                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 2 ? strength.color : '#E2E8F0' }]} />
-                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 3 ? strength.color : '#E2E8F0' }]} />
+                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 1 ? strength.color : 'rgba(255, 255, 255, 0.10)' }]} />
+                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 2 ? strength.color : 'rgba(255, 255, 255, 0.10)' }]} />
+                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 3 ? strength.color : 'rgba(255, 255, 255, 0.10)' }]} />
                   </View>
                   <View style={styles.criteriaList}>
                     <View style={styles.criteriaRow}>
-                      {hasMinLength ? <CheckCircle2 size={13} color="#10B981" /> : <Circle size={13} color="#94A3B8" />}
+                      {hasMinLength ? <CheckCircle2 size={13} color="#10B981" /> : <Circle size={13} color="#64748B" />}
                       <Text style={[styles.criteriaText, hasMinLength && styles.criteriaTextMet]}>8+ karakter</Text>
                     </View>
                     <View style={styles.criteriaRow}>
-                      {hasUppercase ? <CheckCircle2 size={13} color="#10B981" /> : <Circle size={13} color="#94A3B8" />}
+                      {hasUppercase ? <CheckCircle2 size={13} color="#10B981" /> : <Circle size={13} color="#64748B" />}
                       <Text style={[styles.criteriaText, hasUppercase && styles.criteriaTextMet]}>1 büyük harf</Text>
                     </View>
                     <View style={styles.criteriaRow}>
-                      {hasNumber ? <CheckCircle2 size={13} color="#10B981" /> : <Circle size={13} color="#94A3B8" />}
+                      {hasNumber ? <CheckCircle2 size={13} color="#10B981" /> : <Circle size={13} color="#64748B" />}
                       <Text style={[styles.criteriaText, hasNumber && styles.criteriaTextMet]}>1 rakam</Text>
                     </View>
                   </View>
@@ -1366,7 +1367,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#07090E',
   },
   flex1: {
     flex: 1,
@@ -1378,7 +1379,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   topBarRow: {
     flexDirection: 'row',
@@ -1396,34 +1397,34 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#F8FAFC',
     letterSpacing: -0.8,
   },
   logoDot: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#2563EB',
+    color: '#FF6B35',
   },
   stepProgressTrack: {
     flex: 1,
     height: 5,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 3,
     overflow: 'hidden',
     marginHorizontal: 8,
   },
   stepProgressBar: {
     height: '100%',
-    backgroundColor: '#2563EB',
+    backgroundColor: '#FF6B35',
     borderRadius: 3,
   },
   langPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: 10,
     height: 32,
     borderRadius: 16,
@@ -1431,7 +1432,7 @@ const styles = StyleSheet.create({
   langPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#E2F952',
   },
 
   // ─── Step 1: Hook ───
@@ -1457,9 +1458,9 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 16 / 9.5,
     borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
+    backgroundColor: '#0B0F19',
     overflow: 'hidden',
   },
   hookTextCol: {
@@ -1470,22 +1471,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(255, 107, 53, 0.12)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 53, 0.25)',
   },
   hookBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#FF6B35',
     letterSpacing: 0.8,
   },
   hookMainTitle: {
     fontSize: 32,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#F8FAFC',
     textAlign: 'center',
     letterSpacing: -0.9,
     lineHeight: 38,
@@ -1493,7 +1496,7 @@ const styles = StyleSheet.create({
   },
   hookSubTitle: {
     fontSize: 15,
-    color: '#64748B',
+    color: '#94A3B8',
     textAlign: 'center',
     lineHeight: 23,
     fontWeight: '400',
@@ -1507,14 +1510,14 @@ const styles = StyleSheet.create({
   primaryActionButton: {
     height: 56,
     borderRadius: 24,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#FF6B35',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    shadowColor: '#2563EB',
+    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 16,
     elevation: 4,
   },
@@ -1531,7 +1534,7 @@ const styles = StyleSheet.create({
   signInShortcutText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#94A3B8',
   },
 
   // ─── Step 2: Home ───
@@ -1546,13 +1549,13 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#F8FAFC',
     letterSpacing: -0.5,
     marginBottom: 6,
   },
   stepSub: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#94A3B8',
     lineHeight: 20,
   },
   mapCardWrapper: {
@@ -1564,9 +1567,9 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 16 / 9.5,
     borderRadius: 22,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    backgroundColor: '#0B0F19',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     overflow: 'hidden',
   },
   selectedHomePill: {
@@ -1576,40 +1579,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(15, 20, 32, 0.90)',
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   selectedHomePillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#F8FAFC',
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     marginBottom: 16,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#0F172A',
+    color: '#F8FAFC',
   },
   popularSection: {
     marginBottom: 16,
@@ -1617,7 +1615,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: '#64748B',
     letterSpacing: 0.8,
     marginBottom: 8,
   },
@@ -1630,16 +1628,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
   },
   countryChipActive: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#2563EB',
+    backgroundColor: 'rgba(255, 107, 53, 0.15)',
+    borderColor: '#FF6B35',
   },
   chipFlag: {
     fontSize: 15,
@@ -1647,10 +1645,10 @@ const styles = StyleSheet.create({
   chipName: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#334155',
+    color: '#94A3B8',
   },
   chipNameActive: {
-    color: '#2563EB',
+    color: '#FF6B35',
     fontWeight: '800',
   },
   countryListCol: {
@@ -1663,13 +1661,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   countryListItemActive: {
     borderColor: '#10B981',
-    backgroundColor: '#F0FDF4',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
   },
   countryListLeft: {
     flexDirection: 'row',
@@ -1682,26 +1680,26 @@ const styles = StyleSheet.create({
   countryListName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#F8FAFC',
   },
   countryListNameActive: {
-    color: '#065F46',
+    color: '#10B981',
   },
   countryListContinent: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#64748B',
   },
   stickyFooterBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: 'rgba(7, 9, 14, 0.95)',
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 24 : 20,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
 
   // ─── Step 3: Visited Grid ───
@@ -1712,13 +1710,13 @@ const styles = StyleSheet.create({
   },
   visitedTitleSection: {
     paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
   },
   visitedStepBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(46, 92, 255, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -1728,16 +1726,16 @@ const styles = StyleSheet.create({
   visitedStepBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#60A5FA',
     letterSpacing: 0.8,
   },
   visitedMapCard: {
     width: '100%',
     aspectRatio: 16 / 9.5,
     borderRadius: 22,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    backgroundColor: '#0B0F19',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     overflow: 'hidden',
   },
   visitedStatsRow: {
@@ -1750,7 +1748,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -1758,39 +1756,39 @@ const styles = StyleSheet.create({
   statPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#F8FAFC',
   },
   statPillHighlight: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: 'rgba(255, 107, 53, 0.15)',
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: 'rgba(255, 107, 53, 0.3)',
   },
   statPillHighlightText: {
     fontSize: 11,
     fontWeight: '900',
-    color: '#2563EB',
+    color: '#FF6B35',
   },
   filterSection: {
     paddingVertical: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
   },
   searchBoxCompact: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     marginBottom: 8,
   },
   searchInputCompact: {
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
-    color: '#0F172A',
+    color: '#F8FAFC',
   },
   continentChipsRow: {
     gap: 6,
@@ -1800,15 +1798,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   continentChipActive: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FF6B35',
   },
   continentChipText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#94A3B8',
   },
   continentChipTextActive: {
     color: '#FFFFFF',
@@ -1827,7 +1825,7 @@ const styles = StyleSheet.create({
   gridSelectedCountHint: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#E2F952',
   },
   flagGrid: {
     flexDirection: 'row',
@@ -1838,30 +1836,30 @@ const styles = StyleSheet.create({
     width: (SCREEN_WIDTH - 50) / 2,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 8,
   },
   flagGridCardActive: {
-    borderColor: '#2563EB',
-    backgroundColor: '#EFF6FF',
-    shadowColor: '#2563EB',
+    borderColor: '#2E5CFF',
+    backgroundColor: 'rgba(46, 92, 255, 0.18)',
+    shadowColor: '#2E5CFF',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 2,
   },
   flagGridCardHome: {
     borderColor: '#10B981',
-    backgroundColor: '#F0FDF4',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
   },
   flagGridCardWishlist: {
-    borderColor: '#F59E0B',
-    backgroundColor: '#FFFBEB',
+    borderColor: '#FF6B35',
+    backgroundColor: 'rgba(255, 107, 53, 0.15)',
   },
   flagGridEmoji: {
     fontSize: 22,
@@ -1870,14 +1868,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#F8FAFC',
   },
   flagGridTitleActive: {
-    color: '#2563EB',
+    color: '#60A5FA',
     fontWeight: '800',
   },
   flagGridTitleWishlist: {
-    color: '#B45309',
+    color: '#FF8A5B',
     fontWeight: '800',
   },
   flagGridCheck: {
@@ -1900,43 +1898,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(226, 249, 82, 0.12)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 249, 82, 0.25)',
   },
   celebrationBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#E2F952',
     letterSpacing: 0.8,
   },
   payoffTitle: {
     fontSize: 26,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#F8FAFC',
     textAlign: 'center',
     letterSpacing: -0.6,
   },
   statHeroBox: {
     width: '100%',
-    backgroundColor: '#0F172A',
+    backgroundColor: 'rgba(15, 20, 32, 0.90)',
     borderRadius: 30,
     paddingVertical: 28,
     paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.25,
     shadowRadius: 24,
     elevation: 5,
   },
   statHeroPercent: {
     fontSize: 64,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#E2F952',
     letterSpacing: -2,
     lineHeight: 68,
   },
@@ -1950,7 +1952,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: '100%',
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
     marginVertical: 20,
   },
   statTrioRow: {
@@ -1964,7 +1966,7 @@ const styles = StyleSheet.create({
   statTrioNum: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#F8FAFC',
   },
   statTrioLabel: {
     fontSize: 10,
@@ -1975,10 +1977,10 @@ const styles = StyleSheet.create({
   },
   badgeUnlockCard: {
     width: '100%',
-    backgroundColor: '#FFFBEB',
+    backgroundColor: 'rgba(124, 58, 237, 0.12)',
     borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: '#FDE68A',
+    borderWidth: 1,
+    borderColor: 'rgba(124, 58, 237, 0.25)',
     padding: 20,
     alignItems: 'center',
     marginBottom: 24,
@@ -1992,29 +1994,29 @@ const styles = StyleSheet.create({
   badgeUnlockSub: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#D97706',
+    color: '#A78BFA',
     letterSpacing: 1,
   },
   badgeMedalIcon: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: 'rgba(124, 58, 237, 0.20)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: 'rgba(124, 58, 237, 0.35)',
   },
   badgeNameText: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#92400E',
+    color: '#F8FAFC',
     marginBottom: 6,
   },
   badgeDescText: {
     fontSize: 12,
-    color: '#B45309',
+    color: '#C4B5FD',
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 12,
@@ -2040,12 +2042,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   skipSmallText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#94A3B8',
   },
 
   // ─── Step 6: Save Passport ───
@@ -2056,7 +2058,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: 'rgba(255, 107, 53, 0.12)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -2066,26 +2068,28 @@ const styles = StyleSheet.create({
   passportChipText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#FF6B35',
   },
   savePassportTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#F8FAFC',
     letterSpacing: -0.6,
     marginBottom: 6,
   },
   savePassportSub: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#94A3B8',
     lineHeight: 19,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
     padding: 4,
     marginBottom: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   tabItem: {
     flex: 1,
@@ -2094,12 +2098,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tabItemActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   tabText: {
     fontSize: 13,
@@ -2107,7 +2106,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   tabTextActive: {
-    color: '#0F172A',
+    color: '#F8FAFC',
     fontWeight: '800',
   },
   formCol: {
@@ -2117,36 +2116,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     borderRadius: 18,
     paddingHorizontal: 16,
     height: 54,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
   },
   inputBoxFocused: {
-    borderColor: '#2563EB',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    borderColor: '#FF6B35',
+    backgroundColor: 'rgba(20, 26, 40, 0.95)',
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: 14,
-    color: '#0F172A',
+    color: '#F8FAFC',
     fontWeight: '600',
     paddingVertical: 0,
   },
   strengthCard: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     gap: 8,
   },
   strengthHeaderRow: {
@@ -2156,7 +2150,7 @@ const styles = StyleSheet.create({
   },
   strengthTitle: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '600',
   },
   strengthBarRow: {
@@ -2182,11 +2176,11 @@ const styles = StyleSheet.create({
   },
   criteriaText: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#64748B',
     fontWeight: '600',
   },
   criteriaTextMet: {
-    color: '#0F172A',
+    color: '#F8FAFC',
     fontWeight: '700',
   },
   dividerRow: {
@@ -2198,12 +2192,12 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
   },
   dividerText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: '#64748B',
     letterSpacing: 0.5,
   },
   socialCol: {
@@ -2218,7 +2212,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   appleBtn: {
-    backgroundColor: '#000000',
+    backgroundColor: '#131B2E',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   appleBtnText: {
     color: '#FFFFFF',
@@ -2226,12 +2222,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   googleBtn: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.2,
-    borderColor: '#E2E8F0',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   googleBtnText: {
-    color: '#0F172A',
+    color: '#F8FAFC',
     fontSize: 15,
     fontWeight: '700',
   },
@@ -2245,12 +2241,12 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: 'rgba(255, 107, 53, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
     borderWidth: 1.5,
-    borderColor: '#DBEAFE',
+    borderColor: 'rgba(255, 107, 53, 0.3)',
   },
   otpBoxesRow: {
     flexDirection: 'row',
@@ -2263,19 +2259,19 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   otpBoxFilled: {
-    borderColor: '#2563EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: '#E2F952',
+    backgroundColor: 'rgba(20, 26, 40, 0.95)',
   },
   otpInput: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#F8FAFC',
     textAlign: 'center',
     width: '100%',
     height: '100%',

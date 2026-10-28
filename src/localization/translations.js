@@ -14,6 +14,23 @@ export const translations = {
     navStats: "Stats",
     navProfile: "Profile",
 
+    // Explore Screen
+    exploreTitle: "Explore the World",
+    exploreSubtitle: "Discover destinations, earn badges & track progress",
+    swipeCardTitle: "Wanderlust Deck",
+    swipeCardHint: "Swipe right to add to Wishlist, left to skip",
+    addToWishlist: "Add to Wishlist",
+    addedToWishlist: "Added to Wishlist! 🎉",
+    skipCountry: "Next Country",
+    achievementsTitle: "Achievements & Badges",
+    achievementsSubtitle: "Unlock badges as your travel map expands",
+    continentProgressTitle: "Continental Progress",
+    funFact: "Fun Fact",
+    unlocked: "Unlocked",
+    locked: "Locked",
+    allCaughtUp: "You've seen all suggestions for now!",
+    shuffleDeck: "Shuffle & Discover Again",
+
     // Home Screen
     planetaryReach: "Planetary Reach",
     reachBadgeText: "{percent}% OF EARTH",
@@ -223,6 +240,23 @@ export const translations = {
     navPassport: "Pasaport",
     navStats: "İstatistik",
     navProfile: "Profil",
+
+    // Explore Screen
+    exploreTitle: "Dünyayı Keşfet",
+    exploreSubtitle: "Yeni rotalar keşfet, rozetler kazan ve ilerlemeni gör",
+    swipeCardTitle: "Keşif Kartı",
+    swipeCardHint: "İstek listene eklemek için sağa, geçmek için sola kaydır",
+    addToWishlist: "Hedeflerime Ekle",
+    addedToWishlist: "Hedeflere Eklendi! 🎉",
+    skipCountry: "Sonraki Ülke",
+    achievementsTitle: "Başarımlar & Rozetler",
+    achievementsSubtitle: "Haritan genişledikçe yeni rozetlerin kilidini aç",
+    continentProgressTitle: "Kıta Bazlı İlerleme",
+    funFact: "Bunu Biliyor muydun?",
+    unlocked: "Kazanıldı",
+    locked: "Kilitli",
+    allCaughtUp: "Tüm önerileri inceledin!",
+    shuffleDeck: "Kartları Karıştır & Yeniden Keşfet",
 
     // Home Screen
     planetaryReach: "Küresel Ayak İzi",

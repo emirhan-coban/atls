@@ -27,8 +27,11 @@ import {
   Image as ImageIcon,
 } from 'lucide-react-native';
 import Svg, { G, Path } from 'react-native-svg';
+import GlowSphere from './GlowSphere';
+import OrbitalRings from './OrbitalRings';
 import { worldViewBox, worldMapFeatures } from '../data/worldMapPaths';
 import { getLocalizedCountryName, availableCatalog } from '../data/travelData';
+import { getDynamicLocation } from '../utils/locationHelper';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(width - 44, 350);
@@ -43,6 +46,7 @@ export default function PassportShareModal({
 }) {
   const cardRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [shareFormat, setShareFormat] = useState('card'); // 'card' | 'story'
 
   const visitedCount = countries.filter((c) => c.status === 'visited').length;
   const livedCount = countries.filter((c) => c.status === 'lived').length;
@@ -58,80 +62,10 @@ export default function PassportShareModal({
 
   const getFill = (id) => {
     const s = statusMap[id];
-    if (s === 'lived') return '#1D4ED8'; // Darker Royal Blue
-    if (s === 'visited') return '#2563EB'; // Royal Blue
-    if (s === 'want') return '#60A5FA'; // Light Blue
-    return '#E2E8F0'; // Default Slate
-  };
-
-  const getDynamicLocation = () => {
-    // 1. Explicit country selection
-    if (profile?.homeCountryId) {
-      const country = availableCatalog.find(
-        (c) => c.id.toUpperCase() === profile.homeCountryId.toUpperCase()
-      );
-      if (country) {
-        const cName = currentLang === 'tr' ? (country.nameTr || country.name) : country.name;
-        const text = profile.homeCity && profile.homeCity.trim()
-          ? `${profile.homeCity.trim()}, ${cName}`
-          : cName;
-        return {
-          flag: country.flag || '📍',
-          text,
-        };
-      }
-    }
-
-    // 2. Custom location string (if set directly)
-    if (profile?.customLocation && profile.customLocation.trim()) {
-      const trimmed = profile.customLocation.trim();
-      const match = trimmed.match(/^([\uD83C-\uDBFF\uDC00-\uDFFF\u2600-\u27BF\uFE0F\u200D]+)\s*(.*)$/);
-      if (match) {
-        return {
-          flag: match[1],
-          text: match[2],
-        };
-      }
-      const lower = trimmed.toLowerCase();
-      const matchedCountry = availableCatalog.find(
-        (c) => lower.includes(c.name.toLowerCase()) || (c.nameTr && lower.includes(c.nameTr.toLowerCase()))
-      );
-      if (matchedCountry) {
-        return {
-          flag: matchedCountry.flag,
-          text: trimmed,
-        };
-      }
-      return {
-        flag: null,
-        text: trimmed,
-      };
-    }
-
-    // 3. Dynamic: Lived-in country
-    const lived = countries.find((c) => c.status === 'lived');
-    if (lived) {
-      const locName = getLocalizedCountryName(lived, currentLang);
-      return {
-        flag: lived.flag || '📍',
-        text: `${locName} (${currentLang === 'tr' ? 'İkamet' : 'Home'})`,
-      };
-    }
-
-    // 4. Dynamic: Latest visited country
-    const visited = countries.find((c) => c.status === 'visited');
-    if (visited) {
-      const locName = getLocalizedCountryName(visited, currentLang);
-      return {
-        flag: visited.flag || '📍',
-        text: `${locName} (${currentLang === 'tr' ? 'Son Durak' : 'Latest'})`,
-      };
-    }
-
-    return {
-      flag: '🌍',
-      text: currentLang === 'tr' ? 'Dünya Vatandaşı' : 'Global Citizen',
-    };
+    if (s === 'lived') return '#10B981'; // Emerald
+    if (s === 'visited') return '#3B82F6'; // Electric Sapphire
+    if (s === 'want') return '#FF6B35'; // Solar Orange
+    return '#182235'; // Base Obsidian Landmass
   };
 
   // High-res 4:3 Photo Capture & Native Image Share
@@ -177,7 +111,7 @@ export default function PassportShareModal({
 
   if (!isOpen) return null;
 
-  const locationInfo = getDynamicLocation();
+  const locationInfo = getDynamicLocation(profile, countries, currentLang);
 
   return (
     <Modal
@@ -211,17 +145,58 @@ export default function PassportShareModal({
             </TouchableOpacity>
           </View>
 
+          {/* Format Toggle: 4:3 Card vs 9:16 Story */}
+          <View style={styles.formatToggleContainer}>
+            <TouchableOpacity
+              style={[styles.formatToggleBtn, shareFormat === 'card' && styles.formatToggleBtnActive]}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setShareFormat('card');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.formatToggleText, shareFormat === 'card' && styles.formatToggleTextActive]}>
+                {currentLang === 'tr' ? '💳 4:3 Kart' : '💳 4:3 Card'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.formatToggleBtn, shareFormat === 'story' && styles.formatToggleBtnActive]}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setShareFormat('story');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.formatToggleText, shareFormat === 'story' && styles.formatToggleTextActive]}>
+                {currentLang === 'tr' ? '📱 9:16 Story' : '📱 9:16 Story'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {/* CARD CONTAINER (Wrapped for capture) */}
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.cardScrollContainer}
           >
-            {/* 4:3 PURE WHITE PASSPORT PHOTO CARD */}
+            {/* 4:3 / 9:16 COSMIC LUXURY PASSPORT PHOTO CARD */}
             <View
               ref={cardRef}
               collapsable={false}
-              style={styles.photoCard}
+              style={[styles.photoCard, shareFormat === 'story' && styles.photoCardStory]}
             >
+              {/* Background Celestial Glowing Sphere & Orbital Lines */}
+              <GlowSphere
+                size={220}
+                colors={['#FF6B35', '#2E5CFF']}
+                opacity={0.3}
+                style={{ position: 'absolute', top: -30, right: -30 }}
+              />
+              <OrbitalRings
+                size={180}
+                style={{ position: 'absolute', top: -15, right: -15, opacity: 0.25 }}
+              />
+
               {/* Card Header: Brand & Security Pill */}
               <View style={styles.cardHeader}>
                 <View style={styles.brandRow}>
@@ -230,7 +205,7 @@ export default function PassportShareModal({
                 </View>
 
                 <View style={styles.passportBadge}>
-                  <ShieldCheck size={11} color="#2563EB" />
+                  <ShieldCheck size={11} color="#E2F952" />
                   <Text style={styles.passportBadgeText}>
                     {currentLang === 'tr' ? 'BİYOMETRİK PASAPORT' : 'BIOMETRIC PASSPORT'}
                   </Text>
@@ -241,7 +216,7 @@ export default function PassportShareModal({
               <View style={styles.profileSection}>
                 <View style={styles.avatarBox}>
                   <LinearGradient
-                    colors={['#2563EB', '#1D4ED8']}
+                    colors={['#3B82F6', '#1E40AF']}
                     style={styles.avatarGradient}
                   >
                     <Text style={styles.avatarText}>{profile?.avatarInitials || 'TR'}</Text>
@@ -255,7 +230,7 @@ export default function PassportShareModal({
                     {locationInfo.flag ? (
                       <Text style={styles.locationFlag}>{locationInfo.flag}</Text>
                     ) : (
-                      <MapPin size={10} color="#2563EB" />
+                      <MapPin size={10} color="#FF6B35" />
                     )}
                     <Text style={styles.locationText}>
                       {locationInfo.text}
@@ -267,7 +242,7 @@ export default function PassportShareModal({
               {/* Mini World Map */}
               <View style={styles.mapBox}>
                 <Svg viewBox={worldViewBox} style={styles.mapSvg}>
-                  <G stroke="#FFFFFF" strokeWidth={0.6}>
+                  <G stroke="#232F48" strokeWidth={0.5}>
                     {worldMapFeatures.map((f, i) => (
                       <Path
                         key={`${f.id}-${i}`}
@@ -279,7 +254,7 @@ export default function PassportShareModal({
                 </Svg>
 
                 <View style={styles.mapPill}>
-                  <Plane size={9} color="#2563EB" style={{ transform: [{ rotate: '45deg' }] }} />
+                  <Plane size={9} color="#60A5FA" style={{ transform: [{ rotate: '45deg' }] }} />
                   <Text style={styles.mapPillText}>
                     {currentLang === 'tr' ? `%${earthPercent} DÜNYA KEŞFİ` : `%${earthPercent} EXPLORED`}
                   </Text>
@@ -289,7 +264,7 @@ export default function PassportShareModal({
               {/* Stats Bar */}
               <View style={styles.statsGrid}>
                 <View style={styles.statItem}>
-                  <Text style={[styles.statNum, { color: '#2563EB' }]}>
+                  <Text style={[styles.statNum, { color: '#60A5FA' }]}>
                     {visitedCount < 10 ? `0${visitedCount}` : visitedCount}
                   </Text>
                   <Text style={styles.statLabel}>{t?.visited || 'Gezilen'}</Text>
@@ -298,7 +273,7 @@ export default function PassportShareModal({
                 <View style={styles.statDivider} />
 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statNum, { color: '#1D4ED8' }]}>
+                  <Text style={[styles.statNum, { color: '#34D399' }]}>
                     {livedCount < 10 ? `0${livedCount}` : livedCount}
                   </Text>
                   <Text style={styles.statLabel}>{t?.livedIn || 'Yaşanan'}</Text>
@@ -307,7 +282,7 @@ export default function PassportShareModal({
                 <View style={styles.statDivider} />
 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statNum, { color: '#0284C7' }]}>
+                  <Text style={[styles.statNum, { color: '#FF8A5B' }]}>
                     {wantCount < 10 ? `0${wantCount}` : wantCount}
                   </Text>
                   <Text style={styles.statLabel}>{t?.wishlist || 'Hedef'}</Text>
@@ -325,7 +300,7 @@ export default function PassportShareModal({
                   </Text>
                 </View>
                 <View style={styles.qrContainer}>
-                  <QrCode size={22} color="#0F172A" />
+                  <QrCode size={22} color="#07090E" />
                 </View>
               </View>
             </View>
@@ -341,14 +316,14 @@ export default function PassportShareModal({
             >
               {isCapturing ? (
                 <>
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color="#07090E" size="small" />
                   <Text style={styles.primaryActionBtnText}>
                     {currentLang === 'tr' ? 'Fotoğraf Hazırlanıyor...' : 'Generating Photo...'}
                   </Text>
                 </>
               ) : (
                 <>
-                  <ImageIcon size={18} color="#FFFFFF" />
+                  <ImageIcon size={18} color="#07090E" />
                   <Text style={styles.primaryActionBtnText}>
                     {currentLang === 'tr' ? 'Fotoğraf Olarak Paylaş / Kaydet' : 'Share / Save Photo'}
                   </Text>
@@ -365,25 +340,27 @@ export default function PassportShareModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#0D111A',
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingTop: 12,
     paddingHorizontal: 20,
     paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     maxHeight: '94%',
   },
   handleBar: {
     width: 44,
     height: 5,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 2.5,
     alignSelf: 'center',
     marginBottom: 14,
@@ -397,12 +374,12 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
     letterSpacing: -0.5,
   },
   sheetSubtitle: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
     marginTop: 2,
     fontWeight: '500',
   },
@@ -410,7 +387,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -419,21 +396,56 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
 
-  // 4:3 Aspect Ratio White Card
+  // 4:3 Aspect Ratio Cosmic Card
   photoCard: {
     width: CARD_WIDTH,
-    aspectRatio: 3 / 4, // 3:4 portrait photo standard (4:3 ratio)
-    backgroundColor: '#FFFFFF',
+    aspectRatio: 3 / 4,
+    backgroundColor: '#07090E',
     borderRadius: 24,
     padding: 18,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'space-between',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.45,
+    shadowRadius: 24,
+    elevation: 6,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  photoCardStory: {
+    aspectRatio: 9 / 16,
+    paddingVertical: 24,
+  },
+  formatToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 14,
+    padding: 3,
+    marginBottom: 14,
+    width: CARD_WIDTH,
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
+  },
+  formatToggleBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 11,
+  },
+  formatToggleBtnActive: {
+    backgroundColor: '#FF6B35',
+  },
+  formatToggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  formatToggleTextActive: {
+    color: '#07090E',
+    fontWeight: '900',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -447,21 +459,21 @@ const styles = StyleSheet.create({
   brandText: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
     letterSpacing: -0.5,
   },
   brandDot: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#2563EB',
+    color: '#FF6B35',
   },
   passportBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(226, 249, 82, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.15)',
+    borderColor: 'rgba(226, 249, 82, 0.3)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -469,7 +481,7 @@ const styles = StyleSheet.create({
   passportBadgeText: {
     fontSize: 8,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#E2F952',
     letterSpacing: 0.5,
   },
   profileSection: {
@@ -500,12 +512,12 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
     letterSpacing: -0.3,
   },
   userHandle: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '600',
   },
   locationRow: {
@@ -520,17 +532,17 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 9.5,
-    color: '#2563EB',
+    color: '#FF6B35',
     fontWeight: '700',
   },
   mapBox: {
     width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#07090E',
     borderRadius: 16,
     padding: 6,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     overflow: 'hidden',
     position: 'relative',
     marginVertical: 10,
@@ -546,31 +558,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(15, 20, 32, 0.9)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   mapPillText: {
     fontSize: 8,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#60A5FA',
     letterSpacing: 0.4,
   },
   statsGrid: {
     flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 14,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 8,
   },
   statItem: {
@@ -584,13 +591,13 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 8.5,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#94A3B8',
     marginTop: 1,
   },
   statDivider: {
     width: 1,
     height: '60%',
-    backgroundColor: '#E2E8F0',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignSelf: 'center',
   },
   cardFooter: {
@@ -598,7 +605,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
     paddingTop: 8,
   },
   footerLeft: {
@@ -607,7 +614,7 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: 9.5,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#FFFFFF',
   },
   passportIdText: {
     fontSize: 8,
@@ -618,29 +625,29 @@ const styles = StyleSheet.create({
   },
   qrContainer: {
     padding: 4,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
   },
   actionsContainer: {
     marginTop: 14,
   },
   primaryActionBtn: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#FF6B35',
     borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 16,
-    shadowColor: '#2563EB',
+    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 3,
   },
   primaryActionBtnText: {
     fontSize: 14,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontWeight: '900',
+    color: '#07090E',
   },
 });

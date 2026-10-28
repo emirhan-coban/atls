@@ -30,6 +30,7 @@ import {
   Edit3,
 } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
+import GlowSphere from './GlowSphere';
 import { authService } from '../services/authService';
 import { generateHandle } from '../services/storageService';
 
@@ -402,157 +403,185 @@ export default function AuthScreen({
   // If OTP Step is active
   if (isOtpStep) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.topBar}>
-          <View style={styles.logoRow}>
-            <Text style={styles.logoText}>atls</Text>
-            <Text style={styles.logoDot}>.</Text>
+      <View style={styles.outerWrapper}>
+        <GlowSphere
+          size={300}
+          colors={['#FF6B35', 'transparent']}
+          opacity={0.16}
+          style={{ position: 'absolute', top: -70, right: -80, pointerEvents: 'none' }}
+        />
+        <GlowSphere
+          size={260}
+          colors={['#2E5CFF', 'transparent']}
+          opacity={0.14}
+          style={{ position: 'absolute', bottom: 100, left: -80, pointerEvents: 'none' }}
+        />
+        <SafeAreaView style={styles.container}>
+          <View style={styles.topBar}>
+            <View style={styles.logoRow}>
+              <Text style={styles.logoText}>atls</Text>
+              <Text style={styles.logoDot}>.</Text>
+            </View>
           </View>
-        </View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.keyboardContainer}
-        >
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            <View style={styles.headerTextCol}>
-              <View style={styles.otpIconBadge}>
-                <KeyRound size={28} color="#2563EB" strokeWidth={2} />
-              </View>
-
-              <Text style={styles.mainTitle}>
-                {t?.otpTitle || (currentLang === 'tr' ? 'E-postanızı Doğrulayın' : 'Verify Your Email')}
-              </Text>
-              
-              <Text style={styles.subTitle}>
-                {currentLang === 'tr' 
-                  ? 'Kişisel pasaportunuzu güvenceye almak için gönderilen 6 haneli güvenlik kodunu girin.' 
-                  : 'Enter the 6-digit security code sent to protect your passport.'}
-              </Text>
-
-              {/* Target Email Capsule with Edit Button */}
-              <View style={styles.emailBadge}>
-                <Mail size={14} color="#2563EB" />
-                <Text style={styles.emailBadgeText} numberOfLines={1}>{email}</Text>
-                <TouchableOpacity
-                  onPress={() => setIsOtpStep(false)}
-                  style={styles.editEmailBtn}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Edit3 size={13} color="#64748B" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* 6 Digit Input Boxes */}
-            <View style={styles.otpBoxesRow}>
-              {otpDigits.map((digit, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    styles.otpBox,
-                    digit ? styles.otpBoxFilled : null,
-                    focusedField === `otp_${idx}` ? styles.otpBoxFocused : null,
-                  ]}
-                >
-                  <TextInput
-                    ref={(el) => (otpInputsRef.current[idx] = el)}
-                    value={digit}
-                    onChangeText={(val) => handleOtpChange(val, idx)}
-                    onKeyPress={(e) => handleOtpKeyPress(e, idx)}
-                    onFocus={() => setFocusedField(`otp_${idx}`)}
-                    onBlur={() => setFocusedField(null)}
-                    keyboardType="number-pad"
-                    maxLength={idx === 0 ? 6 : 1}
-                    selectTextOnFocus
-                    style={styles.otpInput}
-                  />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.keyboardContainer}
+          >
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+              <View style={styles.headerTextCol}>
+                <View style={styles.otpIconBadge}>
+                  <KeyRound size={28} color="#FF6B35" strokeWidth={2} />
                 </View>
-              ))}
-            </View>
 
-            {/* Verify Button */}
-            <TouchableOpacity
-              onPress={handleVerifyOtp}
-              activeOpacity={0.85}
-              disabled={isLoading}
-              style={[styles.primaryBtn, isLoading && { opacity: 0.7 }]}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <>
-                  <Text style={styles.primaryBtnText}>
-                    {t?.otpVerifyBtn || (currentLang === 'tr' ? 'Doğrula ve Pasaporta Gir' : 'Verify & Enter Passport')}
-                  </Text>
-                  <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Resend Code Section */}
-            <View style={styles.resendRow}>
-              {canResendOtp ? (
-                <TouchableOpacity
-                  onPress={handleResendOtp}
-                  style={styles.resendBtn}
-                  activeOpacity={0.7}
-                  disabled={isLoading}
-                >
-                  <RefreshCw size={14} color="#2563EB" />
-                  <Text style={styles.resendBtnText}>
-                    {t?.otpResend || (currentLang === 'tr' ? 'Kodu Tekrar Gönder' : 'Resend Code')}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <Text style={styles.timerText}>
-                  {t?.otpResendIn?.replace('{seconds}', otpTimer) || `${otpTimer}s sonra tekrar gönder`}
+                <Text style={styles.mainTitle}>
+                  {t?.otpTitle || (currentLang === 'tr' ? 'E-postanızı Doğrulayın' : 'Verify Your Email')}
                 </Text>
-              )}
-            </View>
+                
+                <Text style={styles.subTitle}>
+                  {currentLang === 'tr' 
+                    ? 'Kişisel pasaportunuzu güvenceye almak için gönderilen 6 haneli güvenlik kodunu girin.' 
+                    : 'Enter the 6-digit security code sent to protect your passport.'}
+                </Text>
 
-            {/* Back to Edit Button */}
-            <TouchableOpacity
-              onPress={() => setIsOtpStep(false)}
-              style={styles.backBtn}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.backBtnText}>
-                {t?.otpChangeEmail || (currentLang === 'tr' ? 'Farklı bir e-posta ile dene' : 'Try with different email')}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+                {/* Target Email Capsule with Edit Button */}
+                <View style={styles.emailBadge}>
+                  <Mail size={14} color="#E2F952" />
+                  <Text style={styles.emailBadgeText} numberOfLines={1}>{email}</Text>
+                  <TouchableOpacity
+                    onPress={() => setIsOtpStep(false)}
+                    style={styles.editEmailBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Edit3 size={13} color="#94A3B8" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 6 Digit Input Boxes */}
+              <View style={styles.otpBoxesRow}>
+                {otpDigits.map((digit, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.otpBox,
+                      digit ? styles.otpBoxFilled : null,
+                      focusedField === `otp_${idx}` ? styles.otpBoxFocused : null,
+                    ]}
+                  >
+                    <TextInput
+                      ref={(el) => (otpInputsRef.current[idx] = el)}
+                      value={digit}
+                      onChangeText={(val) => handleOtpChange(val, idx)}
+                      onKeyPress={(e) => handleOtpKeyPress(e, idx)}
+                      onFocus={() => setFocusedField(`otp_${idx}`)}
+                      onBlur={() => setFocusedField(null)}
+                      keyboardType="number-pad"
+                      maxLength={idx === 0 ? 6 : 1}
+                      selectTextOnFocus
+                      placeholderTextColor="#64748B"
+                      style={styles.otpInput}
+                    />
+                  </View>
+                ))}
+              </View>
+
+              {/* Verify Button */}
+              <TouchableOpacity
+                onPress={handleVerifyOtp}
+                activeOpacity={0.85}
+                disabled={isLoading}
+                style={[styles.primaryBtn, isLoading && { opacity: 0.7 }]}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <Text style={styles.primaryBtnText}>
+                      {t?.otpVerifyBtn || (currentLang === 'tr' ? 'Doğrula ve Pasaporta Gir' : 'Verify & Enter Passport')}
+                    </Text>
+                    <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />
+                  </>
+                )}
+              </TouchableOpacity>
+
+              {/* Resend Code Section */}
+              <View style={styles.resendRow}>
+                {canResendOtp ? (
+                  <TouchableOpacity
+                    onPress={handleResendOtp}
+                    style={styles.resendBtn}
+                    activeOpacity={0.7}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw size={14} color="#E2F952" />
+                    <Text style={styles.resendBtnText}>
+                      {t?.otpResend || (currentLang === 'tr' ? 'Kodu Tekrar Gönder' : 'Resend Code')}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={styles.timerText}>
+                    {t?.otpResendIn?.replace('{seconds}', otpTimer) || `${otpTimer}s sonra tekrar gönder`}
+                  </Text>
+                )}
+              </View>
+
+              {/* Back to Edit Button */}
+              <TouchableOpacity
+                onPress={() => setIsOtpStep(false)}
+                style={styles.backBtn}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.backBtnText}>
+                  {t?.otpChangeEmail || (currentLang === 'tr' ? 'Farklı bir e-posta ile dene' : 'Try with different email')}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </View>
     );
   }
 
   // Standard Login / Register View
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top Header */}
-      <View style={styles.topBar}>
-        <View style={styles.logoRow}>
-          <Text style={styles.logoText}>atls</Text>
-          <Text style={styles.logoDot}>.</Text>
-        </View>
+    <View style={styles.outerWrapper}>
+      <GlowSphere
+        size={320}
+        colors={['#FF6B35', 'transparent']}
+        opacity={0.16}
+        style={{ position: 'absolute', top: -70, right: -80, pointerEvents: 'none' }}
+      />
+      <GlowSphere
+        size={280}
+        colors={['#2E5CFF', 'transparent']}
+        opacity={0.14}
+        style={{ position: 'absolute', top: 380, left: -90, pointerEvents: 'none' }}
+      />
+      <SafeAreaView style={styles.container}>
+        {/* Top Header */}
+        <View style={styles.topBar}>
+          <View style={styles.logoRow}>
+            <Text style={styles.logoText}>atls</Text>
+            <Text style={styles.logoDot}>.</Text>
+          </View>
 
-        {onToggleLang && (
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.selectionAsync();
-              onToggleLang();
-            }}
-            activeOpacity={0.7}
-            style={styles.langPill}
-          >
-            <Languages size={13} color="#2563EB" />
-            <Text style={styles.langPillText}>
-              {t?.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
+          {onToggleLang && (
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.selectionAsync();
+                onToggleLang();
+              }}
+              activeOpacity={0.7}
+              style={styles.langPill}
+            >
+              <Languages size={13} color="#E2F952" />
+              <Text style={styles.langPillText}>
+                {t?.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -622,7 +651,7 @@ export default function AuthScreen({
                   focusedField === 'name' && styles.inputBoxFocused,
                 ]}
               >
-                <User size={18} color={focusedField === 'name' ? '#2563EB' : '#94A3B8'} />
+                <User size={18} color={focusedField === 'name' ? '#FF6B35' : '#64748B'} />
                 <TextInput
                   ref={nameInputRef}
                   value={name}
@@ -630,7 +659,7 @@ export default function AuthScreen({
                   onFocus={() => setFocusedField('name')}
                   onBlur={() => setFocusedField(null)}
                   placeholder={t?.fullName || 'Ad Soyad'}
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#64748B"
                   autoCapitalize="words"
                   autoCorrect={false}
                   style={styles.input}
@@ -646,7 +675,7 @@ export default function AuthScreen({
                 focusedField === 'email' && styles.inputBoxFocused,
               ]}
             >
-              <Mail size={18} color={focusedField === 'email' ? '#2563EB' : '#94A3B8'} />
+              <Mail size={18} color={focusedField === 'email' ? '#FF6B35' : '#64748B'} />
               <TextInput
                 ref={emailInputRef}
                 value={email}
@@ -654,7 +683,7 @@ export default function AuthScreen({
                 onFocus={() => setFocusedField('email')}
                 onBlur={() => setFocusedField(null)}
                 placeholder={t?.email || 'E-posta adresi'}
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#64748B"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -671,7 +700,7 @@ export default function AuthScreen({
                 focusedField === 'password' && styles.inputBoxFocused,
               ]}
             >
-              <Lock size={18} color={focusedField === 'password' ? '#2563EB' : '#94A3B8'} />
+              <Lock size={18} color={focusedField === 'password' ? '#FF6B35' : '#64748B'} />
               <TextInput
                 ref={passwordInputRef}
                 value={password}
@@ -679,7 +708,7 @@ export default function AuthScreen({
                 onFocus={() => setFocusedField('password')}
                 onBlur={() => setFocusedField(null)}
                 placeholder={tab === 'register' ? (t?.password || 'Şifre (en az 8 karakter)') : (t?.password || 'Şifre')}
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#64748B"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -715,19 +744,19 @@ export default function AuthScreen({
                   <View
                     style={[
                       styles.strengthBarSegment,
-                      { backgroundColor: strength.score >= 1 ? strength.color : '#E2E8F0' },
+                      { backgroundColor: strength.score >= 1 ? strength.color : 'rgba(255, 255, 255, 0.10)' },
                     ]}
                   />
                   <View
                     style={[
                       styles.strengthBarSegment,
-                      { backgroundColor: strength.score >= 2 ? strength.color : '#E2E8F0' },
+                      { backgroundColor: strength.score >= 2 ? strength.color : 'rgba(255, 255, 255, 0.10)' },
                     ]}
                   />
                   <View
                     style={[
                       styles.strengthBarSegment,
-                      { backgroundColor: strength.score >= 3 ? strength.color : '#E2E8F0' },
+                      { backgroundColor: strength.score >= 3 ? strength.color : 'rgba(255, 255, 255, 0.10)' },
                     ]}
                   />
                 </View>
@@ -738,7 +767,7 @@ export default function AuthScreen({
                     {hasMinLength ? (
                       <CheckCircle2 size={13} color="#10B981" />
                     ) : (
-                      <Circle size={13} color="#94A3B8" />
+                      <Circle size={13} color="#64748B" />
                     )}
                     <Text style={[styles.criteriaText, hasMinLength && styles.criteriaTextMet]}>
                       {t?.reqMinChars || 'En az 8 karakter'}
@@ -749,7 +778,7 @@ export default function AuthScreen({
                     {hasUppercase ? (
                       <CheckCircle2 size={13} color="#10B981" />
                     ) : (
-                      <Circle size={13} color="#94A3B8" />
+                      <Circle size={13} color="#64748B" />
                     )}
                     <Text style={[styles.criteriaText, hasUppercase && styles.criteriaTextMet]}>
                       {t?.reqUppercase || 'En az 1 büyük harf'}
@@ -760,7 +789,7 @@ export default function AuthScreen({
                     {hasNumber ? (
                       <CheckCircle2 size={13} color="#10B981" />
                     ) : (
-                      <Circle size={13} color="#94A3B8" />
+                      <Circle size={13} color="#64748B" />
                     )}
                     <Text style={[styles.criteriaText, hasNumber && styles.criteriaTextMet]}>
                       {t?.reqNumber || 'En az 1 rakam'}
@@ -827,7 +856,7 @@ export default function AuthScreen({
 
           {/* Security & Official Badge */}
           <View style={styles.securityBadge}>
-            <ShieldCheck size={14} color="#2563EB" />
+            <ShieldCheck size={14} color="#60A5FA" />
             <Text style={styles.securityText}>
               {currentLang === 'tr' 
                 ? 'Resmi Biyometrik Pasaport & Güvenli Bulut Eşitleme' 
@@ -837,13 +866,18 @@ export default function AuthScreen({
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerWrapper: {
+    flex: 1,
+    backgroundColor: '#07090E',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
   },
   topBar: {
     flexDirection: 'row',
@@ -860,34 +894,29 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#090B10',
+    color: '#F8FAFC',
     letterSpacing: -0.8,
   },
   logoDot: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#2563EB',
+    color: '#FF6B35',
   },
   langPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: 12,
     height: 36,
     borderRadius: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
   },
   langPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#E2F952',
   },
   keyboardContainer: {
     flex: 1,
@@ -903,22 +932,24 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#F8FAFC',
     letterSpacing: -0.6,
     marginBottom: 8,
   },
   subTitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#94A3B8',
     lineHeight: 21,
     fontWeight: '400',
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
     padding: 4,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   tabItem: {
     flex: 1,
@@ -927,12 +958,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tabItemActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   tabText: {
     fontSize: 13,
@@ -940,7 +966,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   tabTextActive: {
-    color: '#0F172A',
+    color: '#F8FAFC',
     fontWeight: '800',
   },
   form: {
@@ -950,36 +976,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     borderRadius: 18,
     paddingHorizontal: 16,
     height: 54,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
   },
   inputBoxFocused: {
-    borderColor: '#2563EB',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    borderColor: '#FF6B35',
+    backgroundColor: 'rgba(20, 26, 40, 0.95)',
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: 14,
-    color: '#0F172A',
+    color: '#F8FAFC',
     fontWeight: '600',
     paddingVertical: 0,
   },
   strengthCard: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     gap: 8,
     marginTop: -4,
   },
@@ -990,7 +1011,7 @@ const styles = StyleSheet.create({
   },
   strengthTitle: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '600',
   },
   strengthBarRow: {
@@ -1016,11 +1037,11 @@ const styles = StyleSheet.create({
   },
   criteriaText: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#64748B',
     fontWeight: '600',
   },
   criteriaTextMet: {
-    color: '#0F172A',
+    color: '#F8FAFC',
     fontWeight: '700',
   },
   primaryBtn: {
@@ -1029,12 +1050,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#FF6B35',
     borderRadius: 22,
     marginTop: 8,
-    shadowColor: '#2563EB',
+    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 3,
   },
@@ -1049,18 +1070,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: 'rgba(37, 99, 235, 0.06)',
+    backgroundColor: 'rgba(46, 92, 255, 0.08)',
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 16,
     marginTop: 32,
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.12)',
+    borderColor: 'rgba(46, 92, 255, 0.20)',
   },
   securityText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#60A5FA',
   },
   dividerRow: {
     flexDirection: 'row',
@@ -1072,12 +1093,12 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
   },
   dividerText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: '#64748B',
     letterSpacing: 0.5,
   },
   socialCol: {
@@ -1092,12 +1113,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   appleBtn: {
-    backgroundColor: '#000000',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    backgroundColor: '#131B2E',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   appleBtnText: {
     color: '#FFFFFF',
@@ -1106,17 +1124,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   googleBtn: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.2,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   googleBtnText: {
-    color: '#0F172A',
+    color: '#F8FAFC',
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: -0.2,
@@ -1127,30 +1140,30 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: 'rgba(255, 107, 53, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 1.5,
-    borderColor: '#DBEAFE',
+    borderColor: 'rgba(255, 107, 53, 0.3)',
   },
   emailBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     marginTop: 12,
     alignSelf: 'flex-start',
   },
   emailBadgeText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#F8FAFC',
   },
   editEmailBtn: {
     padding: 2,
@@ -1167,28 +1180,23 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   otpBoxFilled: {
-    borderColor: '#94A3B8',
-    backgroundColor: '#FFFFFF',
+    borderColor: '#E2F952',
+    backgroundColor: 'rgba(20, 26, 40, 0.95)',
   },
   otpBoxFocused: {
-    borderColor: '#2563EB',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 2,
+    borderColor: '#FF6B35',
+    backgroundColor: 'rgba(20, 26, 40, 0.95)',
   },
   otpInput: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#F8FAFC',
     textAlign: 'center',
     width: '100%',
     height: '100%',
@@ -1207,7 +1215,7 @@ const styles = StyleSheet.create({
   resendBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#E2F952',
   },
   timerText: {
     fontSize: 13,
@@ -1221,7 +1229,7 @@ const styles = StyleSheet.create({
   },
   backBtnText: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '600',
   },
 });

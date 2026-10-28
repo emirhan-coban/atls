@@ -22,10 +22,15 @@ import {
   Compass,
   Calendar,
   Sparkles,
+  Trophy,
 } from 'lucide-react-native';
 import WorldMap from './WorldMap';
+import AnimatedCounter from './AnimatedCounter';
+import GlowSphere from './GlowSphere';
+import OrbitalRings from './OrbitalRings';
 import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
 import { getCountryTrivia } from '../data/countryTrivia';
+import { ACHIEVEMENTS } from '../data/achievements';
 
 export default function HomeScreen({
   countries,
@@ -33,6 +38,7 @@ export default function HomeScreen({
   onOpenAddModal,
   onSelectCountry,
   onNavigateToPassport,
+  onNavigateToExplore,
   t,
   currentLang,
   onToggleLang,
@@ -47,6 +53,9 @@ export default function HomeScreen({
     ? markedCountries[countryCardIndex % markedCountries.length]
     : null;
 
+  const nextAchievement = ACHIEVEMENTS.find((a) => !a.isUnlocked(countries, profile));
+  const nextProgress = nextAchievement ? nextAchievement.getProgress(countries, profile) : null;
+
   const stamps = markedCountries.slice(0, 6).map((c, idx) => {
     const locName = getLocalizedCountryName(c, currentLang);
     return {
@@ -56,8 +65,8 @@ export default function HomeScreen({
       country: locName,
       date: formatCountryDate(c, currentLang) || c.year || c.visitedYear || new Date().getFullYear().toString(),
       type: c.status === 'lived' ? (currentLang === 'tr' ? 'İKAMET' : 'RESIDENCE') : (currentLang === 'tr' ? 'GİRİŞ' : 'ENTRY'),
-      accentColor: idx % 3 === 0 ? '#4F46E5' : idx % 3 === 1 ? '#059669' : '#2563EB',
-      bg: idx % 3 === 0 ? '#EEF2FF' : idx % 3 === 1 ? '#ECFDF5' : '#EFF6FF',
+      accentColor: idx % 3 === 0 ? '#3B82F6' : idx % 3 === 1 ? '#10B981' : '#FF6B35',
+      bg: idx % 3 === 0 ? 'rgba(59, 130, 246, 0.15)' : idx % 3 === 1 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 107, 53, 0.15)',
     };
   });
 
@@ -90,169 +99,210 @@ export default function HomeScreen({
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header Bar */}
-      <View style={styles.header}>
-        <View style={styles.logoRow}>
-          <Text style={styles.logoText}>atls</Text>
-          <Text style={styles.logoDot}>.</Text>
+    <View style={styles.outerWrapper}>
+      {/* Background Celestial Glowing Spheres */}
+      <GlowSphere
+        size={380}
+        colors={['#2E5CFF', '#FF6B35']}
+        opacity={0.24}
+        style={{ position: 'absolute', top: -110, right: -120 }}
+      />
+      <GlowSphere
+        size={280}
+        colors={['#7C3AED', '#2E5CFF']}
+        opacity={0.16}
+        style={{ position: 'absolute', top: 380, left: -100 }}
+      />
+
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Bar */}
+        <View style={styles.header}>
+          <View style={styles.logoRow}>
+            <Text style={styles.logoText}>atls</Text>
+            <Text style={styles.logoDot}>.</Text>
+          </View>
+
+          {/* Right Actions: Language Switcher & Biometric Auth Button */}
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.selectionAsync();
+                onToggleLang();
+              }}
+              activeOpacity={0.7}
+              style={styles.langPill}
+            >
+              <Languages size={13} color="#E2F952" />
+              <Text style={styles.langPillText}>{t.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleBiometricPress}
+              activeOpacity={0.8}
+              style={styles.biometricButton}
+            >
+              <Fingerprint size={20} color="#3B82F6" strokeWidth={2} />
+              <View style={styles.biometricDot} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Right Actions: Language Switcher & Biometric Auth Button */}
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.selectionAsync();
-              onToggleLang();
-            }}
-            activeOpacity={0.7}
-            style={styles.langPill}
-          >
-            <Languages size={13} color="#2563EB" />
-            <Text style={styles.langPillText}>{t.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleBiometricPress}
-            activeOpacity={0.8}
-            style={styles.biometricButton}
-          >
-            <Fingerprint size={22} color="#2563EB" strokeWidth={2} />
-            <View style={styles.biometricDot} />
-          </TouchableOpacity>
+        {/* Cosmic Explorer Greeting */}
+        <View style={styles.explorerGreetingRow}>
+          <Text style={styles.explorerGreetingText}>
+            {currentLang === 'tr' ? 'Merhaba, Gezgin! 🪐' : 'Hey Explorer! 🪐'}
+          </Text>
+          <Text style={styles.explorerGreetingSub}>
+            {currentLang === 'tr' ? 'Galaktik rota seni nereye çağırıyor?' : 'Where does your orbit lead today?'}
+          </Text>
         </View>
-      </View>
 
-      {/* HERO CARD: Empty State OR Visited Country Highlight */}
-      {!hasCountries ? (
-        /* EMPTY STATE: Call to action when no country has been added yet */
-        <View style={styles.emptyHeroCard}>
-          <View style={styles.emptyBadgeRow}>
-            <View style={styles.emptyIconBadge}>
-              <Compass size={22} color="#2563EB" />
+        {/* HERO CARD: Empty State OR Visited Country Highlight */}
+        {!hasCountries ? (
+          /* EMPTY STATE: Call to action when no country has been added yet */
+          <View style={styles.emptyHeroCard}>
+            <OrbitalRings size={180} style={{ position: 'absolute', right: -25, top: -15, opacity: 0.22 }} />
+            <View style={styles.emptyBadgeRow}>
+              <View style={styles.emptyIconBadge}>
+                <Compass size={22} color="#3B82F6" />
+              </View>
+              <View style={styles.emptyPill}>
+                <Sparkles size={11} color="#E2F952" />
+                <Text style={styles.emptyPillText}>
+                  {currentLang === 'tr' ? 'KİŞİSEL KARTIN' : 'PERSONAL CARD'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.emptyPill}>
-              <Sparkles size={11} color="#2563EB" />
-              <Text style={styles.emptyPillText}>
-                {currentLang === 'tr' ? 'KİŞİSEL KARTIN' : 'PERSONAL CARD'}
+
+            <View style={styles.emptyTextContent}>
+              <Text style={styles.emptyHeroTitle}>
+                {currentLang === 'tr' ? 'İlk Ülkeni Keşfe Başla' : 'Discover Your First Country'}
+              </Text>
+              <Text style={styles.emptyHeroDesc}>
+                {currentLang === 'tr'
+                  ? 'Bir ülke ekle ve sana özel seyahat kartın burada canlansın. Dünya pasaportunu mühürlemeye şimdi başla!'
+                  : 'Add a country and your personalized travel card will come alive here. Start stamping your world passport!'}
               </Text>
             </View>
-          </View>
 
-          <View style={styles.emptyTextContent}>
-            <Text style={styles.emptyHeroTitle}>
-              {currentLang === 'tr' ? 'İlk Ülkeni Keşfe Başla' : 'Discover Your First Country'}
-            </Text>
-            <Text style={styles.emptyHeroDesc}>
-              {currentLang === 'tr'
-                ? 'Bir ülke ekle ve sana özel seyahat kartın burada canlansın. Dünya pasaportunu mühürlemeye şimdi başla!'
-                : 'Add a country and your personalized travel card will come alive here. Start stamping your world passport!'}
-            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onOpenAddModal();
+              }}
+              activeOpacity={0.85}
+              style={styles.emptyCtaButton}
+            >
+              <Plus size={16} color="#07090E" strokeWidth={2.5} />
+              <Text style={styles.emptyCtaButtonText}>
+                {currentLang === 'tr' ? '+ Ülke Ekle' : '+ Add Country'}
+              </Text>
+            </TouchableOpacity>
           </View>
+        ) : (
+          /* POPULATED STATE: User's stamped countries with curated trivia */
+          <View style={styles.countryHeroCard}>
+            <OrbitalRings size={200} style={{ position: 'absolute', right: -30, top: -20, opacity: 0.3 }} />
+            {/* Top Row: Tag, Flag & Year */}
+            <View style={styles.countryHeroTopRow}>
+              <View style={styles.countryHeroBadges}>
+                <View style={styles.countryStatusPill}>
+                  <Text style={styles.countryStatusPillText}>
+                    {currentMarkedCountry.status === 'lived'
+                      ? (currentLang === 'tr' ? 'YAŞANDI' : 'LIVED')
+                      : (currentLang === 'tr' ? 'ZİYARET EDİLDİ' : 'VISITED')}
+                  </Text>
+                </View>
 
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onOpenAddModal();
-            }}
-            activeOpacity={0.85}
-            style={styles.emptyCtaButton}
-          >
-            <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-            <Text style={styles.emptyCtaButtonText}>
-              {currentLang === 'tr' ? '+ Ülke Ekle' : '+ Add Country'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        /* POPULATED STATE: User's stamped countries with curated trivia */
-        <View style={styles.countryHeroCard}>
-          {/* Top Row: Tag, Flag & Year */}
-          <View style={styles.countryHeroTopRow}>
-            <View style={styles.countryHeroBadges}>
-              <View style={styles.countryStatusPill}>
-                <Text style={styles.countryStatusPillText}>
-                  {currentMarkedCountry.status === 'lived'
-                    ? (currentLang === 'tr' ? 'YAŞANDI' : 'LIVED')
-                    : (currentLang === 'tr' ? 'ZİYARET EDİLDİ' : 'VISITED')}
-                </Text>
+                <View style={styles.countryYearPill}>
+                  <Calendar size={11} color="#FF6B35" />
+                  <Text style={styles.countryYearPillText}>
+                    {formatCountryDate(currentMarkedCountry, currentLang) || currentMarkedCountry.year || currentMarkedCountry.visitedYear || new Date().getFullYear()}
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.countryYearPill}>
-                <Calendar size={11} color="#2563EB" />
-                <Text style={styles.countryYearPillText}>
-                  {formatCountryDate(currentMarkedCountry, currentLang) || currentMarkedCountry.year || currentMarkedCountry.visitedYear || new Date().getFullYear()}
-                </Text>
-              </View>
+              <Text style={styles.countryHeroFlag}>{currentMarkedCountry.flag || '🌍'}</Text>
             </View>
 
-            <Text style={styles.countryHeroFlag}>{currentMarkedCountry.flag || '🌍'}</Text>
-          </View>
-
-          {/* Country Name & Trivia */}
-          <View style={styles.countryHeroTextContent}>
-            <Text
-              style={styles.countryHeroTitle}
-              numberOfLines={2}
-              adjustsFontSizeToFit={true}
-              minimumFontScale={0.75}
+            {/* Country Name & Trivia */}
+            <TouchableOpacity
+              style={styles.countryHeroTextContent}
+              activeOpacity={0.85}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (onSelectCountry && currentMarkedCountry) {
+                  onSelectCountry(currentMarkedCountry.id);
+                }
+              }}
             >
-              {getLocalizedCountryName(currentMarkedCountry, currentLang)}
-            </Text>
-            <Text style={styles.countryHeroDesc} numberOfLines={3}>
-              {getCountryTrivia(
-                currentMarkedCountry.id,
-                getLocalizedCountryName(currentMarkedCountry, currentLang),
-                currentLang
-              )}
-            </Text>
-          </View>
+              <Text
+                style={styles.countryHeroTitle}
+                numberOfLines={2}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.75}
+              >
+                {getLocalizedCountryName(currentMarkedCountry, currentLang)}
+              </Text>
+              <Text style={styles.countryHeroDesc} numberOfLines={3}>
+                {getCountryTrivia(
+                  currentMarkedCountry.id,
+                  getLocalizedCountryName(currentMarkedCountry, currentLang),
+                  currentLang
+                )}
+              </Text>
+            </TouchableOpacity>
 
-          {/* Footer: Counter & Carousel Navigation */}
-          <View style={styles.countryHeroFooter}>
-            <Text style={styles.countryCounterText}>
-              {`${(countryCardIndex % markedCountries.length) + 1} / ${markedCountries.length} ${currentLang === 'tr' ? 'Ülke' : 'Countries'}`}
-            </Text>
+            {/* Footer: Counter & Carousel Navigation */}
+            <View style={styles.countryHeroFooter}>
+              <Text style={styles.countryCounterText}>
+                {`${(countryCardIndex % markedCountries.length) + 1} / ${markedCountries.length} ${currentLang === 'tr' ? 'Ülke' : 'Countries'}`}
+              </Text>
 
-            {markedCountries.length > 1 && (
-              <View style={styles.carouselControls}>
-                <TouchableOpacity onPress={handlePrevCountry} style={styles.arrowButton}>
-                  <ChevronLeft size={15} color="#0F172A" />
-                </TouchableOpacity>
-                <View style={styles.dotsRow}>
-                  {markedCountries.slice(0, 6).map((_, i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.dot,
-                        i === (countryCardIndex % markedCountries.length)
-                          ? styles.dotActive
-                          : styles.dotInactive,
-                      ]}
-                    />
-                  ))}
+              {markedCountries.length > 1 && (
+                <View style={styles.carouselControls}>
+                  <TouchableOpacity onPress={handlePrevCountry} style={styles.arrowButton}>
+                    <ChevronLeft size={15} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  <View style={styles.dotsRow}>
+                    {markedCountries.slice(0, 6).map((_, i) => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.dot,
+                          i === (countryCardIndex % markedCountries.length)
+                            ? styles.dotActive
+                            : styles.dotInactive,
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <TouchableOpacity onPress={handleNextCountry} style={styles.arrowButton}>
+                    <ChevronRight size={15} color="#FFFFFF" />
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={handleNextCountry} style={styles.arrowButton}>
-                  <ChevronRight size={15} color="#0F172A" />
-                </TouchableOpacity>
-              </View>
-            )}
+              )}
+            </View>
           </View>
-        </View>
-      )}
+        )}
 
-      {/* SECTION: Planetary Reach */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{t.planetaryReach}</Text>
-        <View style={styles.reachBadge}>
-          <Plane size={11} color="#2563EB" style={{ transform: [{ rotate: '45deg' }] }} />
-          <Text style={styles.reachBadgeText}>
-            {t.reachBadgeText ? t.reachBadgeText.replace('{percent}', earthPercentage) : `${earthPercentage}%`}
-          </Text>
+        {/* SECTION: Planetary Reach */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t.planetaryReach}</Text>
+          <View style={styles.reachBadge}>
+            <Plane size={11} color="#60A5FA" style={{ transform: [{ rotate: '45deg' }] }} />
+          <AnimatedCounter
+            value={Number(earthPercentage) || 0}
+            formatter={(v) => {
+              const valStr = v.toFixed(1);
+              return t.reachBadgeText ? t.reachBadgeText.replace('{percent}', valStr) : `${valStr}%`;
+            }}
+            style={styles.reachBadgeText}
+          />
         </View>
       </View>
 
@@ -266,7 +316,7 @@ export default function HomeScreen({
           currentLang={currentLang}
         />
 
-        {/* Stats Row */}
+        {/* Stats Row - Playful Candy Tiles */}
         <View style={styles.statsRow}>
           {/* Visited */}
           <TouchableOpacity
@@ -274,15 +324,21 @@ export default function HomeScreen({
             activeOpacity={0.7}
             style={[
               styles.statBox,
+              styles.statBoxVisited,
               activeFilter === 'visited' && styles.statBoxActiveVisited,
             ]}
           >
-            <Text style={styles.statNumber}>
-              {visitedCount < 10 ? `0${visitedCount}` : visitedCount}
-            </Text>
+            <AnimatedCounter
+              value={visitedCount}
+              formatter={(v) => {
+                const rounded = Math.round(v);
+                return rounded < 10 ? `0${rounded}` : `${rounded}`;
+              }}
+              style={[styles.statNumber, { color: '#60A5FA' }]}
+            />
             <View style={styles.statLabelRow}>
-              <View style={[styles.statusDot, { backgroundColor: '#2563EB' }]} />
-              <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              <View style={[styles.statusDot, { backgroundColor: '#3B82F6' }]} />
+              <Text style={[styles.statLabel, { color: '#93C5FD' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {t.visited}
               </Text>
             </View>
@@ -294,15 +350,21 @@ export default function HomeScreen({
             activeOpacity={0.7}
             style={[
               styles.statBox,
+              styles.statBoxLived,
               activeFilter === 'lived' && styles.statBoxActiveLived,
             ]}
           >
-            <Text style={styles.statNumber}>
-              {livedCount < 10 ? `0${livedCount}` : livedCount}
-            </Text>
+            <AnimatedCounter
+              value={livedCount}
+              formatter={(v) => {
+                const rounded = Math.round(v);
+                return rounded < 10 ? `0${rounded}` : `${rounded}`;
+              }}
+              style={[styles.statNumber, { color: '#34D399' }]}
+            />
             <View style={styles.statLabelRow}>
-              <View style={[styles.statusDot, { backgroundColor: '#1D4ED8' }]} />
-              <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              <View style={[styles.statusDot, { backgroundColor: '#10B981' }]} />
+              <Text style={[styles.statLabel, { color: '#6EE7B7' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {t.livedIn}
               </Text>
             </View>
@@ -314,15 +376,21 @@ export default function HomeScreen({
             activeOpacity={0.7}
             style={[
               styles.statBox,
+              styles.statBoxWant,
               activeFilter === 'want' && styles.statBoxActiveWant,
             ]}
           >
-            <Text style={styles.statNumber}>
-              {wantCount < 10 ? `0${wantCount}` : wantCount}
-            </Text>
+            <AnimatedCounter
+              value={wantCount}
+              formatter={(v) => {
+                const rounded = Math.round(v);
+                return rounded < 10 ? `0${rounded}` : `${rounded}`;
+              }}
+              style={[styles.statNumber, { color: '#FF8A5B' }]}
+            />
             <View style={styles.statLabelRow}>
-              <View style={[styles.statusDot, { backgroundColor: '#38BDF8' }]} />
-              <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              <View style={[styles.statusDot, { backgroundColor: '#FF6B35' }]} />
+              <Text style={[styles.statLabel, { color: '#FDBA74' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {t.wishlist}
               </Text>
             </View>
@@ -344,9 +412,52 @@ export default function HomeScreen({
           <Text style={styles.searchPlaceholder}>{t.findCountry}</Text>
         </View>
         <View style={styles.plusButton}>
-          <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+          <Plus size={16} color="#07090E" strokeWidth={2.5} />
         </View>
       </TouchableOpacity>
+
+      {/* NEXT MILESTONE BANNER */}
+      {nextAchievement && (
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (onNavigateToExplore) onNavigateToExplore();
+          }}
+          activeOpacity={0.85}
+          style={styles.milestoneCard}
+        >
+          <View style={styles.milestoneLeft}>
+            <View style={styles.milestoneIconBox}>
+              <Text style={{ fontSize: 22 }}>{nextAchievement.badgeEmoji}</Text>
+            </View>
+            <View style={styles.milestoneTextContainer}>
+              <View style={styles.milestoneTitleRow}>
+                <Text style={styles.milestoneBadgeLabel}>
+                  {currentLang === 'tr' ? 'SIRADAKİ HEDEF' : 'NEXT MILESTONE'}
+                </Text>
+                <Text style={styles.milestoneRatio}>
+                  {nextProgress ? `${nextProgress.current}/${nextProgress.target}` : ''}
+                </Text>
+              </View>
+              <Text style={styles.milestoneTitle}>
+                {currentLang === 'tr' ? nextAchievement.titleTr : nextAchievement.titleEn}
+              </Text>
+              <View style={styles.milestoneProgressBar}>
+                <View
+                  style={[
+                    styles.milestoneProgressFill,
+                    {
+                      width: `${nextProgress ? nextProgress.percent : 0}%`,
+                      backgroundColor: nextAchievement.accentColor,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          </View>
+          <ChevronRight size={18} color="#94A3B8" />
+        </TouchableOpacity>
+      )}
 
       {/* SECTION: Recent Arrivals & Stamps */}
       <View style={[styles.sectionHeader, { marginTop: 10 }]}>
@@ -364,12 +475,12 @@ export default function HomeScreen({
         >
           <View style={styles.emptyRecentLeft}>
             <View style={styles.emptyCompassBox}>
-              <Compass size={20} color="#2563EB" strokeWidth={2} />
+              <Compass size={20} color="#FF6B35" strokeWidth={2} />
             </View>
             <Text style={styles.emptyRecentText}>{t.emptyMapHint}</Text>
           </View>
           <View style={styles.emptyRecentAddBtn}>
-            <Plus size={15} color="#FFFFFF" strokeWidth={2.5} />
+            <Plus size={15} color="#07090E" strokeWidth={2.5} />
           </View>
         </TouchableOpacity>
       ) : (
@@ -378,8 +489,22 @@ export default function HomeScreen({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.stampsScroll}
         >
-          {stamps.map((stamp) => (
-            <View key={stamp.id} style={styles.stampCard}>
+          {stamps.map((stamp, idx) => (
+            <TouchableOpacity
+              key={stamp.id}
+              style={[
+                styles.stampCard,
+                {
+                  borderColor: stamp.accentColor,
+                  transform: [{ rotate: idx % 2 === 0 ? '-1.5deg' : '1.5deg' }],
+                },
+              ]}
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (onSelectCountry) onSelectCountry(stamp.code);
+              }}
+            >
               <View style={styles.stampHeader}>
                 <View style={styles.codeBadge}>
                   <Text style={styles.codeText}>{stamp.code}</Text>
@@ -404,18 +529,25 @@ export default function HomeScreen({
                 </Text>
                 <ArrowUpRight size={12} color="#94A3B8" />
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}
     </ScrollView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerWrapper: {
+    flex: 1,
+    backgroundColor: '#07090E',
+    position: 'relative',
+    overflow: 'hidden',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
   },
   contentContainer: {
     paddingHorizontal: 22,
@@ -435,13 +567,29 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 30,
     fontWeight: '900',
-    color: '#090B10',
+    color: '#FFFFFF',
     letterSpacing: -0.8,
   },
   logoDot: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: '900',
-    color: '#2563EB',
+    color: '#FF6B35',
+  },
+  explorerGreetingRow: {
+    marginTop: 2,
+    marginBottom: 12,
+  },
+  explorerGreetingText: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  explorerGreetingSub: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#94A3B8',
+    marginTop: 2,
   },
   subtitleText: {
     fontSize: 10,
@@ -459,35 +607,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: 12,
     height: 38,
     borderRadius: 19,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   langPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#E2F952',
   },
   biometricButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 2,
     position: 'relative',
@@ -499,23 +647,25 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#10B981',
+    backgroundColor: '#E2F952',
     borderWidth: 1.5,
-    borderColor: '#FFFFFF',
+    borderColor: '#07090E',
   },
   // Empty State Card
   emptyHeroCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     borderRadius: 26,
     padding: 22,
     marginTop: 12,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 4,
+    overflow: 'hidden',
+    position: 'relative',
   },
   emptyBadgeRow: {
     flexDirection: 'row',
@@ -527,17 +677,19 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.15)',
+    borderColor: 'rgba(59, 130, 246, 0.3)',
   },
   emptyPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(226, 249, 82, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(226, 249, 82, 0.3)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
@@ -545,7 +697,7 @@ const styles = StyleSheet.create({
   emptyPillText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#E2F952',
     letterSpacing: 0.6,
   },
   emptyTextContent: {
@@ -554,13 +706,13 @@ const styles = StyleSheet.create({
   emptyHeroTitle: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
     letterSpacing: -0.5,
     marginBottom: 6,
   },
   emptyHeroDesc: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#94A3B8',
     lineHeight: 20,
     fontWeight: '400',
   },
@@ -569,34 +721,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#FF6B35',
     borderRadius: 18,
     paddingVertical: 14,
-    shadowColor: '#2563EB',
+    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 4,
   },
   emptyCtaButtonText: {
-    color: '#FFFFFF',
+    color: '#07090E',
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '900',
   },
 
   // Populated Country Highlight Card
   countryHeroCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
     borderRadius: 26,
     padding: 22,
     marginTop: 12,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 4,
+    overflow: 'hidden',
+    position: 'relative',
   },
   countryHeroTopRow: {
     flexDirection: 'row',
@@ -613,9 +767,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   countryStatusPill: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.2)',
+    borderColor: 'rgba(59, 130, 246, 0.35)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
@@ -624,16 +778,16 @@ const styles = StyleSheet.create({
   countryStatusPillText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#60A5FA',
     letterSpacing: 0.5,
   },
   countryYearPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 14,
@@ -642,7 +796,7 @@ const styles = StyleSheet.create({
   countryYearPillText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#E2E8F0',
   },
   countryHeroFlag: {
     fontSize: 28,
@@ -655,14 +809,14 @@ const styles = StyleSheet.create({
   countryHeroTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
     letterSpacing: -0.6,
     marginBottom: 6,
     flexShrink: 1,
   },
   countryHeroDesc: {
     fontSize: 12.5,
-    color: '#475569',
+    color: '#94A3B8',
     lineHeight: 19,
     fontWeight: '400',
   },
@@ -672,7 +826,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
   countryCounterText: {
     fontSize: 11,
@@ -688,7 +842,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -703,11 +857,11 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     width: 14,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#FF6B35',
   },
   dotInactive: {
     width: 4,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -720,14 +874,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
     letterSpacing: -0.3,
   },
   reachBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 16,
@@ -735,19 +891,19 @@ const styles = StyleSheet.create({
   reachBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#60A5FA',
     letterSpacing: 0.5,
   },
   mapCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(11, 15, 25, 0.88)',
     borderRadius: 28,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
     elevation: 3,
   },
   statsRow: {
@@ -756,34 +912,45 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F8FAFC',
-    gap: 6,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 8,
   },
   statBox: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  statBoxVisited: {
+    backgroundColor: 'rgba(59, 130, 246, 0.10)',
+    borderColor: 'rgba(59, 130, 246, 0.25)',
+  },
+  statBoxLived: {
+    backgroundColor: 'rgba(16, 185, 129, 0.10)',
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+  },
+  statBoxWant: {
+    backgroundColor: 'rgba(255, 107, 53, 0.10)',
+    borderColor: 'rgba(255, 107, 53, 0.25)',
   },
   statBoxActiveVisited: {
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
-    borderWidth: 1,
-    borderColor: '#2563EB',
+    borderWidth: 1.5,
+    borderColor: '#3B82F6',
   },
   statBoxActiveLived: {
-    backgroundColor: 'rgba(29, 78, 216, 0.08)',
-    borderWidth: 1,
-    borderColor: '#1D4ED8',
+    borderWidth: 1.5,
+    borderColor: '#10B981',
   },
   statBoxActiveWant: {
-    backgroundColor: 'rgba(56, 189, 248, 0.12)',
-    borderWidth: 1,
-    borderColor: '#38BDF8',
+    borderWidth: 1.5,
+    borderColor: '#FF6B35',
   },
   statNumber: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
     fontVariant: ['tabular-nums'],
   },
   statLabelRow: {
@@ -800,24 +967,24 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#94A3B8',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    borderRadius: 22,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginTop: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.10)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
     shadowRadius: 6,
-    elevation: 1,
+    elevation: 2,
   },
   searchLeft: {
     flexDirection: 'row',
@@ -833,37 +1000,38 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 10,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#FF6B35',
     justifyContent: 'center',
     alignItems: 'center',
   },
   stampsTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: '#64748B',
     letterSpacing: 0.8,
   },
   viewAllText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#2563EB',
+    color: '#E2F952',
   },
   stampsScroll: {
     gap: 12,
     paddingVertical: 6,
   },
   stampCard: {
-    width: 150,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    width: 152,
+    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    borderRadius: 18,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderStyle: 'solid',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 2,
   },
   stampHeader: {
     flexDirection: 'row',
@@ -872,7 +1040,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   codeBadge: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -880,7 +1048,7 @@ const styles = StyleSheet.create({
   codeText: {
     fontSize: 11,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
   },
   typeBadge: {
     paddingHorizontal: 5,
@@ -897,35 +1065,35 @@ const styles = StyleSheet.create({
   cityText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#FFFFFF',
   },
   countryText: {
     fontSize: 10,
-    color: '#64748B',
+    color: '#94A3B8',
   },
   stampFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#F8FAFC',
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
     paddingTop: 6,
   },
   dateText: {
     fontSize: 9,
-    color: '#94A3B8',
+    color: '#64748B',
     fontWeight: '600',
   },
   emptyRecentCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(15, 20, 32, 0.65)',
     borderRadius: 20,
     paddingVertical: 16,
     paddingHorizontal: 18,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     borderStyle: 'dashed',
     marginTop: 6,
   },
@@ -940,22 +1108,94 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: 'rgba(255, 107, 53, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 53, 0.25)',
   },
   emptyRecentText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#334155',
+    color: '#94A3B8',
     flex: 1,
   },
   emptyRecentAddBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#FF6B35',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  milestoneCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(124, 58, 237, 0.12)',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 58, 237, 0.28)',
+    marginTop: 12,
+    marginBottom: 4,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  milestoneLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+    marginRight: 8,
+  },
+  milestoneIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  milestoneTextContainer: {
+    flex: 1,
+  },
+  milestoneTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  milestoneBadgeLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#C084FC',
+    letterSpacing: 0.8,
+  },
+  milestoneRatio: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  milestoneTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 6,
+  },
+  milestoneProgressBar: {
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  milestoneProgressFill: {
+    height: '100%',
+    borderRadius: 2,
   },
 });
