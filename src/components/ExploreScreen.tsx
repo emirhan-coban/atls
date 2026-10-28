@@ -6,8 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Image,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { 
   Compass, 
@@ -18,14 +20,15 @@ import {
   Plus, 
   Check, 
   Languages,
-  Sparkles,
+  Navigation,
+  ExternalLink,
   BookmarkCheck,
-  ChevronRight
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react-native';
-import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
-import { getCountryGuide } from '../data/travelGuides';
+import { CURATED_DESTINATIONS, CuratedDestination, MapPoint } from '../data/curatedDestinations';
+import { openAppleMaps, openGoogleMaps } from '../utils/mapHelper';
 import { Country, Profile } from '../stores/types';
-import { theme } from '../theme';
 
 interface ExploreScreenProps {
   countries: Country[];
@@ -43,24 +46,20 @@ const CONTINENTS = [
   { id: 'Asia', tr: 'Asya', en: 'Asia' },
   { id: 'Americas', tr: 'Amerika', en: 'Americas' },
   { id: 'Africa', tr: 'Afrika', en: 'Africa' },
-  { id: 'Oceania', tr: 'Okyanusya', en: 'Oceania' },
 ];
 
-// Highlighted iconic curated list first for inspiring explore deck
-const FEATURED_COUNTRY_CODES = ['IT', 'JP', 'FR', 'ES', 'TR', 'GR', 'PT', 'TH', 'GE', 'MX', 'GB', 'US', 'CH', 'DE', 'NL'];
-
-export default function ExploreScreen({
+function ExploreScreen({
   countries,
   onAddToWishlist,
   onMarkVisited,
-  t,
   currentLang,
   onToggleLang,
 }: ExploreScreenProps) {
   const [selectedContinent, setSelectedContinent] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedCountryId, setExpandedCountryId] = useState<string | null>('IT'); // Default first expanded
 
-  // Map user's existing statuses
+  // Visited and wishlist tracking
   const visitedSet = useMemo(() => {
     return new Set(
       countries
@@ -77,76 +76,126 @@ export default function ExploreScreen({
     );
   }, [countries]);
 
-  // Sort and filter country list
-  const filteredCountries = useMemo(() => {
-    // Put featured countries first, then the rest
-    const sortedCatalog = [...availableCatalog].sort((a, b) => {
-      const aFeatured = FEATURED_COUNTRY_CODES.includes(a.id);
-      const bFeatured = FEATURED_COUNTRY_CODES.includes(b.id);
-      if (aFeatured && !bFeatured) return -1;
-      if (!aFeatured && bFeatured) return 1;
-      return 0;
-    });
+  // Filter destinations
+  const filteredDestinations = useMemo(() => {
+    return CURATED_DESTINATIONS.filter((item) => {
+      if (selectedContinent !== 'all') {
+        const itemContinent = (item.continent || '').toLowerCase();
+        const selContinent = selectedContinent.toLowerCase();
 
-    return sortedCatalog.filter((c) => {
-      // Continent filter
-      if (selectedContinent !== 'all' && c.continent !== selectedContinent) {
-        return false;
+        if (selContinent === 'americas' || selContinent === 'america') {
+          if (!itemContinent.includes('america')) {
+            return false;
+          }
+        } else if (itemContinent !== selContinent) {
+          return false;
+        }
       }
 
-      // Search filter
       if (searchQuery.trim().length > 0) {
         const query = searchQuery.toLowerCase();
-        const locName = getLocalizedCountryName(c, currentLang).toLowerCase();
-        const guide = getCountryGuide(c.id, c.name, c.continent);
-        const foodText = guide.food[currentLang].toLowerCase();
-        const seeText = guide.see[currentLang].toLowerCase();
-        const tipText = guide.tip[currentLang].toLowerCase();
-
-        return (
-          locName.includes(query) ||
-          c.name.toLowerCase().includes(query) ||
-          c.id.toLowerCase().includes(query) ||
-          foodText.includes(query) ||
-          seeText.includes(query) ||
-          tipText.includes(query)
-        );
+        const nameMatch = item.name.toLowerCase().includes(query) || item.nameTr.toLowerCase().includes(query);
+        const cityMatch = item.seePlaces.some(p => p.city.toLowerCase().includes(query) || p.title.toLowerCase().includes(query));
+        const foodMatch = item.foodPlaces.some(p => p.title.toLowerCase().includes(query) || p.city.toLowerCase().includes(query));
+        return nameMatch || cityMatch || foodMatch;
       }
 
       return true;
     });
-  }, [selectedContinent, searchQuery, currentLang]);
+  }, [selectedContinent, searchQuery]);
 
   const handleContinentSelect = (continentId: string) => {
     Haptics.selectionAsync();
     setSelectedContinent(continentId);
   };
 
-  const handleAddToWishlist = (countryItem: any) => {
+  const handleToggleExpand = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setExpandedCountryId(prev => (prev === id ? null : id));
+  };
+
+  const handleAddToWishlist = (dest: CuratedDestination) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onAddToWishlist({
-      ...countryItem,
+      id: dest.id,
+      name: dest.name,
+      nameTr: dest.nameTr,
+      flag: dest.flag,
+      continent: dest.continent,
+      continentTr: dest.continentTr,
       status: 'want',
       year: new Date().getFullYear().toString(),
     });
   };
 
-  const handleMarkVisited = (countryItem: any) => {
+  const handleMarkVisited = (dest: CuratedDestination) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const payload = {
+      id: dest.id,
+      name: dest.name,
+      nameTr: dest.nameTr,
+      flag: dest.flag,
+      continent: dest.continent,
+      continentTr: dest.continentTr,
+      status: 'visited',
+      year: new Date().getFullYear().toString(),
+    };
     if (onMarkVisited) {
-      onMarkVisited({
-        ...countryItem,
-        status: 'visited',
-        year: new Date().getFullYear().toString(),
-      });
+      onMarkVisited(payload);
     } else {
-      // Fallback to onAddToWishlist with status visited
-      onAddToWishlist({
-        ...countryItem,
-        status: 'visited',
-        year: new Date().getFullYear().toString(),
-      });
+      onAddToWishlist(payload);
     }
+  };
+
+  const renderMapPoint = (point: MapPoint, isFood: boolean = false) => {
+    return (
+      <View key={point.title} style={styles.pointCard}>
+        <View style={styles.pointHeader}>
+          <View style={[styles.pointIconBox, isFood ? styles.foodIconBox : styles.seeIconBox]}>
+            {isFood ? (
+              <Utensils size={13} color="#E5A93C" />
+            ) : (
+              <MapPin size={13} color="#3B82F6" />
+            )}
+          </View>
+          <View style={styles.pointTitles}>
+            <Text style={styles.pointMainTitle}>{point.title}</Text>
+            <Text style={styles.pointSubtitle}>
+              {point.city} • {point.subtitle}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.pointDesc}>{point.desc[currentLang]}</Text>
+
+        {/* Clickable Maps Launchers */}
+        <View style={styles.mapButtonsRow}>
+          <TouchableOpacity
+            style={[styles.mapBtn, styles.appleMapBtn]}
+            onPress={() => {
+              Haptics.selectionAsync();
+              openAppleMaps(point.mapQuery);
+            }}
+            activeOpacity={0.75}
+          >
+            <Navigation size={12} color="#FFFFFF" />
+            <Text style={styles.mapBtnTextApple}>Apple Maps</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.mapBtn, styles.googleMapBtn]}
+            onPress={() => {
+              Haptics.selectionAsync();
+              openGoogleMaps(point.mapQuery);
+            }}
+            activeOpacity={0.75}
+          >
+            <ExternalLink size={12} color="#CBD5E1" />
+            <Text style={styles.mapBtnTextGoogle}>Google Maps</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
   return (
@@ -157,51 +206,33 @@ export default function ExploreScreen({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Clean Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.badgeRow}>
-              <Compass size={16} color="#E5A93C" />
-              <Text style={styles.badgeText}>
-                {currentLang === 'tr' ? 'GEZGİN REHBERİ' : 'TRAVEL GUIDE'}
-              </Text>
-            </View>
-            <Text style={styles.title}>
-              {currentLang === 'tr' ? 'Ne Yenir? Ne Gezilir?' : 'Eat & Wander Guide'}
-            </Text>
-            <Text style={styles.subtitle}>
-              {currentLang === 'tr'
-                ? 'İkonik sokak lezzetleri, görülmesi gereken gizli köşeler ve yerel tüyolar.'
-                : 'Iconic street bites, must-see secret spots & insider traveler hacks.'}
+        {/* Page Subheader */}
+        <View style={styles.pageSubheader}>
+          <View style={styles.badgeRow}>
+            <Compass size={14} color="#E5A93C" />
+            <Text style={styles.badgeText}>
+              {currentLang === 'tr' ? 'GEZGİN REHBERİ' : 'CURATED GUIDE'}
             </Text>
           </View>
-
-          {onToggleLang && (
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.selectionAsync();
-                onToggleLang();
-              }}
-              activeOpacity={0.7}
-              style={styles.langPill}
-            >
-              <Languages size={14} color="#E5A93C" />
-              <Text style={styles.langPillText}>
-                {currentLang === 'tr' ? 'EN' : 'TR'}
-              </Text>
-            </TouchableOpacity>
-          )}
+          <Text style={styles.title}>
+            {currentLang === 'tr' ? 'Nerede Ne Yenir & Ne Gezilir?' : 'Eat & Wander Guide'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {currentLang === 'tr'
+              ? 'Popüler rotaların konum noktaları, mekan önerileri ve harita bağlantıları.'
+              : 'Exact map points, handpicked food spots & one-click navigation.'}
+          </Text>
         </View>
 
         {/* Search Bar */}
         <View style={styles.searchWrapper}>
-          <Search size={18} color="#64748B" style={styles.searchIcon} />
+          <Search size={17} color="#64748B" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder={
               currentLang === 'tr'
-                ? 'Ülke, lezzet veya şehir ara... (Örn. İtalya, Ramen, Roma)'
-                : 'Search country, dish or city... (e.g. Italy, Ramen, Rome)'
+                ? 'Ülke, şehir veya lezzet ara... (Örn. Roma, Ramen, Paris)'
+                : 'Search country, city or dish... (e.g. Rome, Ramen, Paris)'
             }
             placeholderTextColor="#64748B"
             value={searchQuery}
@@ -242,135 +273,153 @@ export default function ExploreScreen({
         {/* Results Counter */}
         <View style={styles.counterRow}>
           <Text style={styles.counterText}>
-            {filteredCountries.length}{' '}
-            {currentLang === 'tr' ? 'ülke rehberi listeleniyor' : 'destinations curated'}
+            {filteredDestinations.length}{' '}
+            {currentLang === 'tr' ? 'özenle hazırlanmış rota' : 'handcrafted destinations'}
           </Text>
         </View>
 
-        {/* Travel Guide Cards */}
-        <View style={styles.cardList}>
-          {filteredCountries.map((country) => {
-            const localizedName = getLocalizedCountryName(country, currentLang);
-            const guide = getCountryGuide(country.id, localizedName, country.continent);
-            const isVisited = visitedSet.has(country.id);
-            const isWishlisted = wishlistSet.has(country.id);
+        {/* Curated Destination Cards */}
+        <View style={styles.destinationList}>
+          {filteredDestinations.map((dest) => {
+            const isExpanded = expandedCountryId === dest.id;
+            const isVisited = visitedSet.has(dest.id);
+            const isWishlisted = wishlistSet.has(dest.id);
+            const countryDisplayName = currentLang === 'tr' ? dest.nameTr : dest.name;
 
             return (
-              <View key={country.id} style={styles.card}>
-                {/* Card Top: Country Flag, Name, Tag & Status */}
-                <View style={styles.cardHeader}>
-                  <View style={styles.countryInfo}>
-                    <Text style={styles.flag}>{country.flag}</Text>
-                    <View>
-                      <Text style={styles.countryName}>{localizedName}</Text>
-                      <Text style={styles.continentText}>
-                        {country.continentTr && currentLang === 'tr'
-                          ? country.continentTr
-                          : country.continent}
-                      </Text>
+              <View key={dest.id} style={styles.destinationCard}>
+                {/* Hero Image Thumbnail & Banner */}
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => handleToggleExpand(dest.id)}
+                  style={styles.thumbnailContainer}
+                >
+                  <Image
+                    source={{ uri: dest.heroImage }}
+                    style={styles.thumbnail}
+                    resizeMode="cover"
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(9, 11, 14, 0.95)']}
+                    style={styles.thumbnailGradient}
+                  />
+
+                  {/* Top Bar on Image: Flag, Continent Tag & Expand Indicator */}
+                  <View style={styles.imageOverlayTop}>
+                    <View style={styles.imageTagBadge}>
+                      <Text style={styles.imageTagText}>{dest.tag[currentLang]}</Text>
+                    </View>
+                    <View style={styles.expandChevron}>
+                      {isExpanded ? (
+                        <ChevronUp size={16} color="#FFFFFF" />
+                      ) : (
+                        <ChevronDown size={16} color="#FFFFFF" />
+                      )}
                     </View>
                   </View>
 
-                  <View style={styles.tagBadge}>
-                    <Text style={styles.tagBadgeText}>{guide.tag[currentLang]}</Text>
-                  </View>
-                </View>
-
-                {/* Section 1: Ne Yenir? */}
-                <View style={styles.guideRow}>
-                  <View style={[styles.iconBox, styles.foodIconBox]}>
-                    <Utensils size={15} color="#E5A93C" />
-                  </View>
-                  <View style={styles.guideContent}>
-                    <Text style={styles.guideLabel}>
-                      {currentLang === 'tr' ? 'NE YENİR?' : 'WHAT TO EAT'}
-                    </Text>
-                    <Text style={styles.guideText}>
-                      {guide.food[currentLang]}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Section 2: Ne Gezilir? */}
-                <View style={styles.guideRow}>
-                  <View style={[styles.iconBox, styles.seeIconBox]}>
-                    <MapPin size={15} color="#3B82F6" />
-                  </View>
-                  <View style={styles.guideContent}>
-                    <Text style={styles.guideLabel}>
-                      {currentLang === 'tr' ? 'NE GEZİLİR?' : 'MUST SEE'}
-                    </Text>
-                    <Text style={styles.guideText}>
-                      {guide.see[currentLang]}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Section 3: Gezgin Tüyosu */}
-                <View style={[styles.guideRow, styles.tipRow]}>
-                  <View style={[styles.iconBox, styles.tipIconBox]}>
-                    <Lightbulb size={15} color="#10B981" />
-                  </View>
-                  <View style={styles.guideContent}>
-                    <Text style={styles.guideLabel}>
-                      {currentLang === 'tr' ? 'GEZGİN TÜYOSU' : 'LOCAL TIP'}
-                    </Text>
-                    <Text style={styles.tipText}>
-                      {guide.tip[currentLang]}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Bottom Action Buttons */}
-                <View style={styles.cardActions}>
-                  {isVisited ? (
-                    <View style={styles.visitedBanner}>
-                      <Check size={14} color="#10B981" />
-                      <Text style={styles.visitedBannerText}>
-                        {currentLang === 'tr' ? 'Pasaportunda Damgalı' : 'Stamped in Passport'}
-                      </Text>
+                  {/* Bottom Bar on Image: Name & Headline */}
+                  <View style={styles.imageOverlayBottom}>
+                    <View style={styles.titleRow}>
+                      <Text style={styles.cardFlag}>{dest.flag}</Text>
+                      <Text style={styles.cardCountryName}>{countryDisplayName}</Text>
                     </View>
-                  ) : (
-                    <>
-                      <TouchableOpacity
-                        onPress={() => handleAddToWishlist(country)}
-                        activeOpacity={0.7}
-                        style={[
-                          styles.actionBtn,
-                          styles.wishlistBtn,
-                          isWishlisted && styles.wishlistBtnActive,
-                        ]}
-                      >
-                        {isWishlisted ? (
-                          <>
-                            <BookmarkCheck size={14} color="#E5A93C" />
-                            <Text style={styles.wishlistBtnTextActive}>
-                              {currentLang === 'tr' ? 'İstek Listende' : 'In Wishlist'}
-                            </Text>
-                          </>
-                        ) : (
-                          <>
-                            <Plus size={14} color="#CBD5E1" />
-                            <Text style={styles.wishlistBtnText}>
-                              {currentLang === 'tr' ? 'İstek Listeme Ekle' : 'Add to Wishlist'}
-                            </Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
+                    <Text style={styles.cardHeadline}>{dest.headline[currentLang]}</Text>
+                  </View>
+                </TouchableOpacity>
 
-                      <TouchableOpacity
-                        onPress={() => handleMarkVisited(country)}
-                        activeOpacity={0.7}
-                        style={[styles.actionBtn, styles.visitedBtn]}
-                      >
-                        <Check size={14} color="#090B0E" />
-                        <Text style={styles.visitedBtnText}>
-                          {currentLang === 'tr' ? 'Gittim, Damgala' : 'I Was Here'}
+                {/* Collapsible Content */}
+                {isExpanded && (
+                  <View style={styles.expandedContent}>
+                    {/* SECTION: Gezilecek Yerler */}
+                    <View style={styles.sectionBlock}>
+                      <View style={styles.sectionHeader}>
+                        <MapPin size={15} color="#3B82F6" />
+                        <Text style={styles.sectionTitle}>
+                          {currentLang === 'tr' ? 'MUTLAKA GEZİLECEK YERLER' : 'MUST-SEE PLACES'}
                         </Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
+                      </View>
+                      <View style={styles.pointsList}>
+                        {dest.seePlaces.map(p => renderMapPoint(p, false))}
+                      </View>
+                    </View>
+
+                    {/* SECTION: Ne Yenir & Nerede Yenir? */}
+                    <View style={styles.sectionBlock}>
+                      <View style={styles.sectionHeader}>
+                        <Utensils size={15} color="#E5A93C" />
+                        <Text style={styles.sectionTitle}>
+                          {currentLang === 'tr' ? 'NE YENİR & NEREDE YENİR?' : 'WHAT & WHERE TO EAT'}
+                        </Text>
+                      </View>
+                      <View style={styles.pointsList}>
+                        {dest.foodPlaces.map(p => renderMapPoint(p, true))}
+                      </View>
+                    </View>
+
+                    {/* SECTION: Gezgin Tüyosu */}
+                    <View style={styles.tipBox}>
+                      <View style={styles.tipHeader}>
+                        <Lightbulb size={15} color="#10B981" />
+                        <Text style={styles.tipLabel}>
+                          {currentLang === 'tr' ? 'GEZGİN TÜYOSU' : 'INSIDER TRAVEL HACK'}
+                        </Text>
+                      </View>
+                      <Text style={styles.tipBody}>{dest.insiderTip[currentLang]}</Text>
+                    </View>
+
+                    {/* Action Bar */}
+                    <View style={styles.cardActions}>
+                      {isVisited ? (
+                        <View style={styles.visitedBanner}>
+                          <Check size={14} color="#10B981" />
+                          <Text style={styles.visitedBannerText}>
+                            {currentLang === 'tr' ? 'Pasaportunda Damgalı' : 'Stamped in Passport'}
+                          </Text>
+                        </View>
+                      ) : (
+                        <>
+                          <TouchableOpacity
+                            onPress={() => handleAddToWishlist(dest)}
+                            activeOpacity={0.7}
+                            style={[
+                              styles.actionBtn,
+                              styles.wishlistBtn,
+                              isWishlisted && styles.wishlistBtnActive,
+                            ]}
+                          >
+                            {isWishlisted ? (
+                              <>
+                                <BookmarkCheck size={14} color="#E5A93C" />
+                                <Text style={styles.wishlistBtnTextActive}>
+                                  {currentLang === 'tr' ? 'İstek Listende' : 'In Wishlist'}
+                                </Text>
+                              </>
+                            ) : (
+                              <>
+                                <Plus size={14} color="#CBD5E1" />
+                                <Text style={styles.wishlistBtnText}>
+                                  {currentLang === 'tr' ? '+ İstek Listesi' : '+ Wishlist'}
+                                </Text>
+                              </>
+                            )}
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => handleMarkVisited(dest)}
+                            activeOpacity={0.7}
+                            style={[styles.actionBtn, styles.visitedBtn]}
+                          >
+                            <Check size={14} color="#090B0E" />
+                            <Text style={styles.visitedBtnText}>
+                              {currentLang === 'tr' ? 'Gittim, Damgala' : 'I Was Here'}
+                            </Text>
+                          </TouchableOpacity>
+                        </>
+                      )}
+                    </View>
+                  </View>
+                )}
               </View>
             );
           })}
@@ -392,14 +441,11 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
+    paddingTop: 8,
     paddingBottom: 110,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
+  pageSubheader: {
+    marginBottom: 18,
   },
   headerLeft: {
     flex: 1,
@@ -418,7 +464,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
   },
   title: {
-    fontSize: 26,
+    fontSize: 25,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.5,
@@ -500,106 +546,213 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontWeight: '500',
   },
-  cardList: {
-    gap: 16,
+  destinationList: {
+    gap: 20,
   },
-  // 30% Frosted Glass Card Architecture
-  card: {
+  // 30% Glass Destination Card
+  destinationCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: 18,
+    overflow: 'hidden',
   },
-  cardHeader: {
+  thumbnailContainer: {
+    height: 190,
+    position: 'relative',
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  thumbnail: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  thumbnailGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  imageOverlayTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    zIndex: 2,
   },
-  countryInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  flag: {
-    fontSize: 32,
-  },
-  countryName: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  continentText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-  tagBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  imageTagBadge: {
+    backgroundColor: 'rgba(9, 11, 14, 0.70)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
-  tagBadgeText: {
+  imageTagText: {
     fontSize: 11,
-    color: '#CBD5E1',
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#E5A93C',
   },
-  guideRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 12,
-  },
-  tipRow: {
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    marginBottom: 14,
-  },
-  iconBox: {
+  expandChevron: {
     width: 28,
     height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
+    borderRadius: 14,
+    backgroundColor: 'rgba(9, 11, 14, 0.65)',
     justifyContent: 'center',
-    marginTop: 2,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
-  foodIconBox: {
-    backgroundColor: 'rgba(229, 169, 60, 0.12)',
+  imageOverlayBottom: {
+    zIndex: 2,
   },
-  seeIconBox: {
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
   },
-  tipIconBox: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+  cardFlag: {
+    fontSize: 26,
   },
-  guideContent: {
-    flex: 1,
+  cardCountryName: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
   },
-  guideLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#64748B',
-    letterSpacing: 0.8,
-    marginBottom: 3,
-  },
-  guideText: {
+  cardHeadline: {
     fontSize: 13,
-    color: '#E2E8F0',
+    color: '#CBD5E1',
     lineHeight: 18,
   },
-  tipText: {
+  // Expanded Content
+  expandedContent: {
+    padding: 16,
+    paddingTop: 12,
+    gap: 16,
+  },
+  sectionBlock: {
+    gap: 10,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+  },
+  pointsList: {
+    gap: 10,
+  },
+  pointCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    padding: 12,
+  },
+  pointHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 6,
+  },
+  pointIconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  seeIconBox: {
+    backgroundColor: 'rgba(59, 130, 246, 0.14)',
+  },
+  foodIconBox: {
+    backgroundColor: 'rgba(229, 169, 60, 0.14)',
+  },
+  pointTitles: {
+    flex: 1,
+  },
+  pointMainTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  pointSubtitle: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  pointDesc: {
     fontSize: 12,
     color: '#CBD5E1',
+    lineHeight: 17,
+    marginBottom: 10,
+  },
+  mapButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  mapBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    height: 32,
+    borderRadius: 9,
+    borderWidth: 1,
+  },
+  appleMapBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  googleMapBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  mapBtnTextApple: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  mapBtnTextGoogle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  tipBox: {
+    backgroundColor: 'rgba(16, 185, 129, 0.06)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.20)',
+    padding: 12,
+  },
+  tipHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  tipLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#10B981',
+    letterSpacing: 0.8,
+  },
+  tipBody: {
+    fontSize: 12,
+    color: '#D1FAE5',
     lineHeight: 17,
     fontStyle: 'italic',
   },
@@ -610,7 +763,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    height: 40,
+    height: 42,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -646,8 +799,8 @@ const styles = StyleSheet.create({
   },
   visitedBanner: {
     flex: 1,
-    height: 38,
-    borderRadius: 10,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: 'rgba(16, 185, 129, 0.08)',
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.25)',
@@ -662,6 +815,8 @@ const styles = StyleSheet.create({
     color: '#10B981',
   },
   bottomSpacer: {
-    height: 40,
+    height: 36,
   },
 });
+
+export default React.memo(ExploreScreen);

@@ -210,7 +210,15 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   const filteredVisitedCatalog = useMemo(() => {
     let list = availableCatalog;
     if (continentFilter !== 'all') {
-      list = list.filter((c) => c.continent?.toLowerCase() === continentFilter.toLowerCase());
+      const filterLower = continentFilter.toLowerCase();
+      if (filterLower === 'americas' || filterLower === 'america') {
+        list = list.filter((c) =>
+          (c.continent && c.continent.toLowerCase().includes('america')) ||
+          (c.continentTr && c.continentTr.toLowerCase().includes('amerika'))
+        );
+      } else {
+        list = list.filter((c) => c.continent?.toLowerCase() === filterLower);
+      }
     }
     if (visitedSearch.trim()) {
       const q = visitedSearch.toLowerCase();
@@ -816,11 +824,12 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.continentChipsRow}>
                 {[
-                  { id: 'all', label: 'Tümü' },
-                  { id: 'Europe', label: 'Avrupa' },
-                  { id: 'Asia', label: 'Asya' },
-                  { id: 'Americas', label: 'Amerika' },
-                  { id: 'Africa', label: 'Afrika' },
+                  { id: 'all', label: currentLang === 'tr' ? 'Tümü' : 'All' },
+                  { id: 'Europe', label: currentLang === 'tr' ? 'Avrupa' : 'Europe' },
+                  { id: 'Asia', label: currentLang === 'tr' ? 'Asya' : 'Asia' },
+                  { id: 'Americas', label: currentLang === 'tr' ? 'Amerika' : 'Americas' },
+                  { id: 'Africa', label: currentLang === 'tr' ? 'Afrika' : 'Africa' },
+                  { id: 'Oceania', label: currentLang === 'tr' ? 'Okyanusya' : 'Oceania' },
                 ].map((c) => (
                   <TouchableOpacity
                     key={c.id}

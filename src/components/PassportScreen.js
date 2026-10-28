@@ -38,7 +38,7 @@ import CountryStatusModal from './CountryStatusModal';
 import AnimatedCounter from './AnimatedCounter';
 import { getDynamicLocation } from '../utils/locationHelper';
 
-export default function PassportScreen({
+function PassportScreen({
   profile,
   countries,
   onRemoveCountry,
@@ -52,11 +52,20 @@ export default function PassportScreen({
   t,
   currentLang,
   onToggleLang,
+  isAccountModalOpen: isAccountModalOpenExternal,
+  onCloseAccountModal: onCloseAccountModalExternal,
 }) {
   const [activeTab, setActiveTab] = useState('all');
   const [isEditing, setIsEditing] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [internalAccountModalOpen, setInternalAccountModalOpen] = useState(false);
+  const isAccountModalOpen = isAccountModalOpenExternal !== undefined ? isAccountModalOpenExternal : internalAccountModalOpen;
+  const setIsAccountModalOpen = (val) => {
+    if (onCloseAccountModalExternal && !val) {
+      onCloseAccountModalExternal();
+    }
+    setInternalAccountModalOpen(val);
+  };
   const [selectedCountryToEdit, setSelectedCountryToEdit] = useState(null);
 
   const visitedCountries = countries.filter((c) => c.status === 'visited');
@@ -122,43 +131,6 @@ export default function PassportScreen({
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header Bar */}
-          <View style={styles.header}>
-            <View style={styles.logoRow}>
-              <Text style={styles.headerTitle}>{t.yourPassport}</Text>
-              <Text style={styles.logoDot}>.</Text>
-            </View>
-
-            <View style={styles.headerRight}>
-              {onToggleLang && (
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    onToggleLang();
-                  }}
-                  activeOpacity={0.7}
-                  style={styles.langPill}
-                >
-                  <Languages size={13} color="#E5A93C" />
-                  <Text style={styles.langPillText}>
-                    {t.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setIsAccountModalOpen(true);
-                }}
-                activeOpacity={0.7}
-                style={styles.headerAccountBtn}
-              >
-                <User size={18} color="#FFFFFF" strokeWidth={2.2} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
           {/* TRAVEL PASSPORT CARD (Theme-adaptive luxury card) */}
           <LinearGradient
             colors={currentTheme.gradient}
@@ -1747,3 +1719,5 @@ const styles = StyleSheet.create({
     color: '#EF4444',
   },
 });
+
+export default React.memo(PassportScreen);

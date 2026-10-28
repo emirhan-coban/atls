@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, View, ActivityIndicator, Alert, LogBox } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import HomeScreen from './src/components/HomeScreen';
 import ExploreScreen from './src/components/ExploreScreen';
 import PassportScreen from './src/components/PassportScreen';
 import BottomNav from './src/components/BottomNav';
+import AppHeader from './src/components/AppHeader';
 import AddCountryModal from './src/components/AddCountryModal';
 import OnboardingScreen from './src/components/OnboardingScreen';
 import AuthScreen from './src/components/AuthScreen';
@@ -51,6 +52,7 @@ export default function App() {
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
   const [selectedCountryDetailId, setSelectedCountryDetailId] = useState<string | null>(null);
   const [countryToEdit, setCountryToEdit] = useState<Country | null>(null);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false);
 
   // Load saved state on mount (offline-first & Supabase sync via Zustand AppStore)
   useEffect(() => {
@@ -59,28 +61,36 @@ export default function App() {
 
   const t = translations[currentLang];
 
-  const handleToggleLang = () => {
+  const handleToggleLang = useCallback(() => {
     toggleLang();
-  };
+  }, [toggleLang]);
+
+  const handleOpenProfile = useCallback(() => {
+    if (activeTab !== 'passport') {
+      setActiveTab('passport');
+    } else {
+      setIsAccountModalOpen(true);
+    }
+  }, [activeTab, setActiveTab]);
 
   const handleCompleteOnboarding = async (onboardingPayload: any = {}) => {
     await completeOnboarding(onboardingPayload);
   };
 
-  const handleAddCountry = (newCountry: any) => {
+  const handleAddCountry = useCallback((newCountry: any) => {
     addCountry(newCountry);
     setShowConfetti(true);
-  };
+  }, [addCountry]);
 
-  const handleUpdateCountry = (updatedCountry: any) => {
+  const handleUpdateCountry = useCallback((updatedCountry: any) => {
     updateCountry(updatedCountry);
-  };
+  }, [updateCountry]);
 
-  const handleRemoveCountry = (countryId: string) => {
+  const handleRemoveCountry = useCallback((countryId: string) => {
     removeCountry(countryId);
-  };
+  }, [removeCountry]);
 
-  const handleTabChange = (tabId: string) => {
+  const handleTabChange = useCallback((tabId: string) => {
     if (tabId === 'passport' || tabId === 'profile') {
       setActiveTab('passport');
     } else if (tabId === 'explore') {
@@ -88,7 +98,13 @@ export default function App() {
     } else {
       setActiveTab('home');
     }
-  };
+  }, [setActiveTab]);
+
+  const handleOpenAddModal = useCallback(() => setIsAddModalOpen(true), [setIsAddModalOpen]);
+  const handleOpenShareModal = useCallback(() => setIsShareModalOpen(true), [setIsShareModalOpen]);
+  const handleNavigateToPassport = useCallback(() => setActiveTab('passport'), [setActiveTab]);
+  const handleNavigateToExplore = useCallback(() => setActiveTab('explore'), [setActiveTab]);
+  const handleSelectCountryDetail = useCallback((id: string) => setSelectedCountryDetailId(id), []);
 
   const handleLoginSuccess = async (userData: any) => {
     const sessionData = await loginSuccess(userData);
@@ -99,9 +115,9 @@ export default function App() {
     }
   };
 
-  const handleUpdateProfile = (updatedProfile: any) => {
+  const handleUpdateProfile = useCallback((updatedProfile: any) => {
     updateProfile(updatedProfile);
-  };
+  }, [updateProfile]);
 
   const handleLogout = async () => {
     clearCountries();
@@ -170,24 +186,31 @@ export default function App() {
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
           <StatusBar style="light" />
 
-        {/* Viewport */}
+          {/* Universal Sticky Top Header Bar (100% Fixed & Consistent Across All Tabs) */}
+          <AppHeader
+            currentLang={currentLang}
+            onToggleLang={handleToggleLang}
+            onOpenProfile={handleOpenProfile}
+          />
+
+        {/* Viewport with instant tab switching (Keep-Alive) */}
         <View style={styles.screenContainer}>
-          {activeTab === 'home' && (
+          <View style={[styles.screenWrapper, { display: activeTab === 'home' ? 'flex' : 'none' }]}>
             <HomeScreen
               countries={countries}
               profile={profile}
-              onOpenAddModal={() => setIsAddModalOpen(true)}
-              onNavigateToPassport={() => setActiveTab('passport')}
-              onNavigateToExplore={() => setActiveTab('explore')}
-              onSelectCountry={(id: string) => setSelectedCountryDetailId(id)}
+              onOpenAddModal={handleOpenAddModal}
+              onNavigateToPassport={handleNavigateToPassport}
+              onNavigateToExplore={handleNavigateToExplore}
+              onSelectCountry={handleSelectCountryDetail}
               t={t}
               currentLang={currentLang}
               onToggleLang={handleToggleLang}
-              onOpenAuth={() => setActiveTab('passport')}
+              onOpenAuth={handleNavigateToPassport}
             />
-          )}
+          </View>
 
-          {activeTab === 'explore' && (
+          <View style={[styles.screenWrapper, { display: activeTab === 'explore' ? 'flex' : 'none' }]}>
             <ExploreScreen
               countries={countries}
               profile={profile}
@@ -197,25 +220,27 @@ export default function App() {
               currentLang={currentLang}
               onToggleLang={handleToggleLang}
             />
-          )}
+          </View>
 
-          {activeTab === 'passport' && (
+          <View style={[styles.screenWrapper, { display: activeTab === 'passport' ? 'flex' : 'none' }]}>
             <PassportScreen
               profile={profile}
               countries={countries}
               onRemoveCountry={handleRemoveCountry}
               onUpdateCountry={handleUpdateCountry}
-              onOpenAddModal={() => setIsAddModalOpen(true)}
-              onOpenShareModal={() => setIsShareModalOpen(true)}
+              onOpenAddModal={handleOpenAddModal}
+              onOpenShareModal={handleOpenShareModal}
               onUpdateProfile={handleUpdateProfile}
               onLogout={handleLogout}
               onDeleteAccount={handleDeleteAccount}
-              onSelectCountry={(id: string) => setSelectedCountryDetailId(id)}
+              onSelectCountry={handleSelectCountryDetail}
               t={t}
               currentLang={currentLang}
               onToggleLang={handleToggleLang}
+              isAccountModalOpen={isAccountModalOpen}
+              onCloseAccountModal={() => setIsAccountModalOpen(false)}
             />
-          )}
+          </View>
         </View>
 
         {/* Floating Capsule Bottom Dock */}
@@ -282,6 +307,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#090B0E',
   },
   screenContainer: {
+    flex: 1,
+  },
+  screenWrapper: {
     flex: 1,
   },
   centerLoader: {

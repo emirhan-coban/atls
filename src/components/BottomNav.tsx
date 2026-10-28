@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -10,7 +10,14 @@ interface BottomNavProps {
   t?: Record<string, string>;
 }
 
-export default function BottomNav({ activeTab, onTabChange, t }: BottomNavProps) {
+function BottomNav({ activeTab, onTabChange, t }: BottomNavProps) {
+  // Optimistic tab state for instantaneous visual reaction without waiting for parent tree re-render
+  const [selectedTab, setSelectedTab] = useState(activeTab);
+
+  useEffect(() => {
+    setSelectedTab(activeTab);
+  }, [activeTab]);
+
   const tabs = [
     { 
       id: 'home', 
@@ -30,6 +37,7 @@ export default function BottomNav({ activeTab, onTabChange, t }: BottomNavProps)
   ];
 
   const handlePress = (id: string) => {
+    setSelectedTab(id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onTabChange(id);
   };
@@ -46,14 +54,15 @@ export default function BottomNav({ activeTab, onTabChange, t }: BottomNavProps)
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = 
-                (tab.id === 'home' && activeTab === 'home') ||
-                (tab.id === 'explore' && activeTab === 'explore') ||
-                (tab.id === 'profile' && (activeTab === 'profile' || activeTab === 'passport'));
+                (tab.id === 'home' && selectedTab === 'home') ||
+                (tab.id === 'explore' && selectedTab === 'explore') ||
+                (tab.id === 'profile' && (selectedTab === 'profile' || selectedTab === 'passport'));
 
               return (
                 <TouchableOpacity
                   key={tab.id}
                   onPress={() => handlePress(tab.id)}
+                  delayPressIn={0}
                   activeOpacity={0.7}
                   accessibilityRole="tab"
                   accessibilityLabel={tab.label}
@@ -141,3 +150,5 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 });
+
+export default React.memo(BottomNav);

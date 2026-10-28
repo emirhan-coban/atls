@@ -29,7 +29,7 @@ import AnimatedCounter from './AnimatedCounter';
 import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
 import { getCountryTrivia } from '../data/countryTrivia';
 
-export default function HomeScreen({
+function HomeScreen({
   countries,
   profile,
   onOpenAddModal,
@@ -99,38 +99,6 @@ export default function HomeScreen({
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Bar */}
-        <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Text style={styles.logoText}>atls</Text>
-            <Text style={styles.logoDot}>.</Text>
-          </View>
-
-          {/* Right Actions: Language Switcher & Biometric Auth Button */}
-          <View style={styles.headerRight}>
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.selectionAsync();
-                onToggleLang();
-              }}
-              activeOpacity={0.7}
-              style={styles.langPill}
-            >
-              <Languages size={13} color="#E5A93C" />
-              <Text style={styles.langPillText}>{t.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleBiometricPress}
-              activeOpacity={0.8}
-              style={styles.biometricButton}
-            >
-              <Fingerprint size={20} color="#3B82F6" strokeWidth={2} />
-              <View style={styles.biometricDot} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Clean Travel Passport Greeting */}
         <View style={styles.explorerGreetingRow}>
           <Text style={styles.explorerGreetingText}>
@@ -1146,3 +1114,5 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
 });
+
+export default React.memo(HomeScreen);
