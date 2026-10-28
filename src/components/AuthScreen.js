@@ -446,7 +446,7 @@ export default function AuthScreen({
 
                 {/* Target Email Capsule with Edit Button */}
                 <View style={styles.emailBadge}>
-                  <Mail size={14} color="#E2F952" />
+                  <Mail size={14} color="#E5A93C" />
                   <Text style={styles.emailBadgeText} numberOfLines={1}>{email}</Text>
                   <TouchableOpacity
                     onPress={() => setIsOtpStep(false)}
@@ -514,7 +514,7 @@ export default function AuthScreen({
                     activeOpacity={0.7}
                     disabled={isLoading}
                   >
-                    <RefreshCw size={14} color="#E2F952" />
+                    <RefreshCw size={14} color="#E5A93C" />
                     <Text style={styles.resendBtnText}>
                       {t?.otpResend || (currentLang === 'tr' ? 'Kodu Tekrar Gönder' : 'Resend Code')}
                     </Text>
@@ -575,7 +575,7 @@ export default function AuthScreen({
               activeOpacity={0.7}
               style={styles.langPill}
             >
-              <Languages size={13} color="#E2F952" />
+              <Languages size={13} color="#E5A93C" />
               <Text style={styles.langPillText}>
                 {t?.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}
               </Text>
@@ -873,7 +873,7 @@ export default function AuthScreen({
 const styles = StyleSheet.create({
   outerWrapper: {
     flex: 1,
-    backgroundColor: '#07090E',
+    backgroundColor: '#090B0E',
   },
   container: {
     flex: 1,
@@ -916,7 +916,7 @@ const styles = StyleSheet.create({
   langPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#E2F952',
+    color: '#E5A93C',
   },
   keyboardContainer: {
     flex: 1,
@@ -1186,7 +1186,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   otpBoxFilled: {
-    borderColor: '#E2F952',
+    borderColor: '#E5A93C',
     backgroundColor: 'rgba(20, 26, 40, 0.95)',
   },
   otpBoxFocused: {
@@ -1215,7 +1215,7 @@ const styles = StyleSheet.create({
   resendBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#E2F952',
+    color: '#E5A93C',
   },
   timerText: {
     fontSize: 13,

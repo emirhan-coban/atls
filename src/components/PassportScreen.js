@@ -36,8 +36,6 @@ import { PASSPORT_THEMES, PassportThemeKey } from '../theme/passportThemes';
 import EditProfileModal from './EditProfileModal';
 import CountryStatusModal from './CountryStatusModal';
 import AnimatedCounter from './AnimatedCounter';
-import GlowSphere from './GlowSphere';
-import OrbitalRings from './OrbitalRings';
 import { getDynamicLocation } from '../utils/locationHelper';
 
 export default function PassportScreen({
@@ -119,19 +117,6 @@ export default function PassportScreen({
   return (
     <>
       <View style={styles.outerWrapper}>
-        <GlowSphere
-          size={380}
-          colors={['#7C3AED', '#2E5CFF']}
-          opacity={0.22}
-          style={{ position: 'absolute', top: -100, left: -110 }}
-        />
-        <GlowSphere
-          size={280}
-          colors={['#FF6B35', '#E2F952']}
-          opacity={0.15}
-          style={{ position: 'absolute', top: 340, right: -90 }}
-        />
-
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.contentContainer}
@@ -154,7 +139,7 @@ export default function PassportScreen({
                   activeOpacity={0.7}
                   style={styles.langPill}
                 >
-                  <Languages size={13} color="#E2F952" />
+                  <Languages size={13} color="#E5A93C" />
                   <Text style={styles.langPillText}>
                     {t.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}
                   </Text>
@@ -181,7 +166,6 @@ export default function PassportScreen({
             end={{ x: 1, y: 1 }}
             style={[styles.passportCard, { borderColor: currentTheme.borderColor }]}
           >
-            <OrbitalRings size={220} style={{ position: 'absolute', right: -30, top: -20, opacity: 0.28 }} />
         {/* Top Card Row */}
         <View style={styles.cardTopRow}>
           <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(255, 255, 255, 0.12)', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
@@ -638,9 +622,9 @@ export default function PassportScreen({
         activeOpacity={0.85}
         style={styles.shareButton}
       >
-        <Sparkles size={18} color="#07090E" />
+        <Sparkles size={18} color="#090B0E" />
         <Text style={styles.shareText}>{t.sharePassport}</Text>
-        <Share2 size={16} color="#07090E" />
+        <Share2 size={16} color="#090B0E" />
       </TouchableOpacity>
 
       </ScrollView>
@@ -878,7 +862,7 @@ export default function PassportScreen({
 const styles = StyleSheet.create({
   outerWrapper: {
     flex: 1,
-    backgroundColor: '#07090E',
+    backgroundColor: '#090B0E',
     position: 'relative',
     overflow: 'hidden',
   },
@@ -910,7 +894,7 @@ const styles = StyleSheet.create({
   logoDot: {
     fontSize: 32,
     fontWeight: '900',
-    color: '#FF6B35',
+    color: '#FFFFFF',
   },
   headerRight: {
     flexDirection: 'row',
@@ -936,7 +920,7 @@ const styles = StyleSheet.create({
   langPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#E2F952',
+    color: '#FFFFFF',
   },
   headerAccountBtn: {
     width: 38,
@@ -1065,7 +1049,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     backgroundColor: '#10B981',
     borderWidth: 2.5,
-    borderColor: '#07090E',
+    borderColor: '#090B0E',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1377,12 +1361,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(226, 249, 82, 0.3)',
+    borderColor: 'rgba(229, 169, 60, 0.3)',
   },
   stampNowText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#E2F952',
+    color: '#E5A93C',
   },
   deleteButton: {
     padding: 6,
@@ -1451,29 +1435,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#E2F952',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     paddingVertical: 18,
     marginTop: 20,
-    shadowColor: '#E2F952',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
     elevation: 4,
   },
   shareText: {
-    color: '#07090E',
+    color: '#090B0E',
     fontSize: 14,
     fontWeight: '900',
   },
   emptyContainer: {
-    backgroundColor: 'rgba(15, 20, 32, 0.65)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 24,
     paddingVertical: 32,
     paddingHorizontal: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     borderStyle: 'dashed',
     marginVertical: 4,
   },
@@ -1481,7 +1465,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: 'rgba(229, 169, 60, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 14,
@@ -1504,19 +1488,19 @@ const styles = StyleSheet.create({
   emptyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#E5A93C',
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 20,
     gap: 6,
-    shadowColor: '#FF6B35',
+    shadowColor: '#E5A93C',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
   },
   emptyBtnText: {
-    color: '#07090E',
+    color: '#090B0E',
     fontSize: 13,
     fontWeight: '900',
   },
@@ -1678,7 +1662,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   themeChipActive: {
-    borderColor: '#E2F952',
+    borderColor: '#E5A93C',
   },
   themeChipText: {
     fontSize: 11,

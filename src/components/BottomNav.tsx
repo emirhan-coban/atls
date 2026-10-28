@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Home, Compass, User } from 'lucide-react-native';
-import { theme } from '../theme';
 
 interface BottomNavProps {
   activeTab: string;
@@ -16,25 +16,16 @@ export default function BottomNav({ activeTab, onTabChange, t }: BottomNavProps)
       id: 'home', 
       icon: Home, 
       label: t ? t.navHome : 'Home',
-      activeColor: '#3B82F6',
-      activeBg: 'rgba(59, 130, 246, 0.16)',
-      glowBorder: 'rgba(59, 130, 246, 0.35)',
     },
     { 
       id: 'explore', 
       icon: Compass, 
       label: t ? t.navExplore : 'Explore',
-      activeColor: '#FF6B35',
-      activeBg: 'rgba(255, 107, 53, 0.16)',
-      glowBorder: 'rgba(255, 107, 53, 0.35)',
     },
     { 
       id: 'profile', 
       icon: User, 
       label: t ? (t.navPassport || t.navProfile) : 'Passport',
-      activeColor: '#E2F952',
-      activeBg: 'rgba(226, 249, 82, 0.14)',
-      glowBorder: 'rgba(226, 249, 82, 0.35)',
     },
   ];
 
@@ -45,47 +36,51 @@ export default function BottomNav({ activeTab, onTabChange, t }: BottomNavProps)
 
   return (
     <View style={styles.container} pointerEvents="box-none">
-      <View style={styles.dock}>
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = 
-            (tab.id === 'home' && activeTab === 'home') ||
-            (tab.id === 'explore' && activeTab === 'explore') ||
-            (tab.id === 'profile' && (activeTab === 'profile' || activeTab === 'passport'));
+      <View style={styles.dockOuter}>
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 45 : 80}
+          tint="dark"
+          style={styles.blurContainer}
+        >
+          <View style={styles.dockInner}>
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = 
+                (tab.id === 'home' && activeTab === 'home') ||
+                (tab.id === 'explore' && activeTab === 'explore') ||
+                (tab.id === 'profile' && (activeTab === 'profile' || activeTab === 'passport'));
 
-          return (
-            <TouchableOpacity
-              key={tab.id}
-              onPress={() => handlePress(tab.id)}
-              activeOpacity={0.8}
-              accessibilityRole="tab"
-              accessibilityLabel={tab.label}
-              accessibilityState={{ selected: isActive }}
-              style={[
-                styles.tabButton,
-                isActive && { 
-                  backgroundColor: tab.activeBg,
-                  borderWidth: 1,
-                  borderColor: tab.glowBorder,
-                },
-              ]}
-            >
-              <Icon
-                size={18}
-                color={isActive ? tab.activeColor : '#64748B'}
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-              <Text
-                style={[
-                  styles.tabLabel,
-                  isActive && { color: tab.activeColor, fontWeight: '800' },
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+              return (
+                <TouchableOpacity
+                  key={tab.id}
+                  onPress={() => handlePress(tab.id)}
+                  activeOpacity={0.7}
+                  accessibilityRole="tab"
+                  accessibilityLabel={tab.label}
+                  accessibilityState={{ selected: isActive }}
+                  style={[
+                    styles.tabButton,
+                    isActive && styles.tabButtonActive,
+                  ]}
+                >
+                  <Icon
+                    size={17}
+                    color={isActive ? '#E5A93C' : '#94A3B8'}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      isActive && styles.tabLabelActive,
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </BlurView>
       </View>
     </View>
   );
@@ -94,27 +89,32 @@ export default function BottomNav({ activeTab, onTabChange, t }: BottomNavProps)
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 24,
+    bottom: Platform.OS === 'ios' ? 28 : 20,
     left: 0,
     right: 0,
     alignItems: 'center',
     zIndex: 100,
   },
-  dock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(11, 15, 25, 0.88)',
+  dockOuter: {
     borderRadius: 36,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    gap: 6,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 10,
+    backgroundColor: 'rgba(10, 13, 18, 0.75)',
+  },
+  blurContainer: {
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+  },
+  dockInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   tabButton: {
     flexDirection: 'row',
@@ -126,10 +126,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
+  tabButtonActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(229, 169, 60, 0.35)',
+  },
   tabLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#94A3B8',
     letterSpacing: 0.2,
+  },
+  tabLabelActive: {
+    color: '#FFFFFF',
+    fontWeight: '800',
   },
 });

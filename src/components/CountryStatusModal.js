@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
     borderColor: '#FF8A5B',
   },
   saveBtnText: {
-    color: '#07090E',
+    color: '#090B0E',
     fontSize: 14,
     fontWeight: '900',
   },

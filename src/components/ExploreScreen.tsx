@@ -1,89 +1,178 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Compass, Trophy, Globe, Sparkles, Languages } from 'lucide-react-native';
-import SwipeDiscoveryCard from './SwipeDiscoveryCard';
-import ContinentalProgress from './ContinentalProgress';
-import AchievementBadge from './AchievementBadge';
-import GlowSphere from './GlowSphere';
-import { ACHIEVEMENTS, Achievement } from '../data/achievements';
+import { 
+  Compass, 
+  Search, 
+  Utensils, 
+  MapPin, 
+  Lightbulb, 
+  Plus, 
+  Check, 
+  Languages,
+  Sparkles,
+  BookmarkCheck,
+  ChevronRight
+} from 'lucide-react-native';
+import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
+import { getCountryGuide } from '../data/travelGuides';
 import { Country, Profile } from '../stores/types';
 import { theme } from '../theme';
 
 interface ExploreScreenProps {
   countries: Country[];
-  profile: Profile;
+  profile?: Profile;
   onAddToWishlist: (country: any) => void;
-  t: any;
+  onMarkVisited?: (country: any) => void;
+  t?: any;
   currentLang: 'tr' | 'en';
   onToggleLang?: () => void;
 }
 
+const CONTINENTS = [
+  { id: 'all', tr: 'Tümü', en: 'All' },
+  { id: 'Europe', tr: 'Avrupa', en: 'Europe' },
+  { id: 'Asia', tr: 'Asya', en: 'Asia' },
+  { id: 'Americas', tr: 'Amerika', en: 'Americas' },
+  { id: 'Africa', tr: 'Afrika', en: 'Africa' },
+  { id: 'Oceania', tr: 'Okyanusya', en: 'Oceania' },
+];
+
+// Highlighted iconic curated list first for inspiring explore deck
+const FEATURED_COUNTRY_CODES = ['IT', 'JP', 'FR', 'ES', 'TR', 'GR', 'PT', 'TH', 'GE', 'MX', 'GB', 'US', 'CH', 'DE', 'NL'];
+
 export default function ExploreScreen({
   countries,
-  profile,
   onAddToWishlist,
+  onMarkVisited,
   t,
   currentLang,
   onToggleLang,
 }: ExploreScreenProps) {
-  const [achievementFilter, setAchievementFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
+  const [selectedContinent, setSelectedContinent] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const unlockedCount = ACHIEVEMENTS.filter((a) => a.isUnlocked(countries, profile)).length;
+  // Map user's existing statuses
+  const visitedSet = useMemo(() => {
+    return new Set(
+      countries
+        .filter((c) => c.status === 'visited' || c.status === 'lived')
+        .map((c) => c.id)
+    );
+  }, [countries]);
 
-  const filteredAchievements = ACHIEVEMENTS.filter((a) => {
-    const isUnlocked = a.isUnlocked(countries, profile);
-    if (achievementFilter === 'unlocked') return isUnlocked;
-    if (achievementFilter === 'locked') return !isUnlocked;
-    return true;
-  });
+  const wishlistSet = useMemo(() => {
+    return new Set(
+      countries
+        .filter((c) => c.status === 'want')
+        .map((c) => c.id)
+    );
+  }, [countries]);
 
-  const handleFilterPress = (filter: 'all' | 'unlocked' | 'locked') => {
+  // Sort and filter country list
+  const filteredCountries = useMemo(() => {
+    // Put featured countries first, then the rest
+    const sortedCatalog = [...availableCatalog].sort((a, b) => {
+      const aFeatured = FEATURED_COUNTRY_CODES.includes(a.id);
+      const bFeatured = FEATURED_COUNTRY_CODES.includes(b.id);
+      if (aFeatured && !bFeatured) return -1;
+      if (!aFeatured && bFeatured) return 1;
+      return 0;
+    });
+
+    return sortedCatalog.filter((c) => {
+      // Continent filter
+      if (selectedContinent !== 'all' && c.continent !== selectedContinent) {
+        return false;
+      }
+
+      // Search filter
+      if (searchQuery.trim().length > 0) {
+        const query = searchQuery.toLowerCase();
+        const locName = getLocalizedCountryName(c, currentLang).toLowerCase();
+        const guide = getCountryGuide(c.id, c.name, c.continent);
+        const foodText = guide.food[currentLang].toLowerCase();
+        const seeText = guide.see[currentLang].toLowerCase();
+        const tipText = guide.tip[currentLang].toLowerCase();
+
+        return (
+          locName.includes(query) ||
+          c.name.toLowerCase().includes(query) ||
+          c.id.toLowerCase().includes(query) ||
+          foodText.includes(query) ||
+          seeText.includes(query) ||
+          tipText.includes(query)
+        );
+      }
+
+      return true;
+    });
+  }, [selectedContinent, searchQuery, currentLang]);
+
+  const handleContinentSelect = (continentId: string) => {
     Haptics.selectionAsync();
-    setAchievementFilter(filter);
+    setSelectedContinent(continentId);
+  };
+
+  const handleAddToWishlist = (countryItem: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onAddToWishlist({
+      ...countryItem,
+      status: 'want',
+      year: new Date().getFullYear().toString(),
+    });
+  };
+
+  const handleMarkVisited = (countryItem: any) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (onMarkVisited) {
+      onMarkVisited({
+        ...countryItem,
+        status: 'visited',
+        year: new Date().getFullYear().toString(),
+      });
+    } else {
+      // Fallback to onAddToWishlist with status visited
+      onAddToWishlist({
+        ...countryItem,
+        status: 'visited',
+        year: new Date().getFullYear().toString(),
+      });
+    }
   };
 
   return (
-    <View style={styles.outerWrapper}>
-      {/* Background Celestial Glowing Spheres */}
-      <GlowSphere
-        size={360}
-        colors={['#2E5CFF', '#FF6B35']}
-        opacity={0.22}
-        style={{ position: 'absolute', top: -90, right: -100 }}
-      />
-      <GlowSphere
-        size={280}
-        colors={['#7C3AED', '#2E5CFF']}
-        opacity={0.16}
-        style={{ position: 'absolute', top: 350, left: -90 }}
-      />
-
+    <View style={styles.container}>
       <ScrollView
-        style={styles.container}
+        style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
+        {/* Clean Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View style={styles.titleRow}>
-              <Compass size={22} color="#3B82F6" />
-              <Text style={styles.title}>
-                {t?.exploreTitle || (currentLang === 'tr' ? 'Dünyayı Keşfet' : 'Explore the World')}
+            <View style={styles.badgeRow}>
+              <Compass size={16} color="#E5A93C" />
+              <Text style={styles.badgeText}>
+                {currentLang === 'tr' ? 'GEZGİN REHBERİ' : 'TRAVEL GUIDE'}
               </Text>
             </View>
+            <Text style={styles.title}>
+              {currentLang === 'tr' ? 'Ne Yenir? Ne Gezilir?' : 'Eat & Wander Guide'}
+            </Text>
             <Text style={styles.subtitle}>
-              {t?.exploreSubtitle ||
-                (currentLang === 'tr'
-                  ? 'Yeni rotalar keşfet, rozetler kazan ve ilerlemeni gör'
-                  : 'Discover destinations, earn badges & track progress')}
+              {currentLang === 'tr'
+                ? 'İkonik sokak lezzetleri, görülmesi gereken gizli köşeler ve yerel tüyolar.'
+                : 'Iconic street bites, must-see secret spots & insider traveler hacks.'}
             </Text>
           </View>
 
@@ -96,252 +185,483 @@ export default function ExploreScreen({
               activeOpacity={0.7}
               style={styles.langPill}
             >
-              <Languages size={13} color="#E2F952" />
+              <Languages size={14} color="#E5A93C" />
               <Text style={styles.langPillText}>
-                {t?.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}
+                {currentLang === 'tr' ? 'EN' : 'TR'}
               </Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {/* SECTION 1: Wanderlust Swipe Deck */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Sparkles size={16} color="#FF6B35" />
-              <Text style={styles.sectionTitle}>
-                {t?.swipeCardTitle || (currentLang === 'tr' ? 'Keşif Kartı' : 'Wanderlust Deck')}
-              </Text>
-            </View>
-          </View>
-
-          <SwipeDiscoveryCard
-            existingCountries={countries}
-            currentLang={currentLang}
-            onAddToWishlist={onAddToWishlist}
-            t={t}
+        {/* Search Bar */}
+        <View style={styles.searchWrapper}>
+          <Search size={18} color="#64748B" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={
+              currentLang === 'tr'
+                ? 'Ülke, lezzet veya şehir ara... (Örn. İtalya, Ramen, Roma)'
+                : 'Search country, dish or city... (e.g. Italy, Ramen, Rome)'
+            }
+            placeholderTextColor="#64748B"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            clearButtonMode="while-editing"
+            autoCorrect={false}
           />
         </View>
 
-        {/* SECTION 2: Continental Progress */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Globe size={16} color="#3B82F6" />
-              <Text style={styles.sectionTitle}>
-                {t?.continentProgressTitle ||
-                  (currentLang === 'tr' ? 'Kıta Bazlı İlerleme' : 'Continental Progress')}
-              </Text>
-            </View>
-          </View>
-
-          <ContinentalProgress countries={countries} currentLang={currentLang} />
-        </View>
-
-        {/* SECTION 3: Achievements & Badges */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Trophy size={16} color="#F59E0B" />
-              <Text style={styles.sectionTitle}>
-                {t?.achievementsTitle ||
-                  (currentLang === 'tr' ? 'Başarımlar & Rozetler' : 'Achievements & Badges')}
-              </Text>
-            </View>
-
-            <View style={styles.badgeCountPill}>
-              <Text style={styles.badgeCountText}>
-                {`${unlockedCount}/${ACHIEVEMENTS.length} `}
-                {currentLang === 'tr' ? 'Açıldı' : 'Unlocked'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Filter Chips */}
-          <View style={styles.filterRow}>
-            <TouchableOpacity
-              style={[styles.filterChip, achievementFilter === 'all' && styles.filterChipActive]}
-              onPress={() => handleFilterPress('all')}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  achievementFilter === 'all' && styles.filterChipTextActive,
-                ]}
-              >
-                {currentLang === 'tr' ? 'Tümü' : 'All'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.filterChip, achievementFilter === 'unlocked' && styles.filterChipActive]}
-              onPress={() => handleFilterPress('unlocked')}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  achievementFilter === 'unlocked' && styles.filterChipTextActive,
-                ]}
-              >
-                {currentLang === 'tr' ? 'Kazanılanlar 🏆' : 'Unlocked 🏆'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.filterChip, achievementFilter === 'locked' && styles.filterChipActive]}
-              onPress={() => handleFilterPress('locked')}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  achievementFilter === 'locked' && styles.filterChipTextActive,
-                ]}
-              >
-                {currentLang === 'tr' ? 'Kilitliler 🔒' : 'Locked 🔒'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Badges List */}
-          <View style={styles.badgesList}>
-            {filteredAchievements.map((item) => (
-              <AchievementBadge
+        {/* Continent Filter Chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterBar}
+        >
+          {CONTINENTS.map((item) => {
+            const isActive = selectedContinent === item.id;
+            return (
+              <TouchableOpacity
                 key={item.id}
-                achievement={item}
-                countries={countries}
-                profile={profile}
-                lang={currentLang}
-              />
-            ))}
-          </View>
+                onPress={() => handleContinentSelect(item.id)}
+                activeOpacity={0.7}
+                style={[styles.filterChip, isActive && styles.filterChipActive]}
+              >
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    isActive && styles.filterChipTextActive,
+                  ]}
+                >
+                  {item[currentLang]}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Results Counter */}
+        <View style={styles.counterRow}>
+          <Text style={styles.counterText}>
+            {filteredCountries.length}{' '}
+            {currentLang === 'tr' ? 'ülke rehberi listeleniyor' : 'destinations curated'}
+          </Text>
         </View>
+
+        {/* Travel Guide Cards */}
+        <View style={styles.cardList}>
+          {filteredCountries.map((country) => {
+            const localizedName = getLocalizedCountryName(country, currentLang);
+            const guide = getCountryGuide(country.id, localizedName, country.continent);
+            const isVisited = visitedSet.has(country.id);
+            const isWishlisted = wishlistSet.has(country.id);
+
+            return (
+              <View key={country.id} style={styles.card}>
+                {/* Card Top: Country Flag, Name, Tag & Status */}
+                <View style={styles.cardHeader}>
+                  <View style={styles.countryInfo}>
+                    <Text style={styles.flag}>{country.flag}</Text>
+                    <View>
+                      <Text style={styles.countryName}>{localizedName}</Text>
+                      <Text style={styles.continentText}>
+                        {country.continentTr && currentLang === 'tr'
+                          ? country.continentTr
+                          : country.continent}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.tagBadge}>
+                    <Text style={styles.tagBadgeText}>{guide.tag[currentLang]}</Text>
+                  </View>
+                </View>
+
+                {/* Section 1: Ne Yenir? */}
+                <View style={styles.guideRow}>
+                  <View style={[styles.iconBox, styles.foodIconBox]}>
+                    <Utensils size={15} color="#E5A93C" />
+                  </View>
+                  <View style={styles.guideContent}>
+                    <Text style={styles.guideLabel}>
+                      {currentLang === 'tr' ? 'NE YENİR?' : 'WHAT TO EAT'}
+                    </Text>
+                    <Text style={styles.guideText}>
+                      {guide.food[currentLang]}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Section 2: Ne Gezilir? */}
+                <View style={styles.guideRow}>
+                  <View style={[styles.iconBox, styles.seeIconBox]}>
+                    <MapPin size={15} color="#3B82F6" />
+                  </View>
+                  <View style={styles.guideContent}>
+                    <Text style={styles.guideLabel}>
+                      {currentLang === 'tr' ? 'NE GEZİLİR?' : 'MUST SEE'}
+                    </Text>
+                    <Text style={styles.guideText}>
+                      {guide.see[currentLang]}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Section 3: Gezgin Tüyosu */}
+                <View style={[styles.guideRow, styles.tipRow]}>
+                  <View style={[styles.iconBox, styles.tipIconBox]}>
+                    <Lightbulb size={15} color="#10B981" />
+                  </View>
+                  <View style={styles.guideContent}>
+                    <Text style={styles.guideLabel}>
+                      {currentLang === 'tr' ? 'GEZGİN TÜYOSU' : 'LOCAL TIP'}
+                    </Text>
+                    <Text style={styles.tipText}>
+                      {guide.tip[currentLang]}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Bottom Action Buttons */}
+                <View style={styles.cardActions}>
+                  {isVisited ? (
+                    <View style={styles.visitedBanner}>
+                      <Check size={14} color="#10B981" />
+                      <Text style={styles.visitedBannerText}>
+                        {currentLang === 'tr' ? 'Pasaportunda Damgalı' : 'Stamped in Passport'}
+                      </Text>
+                    </View>
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => handleAddToWishlist(country)}
+                        activeOpacity={0.7}
+                        style={[
+                          styles.actionBtn,
+                          styles.wishlistBtn,
+                          isWishlisted && styles.wishlistBtnActive,
+                        ]}
+                      >
+                        {isWishlisted ? (
+                          <>
+                            <BookmarkCheck size={14} color="#E5A93C" />
+                            <Text style={styles.wishlistBtnTextActive}>
+                              {currentLang === 'tr' ? 'İstek Listende' : 'In Wishlist'}
+                            </Text>
+                          </>
+                        ) : (
+                          <>
+                            <Plus size={14} color="#CBD5E1" />
+                            <Text style={styles.wishlistBtnText}>
+                              {currentLang === 'tr' ? 'İstek Listeme Ekle' : 'Add to Wishlist'}
+                            </Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => handleMarkVisited(country)}
+                        activeOpacity={0.7}
+                        style={[styles.actionBtn, styles.visitedBtn]}
+                      >
+                        <Check size={14} color="#090B0E" />
+                        <Text style={styles.visitedBtnText}>
+                          {currentLang === 'tr' ? 'Gittim, Damgala' : 'I Was Here'}
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  outerWrapper: {
-    flex: 1,
-    backgroundColor: '#07090E',
-    position: 'relative',
-    overflow: 'hidden',
-  },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#090B0E', // 60% dominant canvas
+  },
+  scrollView: {
+    flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: 120, // space for bottom dock
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 56 : 36,
+    paddingBottom: 110,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: theme.spacing.xl,
+    marginBottom: 20,
   },
   headerLeft: {
     flex: 1,
-    paddingRight: theme.spacing.md,
+    marginRight: 12,
   },
-  titleRow: {
+  badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
+    gap: 6,
+    marginBottom: 6,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#E5A93C', // 10% accent
+    letterSpacing: 1.2,
   },
   title: {
-    fontSize: theme.typography.fontSize['2xl'],
-    fontWeight: theme.typography.fontWeight.black,
+    fontSize: 26,
+    fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.5,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: theme.typography.fontSize.xs,
+    fontSize: 13,
     color: '#94A3B8',
     lineHeight: 18,
   },
   langPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  langPillText: {
-    fontSize: theme.typography.fontSize.xs,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: '#E2F952',
-  },
-  section: {
-    marginBottom: theme.spacing['2xl'],
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.black,
-    color: '#FFFFFF',
-    letterSpacing: -0.3,
-  },
-  badgeCountPill: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
-  },
-  badgeCountText: {
-    fontSize: theme.typography.fontSize.xxs,
-    fontWeight: theme.typography.fontWeight.extrabold,
-    color: '#F59E0B',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: theme.spacing.md,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.10)',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    gap: 6,
+    marginTop: 4,
+  },
+  langPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  searchWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 46,
+    marginBottom: 16,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  filterBar: {
+    paddingBottom: 14,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginRight: 8,
   },
   filterChipActive: {
-    backgroundColor: '#FF6B35',
-    borderColor: '#FF6B35',
+    backgroundColor: '#E5A93C', // 10% accent
+    borderColor: '#E5A93C',
   },
   filterChipText: {
-    fontSize: theme.typography.fontSize.xs,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: 13,
+    fontWeight: '600',
     color: '#94A3B8',
   },
   filterChipTextActive: {
-    color: '#07090E',
-    fontWeight: '800',
+    color: '#090B0E',
+    fontWeight: '700',
   },
-  badgesList: {
-    gap: 2,
+  counterRow: {
+    marginBottom: 16,
+    paddingHorizontal: 2,
+  },
+  counterText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  cardList: {
+    gap: 16,
+  },
+  // 30% Frosted Glass Card Architecture
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 18,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  countryInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  flag: {
+    fontSize: 32,
+  },
+  countryName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  continentText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  tagBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  tagBadgeText: {
+    fontSize: 11,
+    color: '#CBD5E1',
+    fontWeight: '600',
+  },
+  guideRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 12,
+  },
+  tipRow: {
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    marginBottom: 14,
+  },
+  iconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  foodIconBox: {
+    backgroundColor: 'rgba(229, 169, 60, 0.12)',
+  },
+  seeIconBox: {
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+  },
+  tipIconBox: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+  },
+  guideContent: {
+    flex: 1,
+  },
+  guideLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 0.8,
+    marginBottom: 3,
+  },
+  guideText: {
+    fontSize: 13,
+    color: '#E2E8F0',
+    lineHeight: 18,
+  },
+  tipText: {
+    fontSize: 12,
+    color: '#CBD5E1',
+    lineHeight: 17,
+    fontStyle: 'italic',
+  },
+  cardActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  actionBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  wishlistBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
+  },
+  wishlistBtnActive: {
+    backgroundColor: 'rgba(229, 169, 60, 0.10)',
+    borderColor: 'rgba(229, 169, 60, 0.40)',
+  },
+  wishlistBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#CBD5E1',
+  },
+  wishlistBtnTextActive: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#E5A93C',
+  },
+  visitedBtn: {
+    backgroundColor: '#FFFFFF',
+  },
+  visitedBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#090B0E',
+  },
+  visitedBanner: {
+    flex: 1,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  visitedBannerText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#10B981',
+  },
+  bottomSpacer: {
+    height: 40,
   },
 });

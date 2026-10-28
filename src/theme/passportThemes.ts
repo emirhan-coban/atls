@@ -19,7 +19,7 @@ export const PASSPORT_THEMES: Record<PassportThemeKey, PassportTheme> = {
     nameTr: 'Kozmik Boşluk',
     gradient: ['#131B2E', '#06080E'],
     borderColor: 'rgba(255, 255, 255, 0.15)',
-    accentColor: '#E2F952',
+    accentColor: '#E5A93C',
     chipColor: '#FFD700',
     textColor: '#FFFFFF',
     subtextColor: '#94A3B8',

@@ -205,7 +205,7 @@ export default function PassportShareModal({
                 </View>
 
                 <View style={styles.passportBadge}>
-                  <ShieldCheck size={11} color="#E2F952" />
+                  <ShieldCheck size={11} color="#E5A93C" />
                   <Text style={styles.passportBadgeText}>
                     {currentLang === 'tr' ? 'BİYOMETRİK PASAPORT' : 'BIOMETRIC PASSPORT'}
                   </Text>
@@ -300,7 +300,7 @@ export default function PassportShareModal({
                   </Text>
                 </View>
                 <View style={styles.qrContainer}>
-                  <QrCode size={22} color="#07090E" />
+                  <QrCode size={22} color="#090B0E" />
                 </View>
               </View>
             </View>
@@ -316,14 +316,14 @@ export default function PassportShareModal({
             >
               {isCapturing ? (
                 <>
-                  <ActivityIndicator color="#07090E" size="small" />
+                  <ActivityIndicator color="#090B0E" size="small" />
                   <Text style={styles.primaryActionBtnText}>
                     {currentLang === 'tr' ? 'Fotoğraf Hazırlanıyor...' : 'Generating Photo...'}
                   </Text>
                 </>
               ) : (
                 <>
-                  <ImageIcon size={18} color="#07090E" />
+                  <ImageIcon size={18} color="#090B0E" />
                   <Text style={styles.primaryActionBtnText}>
                     {currentLang === 'tr' ? 'Fotoğraf Olarak Paylaş / Kaydet' : 'Share / Save Photo'}
                   </Text>
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   photoCard: {
     width: CARD_WIDTH,
     aspectRatio: 3 / 4,
-    backgroundColor: '#07090E',
+    backgroundColor: '#090B0E',
     borderRadius: 24,
     padding: 18,
     borderWidth: 1,
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   formatToggleTextActive: {
-    color: '#07090E',
+    color: '#090B0E',
     fontWeight: '900',
   },
   cardHeader: {
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
   passportBadgeText: {
     fontSize: 8,
     fontWeight: '800',
-    color: '#E2F952',
+    color: '#E5A93C',
     letterSpacing: 0.5,
   },
   profileSection: {
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
   mapBox: {
     width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: '#07090E',
+    backgroundColor: '#090B0E',
     borderRadius: 16,
     padding: 6,
     borderWidth: 1,
@@ -648,6 +648,6 @@ const styles = StyleSheet.create({
   primaryActionBtnText: {
     fontSize: 14,
     fontWeight: '900',
-    color: '#07090E',
+    color: '#090B0E',
   },
 });

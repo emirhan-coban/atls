@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     aspectRatio: 16 / 9.5,
-    backgroundColor: '#07090E',
+    backgroundColor: '#090B0E',
     borderRadius: 22,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',

@@ -493,7 +493,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
           style={styles.langPill}
           activeOpacity={0.7}
         >
-          <Languages size={12} color="#E2F952" />
+          <Languages size={12} color="#E5A93C" />
           <Text style={styles.langPillText}>{currentLang.toUpperCase()}</Text>
         </TouchableOpacity>
       </View>
@@ -520,7 +520,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             style={styles.langPill}
             activeOpacity={0.7}
           >
-            <Languages size={12} color="#E2F952" />
+            <Languages size={12} color="#E5A93C" />
             <Text style={styles.langPillText}>{currentLang.toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
@@ -790,7 +790,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             {/* Live Stats Pill */}
             <View style={styles.visitedStatsRow}>
               <View style={styles.statPill}>
-                <Globe2 size={13} color="#E2F952" />
+                <Globe2 size={13} color="#E5A93C" />
                 <Text style={styles.statPillText}>
                   {totalCount} {currentLang === 'tr' ? 'Ülke İşaretlendi' : 'Countries Marked'}
                 </Text>
@@ -922,7 +922,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.payoffScrollContent}>
           <Animated.View entering={FadeInDown.duration(600)} style={styles.payoffHeader}>
             <View style={styles.celebrationBadge}>
-              <Sparkles size={14} color="#E2F952" />
+              <Sparkles size={14} color="#E5A93C" />
               <Text style={styles.celebrationBadgeText}>PASAPORTUN HAZIRLANIYOR</Text>
             </View>
 
@@ -1367,7 +1367,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#07090E',
+    backgroundColor: '#090B0E',
   },
   flex1: {
     flex: 1,
@@ -1432,7 +1432,7 @@ const styles = StyleSheet.create({
   langPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#E2F952',
+    color: '#E5A93C',
   },
 
   // ─── Step 1: Hook ───
@@ -1825,7 +1825,7 @@ const styles = StyleSheet.create({
   gridSelectedCountHint: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#E2F952',
+    color: '#E5A93C',
   },
   flagGrid: {
     flexDirection: 'row',
@@ -1909,7 +1909,7 @@ const styles = StyleSheet.create({
   celebrationBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#E2F952',
+    color: '#E5A93C',
     letterSpacing: 0.8,
   },
   payoffTitle: {
@@ -1938,7 +1938,7 @@ const styles = StyleSheet.create({
   statHeroPercent: {
     fontSize: 64,
     fontWeight: '900',
-    color: '#E2F952',
+    color: '#E5A93C',
     letterSpacing: -2,
     lineHeight: 68,
   },
@@ -2265,7 +2265,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   otpBoxFilled: {
-    borderColor: '#E2F952',
+    borderColor: '#E5A93C',
     backgroundColor: 'rgba(20, 26, 40, 0.95)',
   },
   otpInput: {

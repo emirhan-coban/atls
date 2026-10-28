@@ -338,7 +338,7 @@ export default function CountryDetailModal({
                     colors={['#FF6B35', '#FF8A5B']}
                     style={styles.gradientBtn}
                   >
-                    <Plane size={18} color="#07090E" strokeWidth={2.5} />
+                    <Plane size={18} color="#090B0E" strokeWidth={2.5} />
                     <Text style={styles.primaryActionText}>
                       {currentLang === 'tr' ? 'Pasaporta Mühürle ✈️' : 'Stamp into Passport ✈️'}
                     </Text>
@@ -374,8 +374,8 @@ export default function CountryDetailModal({
                     style={styles.secondaryBtn}
                     activeOpacity={0.8}
                   >
-                    <Share2 size={16} color="#E2F952" />
-                    <Text style={[styles.secondaryBtnText, { color: '#E2F952' }]}>
+                    <Share2 size={16} color="#E5A93C" />
+                    <Text style={[styles.secondaryBtnText, { color: '#E5A93C' }]}>
                       {currentLang === 'tr' ? 'Kartı Paylaş' : 'Share Card'}
                     </Text>
                   </TouchableOpacity>
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   primaryActionText: {
-    color: '#07090E',
+    color: '#090B0E',
     fontSize: 15,
     fontWeight: '900',
   },

@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
   previewLabel: {
     fontSize: 9.5,
     fontWeight: '800',
-    color: '#E2F952',
+    color: '#E5A93C',
     letterSpacing: 0.5,
   },
   previewPill: {
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   saveBtnText: {
-    color: '#07090E',
+    color: '#090B0E',
     fontSize: 14,
     fontWeight: '900',
   },

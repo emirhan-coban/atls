@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   submitText: {
-    color: '#07090E',
+    color: '#090B0E',
     fontSize: 14,
     fontWeight: '900',
   },

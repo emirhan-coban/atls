@@ -192,6 +192,7 @@ export default function App() {
               countries={countries}
               profile={profile}
               onAddToWishlist={handleAddCountry}
+              onMarkVisited={handleAddCountry}
               t={t}
               currentLang={currentLang}
               onToggleLang={handleToggleLang}
@@ -278,7 +279,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#07090E',
+    backgroundColor: '#090B0E',
   },
   screenContainer: {
     flex: 1,

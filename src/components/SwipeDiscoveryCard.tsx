@@ -246,7 +246,7 @@ export default function SwipeDiscoveryCard({
             colors={['#FF6B35', '#FF8A5B']}
             style={styles.heartGradient}
           >
-            <Heart size={24} color="#07090E" fill="#07090E" />
+            <Heart size={24} color="#090B0E" fill="#090B0E" />
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -349,12 +349,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     borderLeftWidth: 3,
-    borderLeftColor: '#E2F952',
+    borderLeftColor: '#E5A93C',
   },
   triviaLabel: {
     fontSize: theme.typography.fontSize.xxs,
     fontWeight: theme.typography.fontWeight.extrabold,
-    color: '#E2F952',
+    color: '#E5A93C',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 4,
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.full,
   },
   shuffleBtnText: {
-    color: '#07090E',
+    color: '#090B0E',
     fontWeight: theme.typography.fontWeight.black,
     fontSize: theme.typography.fontSize.sm,
   },
