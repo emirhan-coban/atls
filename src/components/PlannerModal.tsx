@@ -6,6 +6,7 @@ import { BookCheck, Check, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } 
 import Button from './ui/Button';
 import Chip from './ui/Chip';
 import EmptyState from './EmptyState';
+import DocumentVault from './DocumentVault';
 import PlanEditorSheet from './PlanEditorSheet';
 import { makeStyles, useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
@@ -303,6 +304,8 @@ export default function PlannerModal({ visible, onClose, currentLang }: PlannerM
           )}
           <Text style={styles.note}>{lt('budgetNote', currentLang)}</Text>
         </View>
+
+        <DocumentVault planId={plan.id} currentLang={currentLang} />
 
         {plan.notes ? (
           <View style={styles.card}>

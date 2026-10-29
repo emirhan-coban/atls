@@ -144,3 +144,42 @@ describe('reminders', () => {
     expect(buildReminders(withItems('2026-07-30', true), 'Japan', 'en', NOW)[0].title).toContain('Japan');
   });
 });
+
+import { buildMemoryReminders } from '../memories';
+
+describe('anniversary reminders', () => {
+  const trip = (id: string, countryId: string, year: string, month: string | null) =>
+    ({ id, countryId, year, month, cities: [], type: 'leisure', createdAt: '', updatedAt: '' }) as any;
+  const now = new Date(2026, 5, 15, 12, 0, 0); // 15 June 2026
+  const nameOf = (id: string) => id;
+
+  it('schedules the next 1st of the trip month and counts the years', () => {
+    const [r] = buildMemoryReminders([trip('a', 'JP', '2023', '10')], nameOf, 'en', now);
+    expect(r.at).toEqual(new Date(2026, 9, 1, 10, 0, 0));
+    expect(r.title).toContain('3 years ago');
+  });
+
+  it('rolls to next year when the month already passed this year', () => {
+    const [r] = buildMemoryReminders([trip('a', 'FR', '2024', '03')], nameOf, 'tr', now);
+    expect(r.at).toEqual(new Date(2027, 2, 1, 10, 0, 0));
+    expect(r.title).toContain('3 yıl önce');
+  });
+
+  it('skips trips without a month, with an unknown year, or from this very year', () => {
+    const list = buildMemoryReminders(
+      [trip('a', 'IT', '2020', null), trip('b', 'DE', '', '08'), trip('c', 'ES', '2026', '09')],
+      nameOf,
+      'en',
+      now
+    );
+    expect(list).toEqual([]);
+  });
+
+  it('sends one reminder per country and month, soonest first, capped', () => {
+    const trips = [trip('a', 'JP', '2021', '10'), trip('b', 'JP', '2023', '10'), trip('c', 'FR', '2022', '07')];
+    const list = buildMemoryReminders(trips, nameOf, 'en', now);
+    expect(list.map((r) => r.at.getMonth())).toEqual([6, 9]);
+    const many = Array.from({ length: 30 }, (_, i) => trip(`t${i}`, `C${i}`, '2020', String((i % 12) + 1).padStart(2, '0')));
+    expect(buildMemoryReminders(many, nameOf, 'en', now).length).toBeLessThanOrEqual(12);
+  });
+});
