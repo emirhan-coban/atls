@@ -46,10 +46,8 @@ import { PASSPORT_THEMES, PassportThemeKey } from '../theme/passportThemes';
 import { Country, Profile, ThemePreference } from '../stores/types';
 import EditProfileModal from './EditProfileModal';
 import CountryStatusModal from './CountryStatusModal';
-import StampView from './StampView';
 import AnimatedCounter from './AnimatedCounter';
 import { getDynamicLocation } from '../utils/locationHelper';
-import { monthShort } from '../data/months';
 
 interface PassportScreenProps {
   profile: Profile;
@@ -135,16 +133,6 @@ function PassportScreen({
 
   const currentThemeKey = profile?.passportTheme || 'classic_navy';
   const currentTheme = PASSPORT_THEMES[currentThemeKey as PassportThemeKey] || PASSPORT_THEMES.classic_navy;
-
-  // Flat entry stamps for the countries the user has visited (same design as the journal's Stamps tab)
-  const passportStampsList = visitedCountries.slice(0, 8).map((c) => ({
-    id: `stamp-${c.id}`,
-    code: c.id,
-    name: currentLang === 'tr' ? (c.nameTr || c.name) : c.name,
-    date:
-      [monthShort(c.visitedMonth || c.month, currentLang), c.visitedYear || c.year].filter(Boolean).join(' ') ||
-      '',
-  }));
 
   // Dynamic MRZ Code based on profile
   const cleanNameForMrz = (profile.name || 'TRAVELER')
@@ -596,30 +584,6 @@ function PassportScreen({
         )}
       </View>
 
-      {/* DIGITAL BORDER STAMPS */}
-      <View style={styles.stampsSection}>
-        <View style={styles.listHeader}>
-          <Text style={styles.listTitle}>{t.officialStamps}</Text>
-          <Text style={styles.stampsCount}>
-            {t.stampsCount.replace('{count}', passportStampsList.length)}
-          </Text>
-        </View>
-
-        {passportStampsList.length === 0 ? (
-          <View style={styles.emptyStampsCard}>
-            <Text style={styles.emptyStampsText}>{t.noStampsYet}</Text>
-          </View>
-        ) : (
-          <View style={styles.stampsGrid}>
-            {passportStampsList.map((stamp) => (
-              <View key={stamp.id} style={styles.stampCell}>
-                <StampView countryId={stamp.code} title={stamp.name} dateText={stamp.date} status="visited" size={156} />
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-
       {/* PRIMARY CTA: SHARE YOUR PASSPORT (4:3 Photo Card) */}
       {onOpenPlanner && (
         <Button
@@ -856,8 +820,8 @@ function PassportScreen({
                     t.deleteAccountConfirmTitle || (currentLang === 'tr' ? 'Hesabı Kalıcı Olarak Sil' : 'Permanently Delete Account'),
                     t.deleteAccountConfirmMsg ||
                       (currentLang === 'tr'
-                        ? 'Hesabınızı silmek istediğinize emin misiniz? Tüm seyahatleriniz, pasaport mühürleriniz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.'
-                        : 'Are you sure you want to delete your account? All your travels, stamps, and profile data will be permanently wiped. This action cannot be undone.'),
+                        ? 'Hesabınızı silmek istediğinize emin misiniz? Tüm seyahatleriniz, pasaportunuz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.'
+                        : 'Are you sure you want to delete your account? All your travels, passport, and profile data will be permanently wiped. This action cannot be undone.'),
                     [
                       { text: t.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
                       {
@@ -1423,39 +1387,8 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
   deleteButton: {
     padding: 6,
   },
-  stampsSection: {
-    marginTop: 18,
-  },
-  stampsCount: {
-    fontSize: 10,
-    color: colors.text.muted,
-    fontWeight: '600',
-  },
-  stampsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
-  },
-  stampCell: {
-    width: '48.5%',
-    alignItems: 'center',
-  },
   shareButton: {
     marginTop: 20,
-  },
-  emptyStampsCard: {
-    backgroundColor: colors.panel.base,
-    borderRadius: 20,
-    paddingVertical: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-  },
-  emptyStampsText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    fontWeight: '600',
   },
   // Account Modal / Bottom Sheet
   accountSheetHeader: {

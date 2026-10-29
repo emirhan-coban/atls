@@ -455,3 +455,5 @@ Bu bölüm kalan her maddeyi ya yapıldı ya da gerekçesiyle yapılmadı olarak
 - Simülatörde açık ve koyu temada Ana Sayfa, Keşfet, rota sayfası, Pasaport, Günlük (4 sekme), yıl özeti, paylaşım kartı, planlayıcı, onboarding (4 adım) ve hesap ekranı gözle kontrol edildi.
 
 **Mühür yeniden tasarlandı (bilet küpürü):** Önceki çerçeve + ülke kodu tasarımı beğenilmedi. `StampView` artık delikli bir bilet kupürü: solda bayrak, giriş/ikamet etiketi, ülke adı (Instrument Serif) ve tarih, ortada kesik çizgi, sağda ülke kodu ve yıl. Renk yalnızca gezilen (mavi) / yaşanan (yeşil) için değişiyor. Pasaport, Günlük, yıl özeti ve yeni gezi animasyonu aynı bileşeni kullanıyor. Yılı bilinmeyen gezilerde tarih alanı boş kalır.
+
+**Mühür özelliği tamamen kaldırıldı:** `StampView`, Günlük > Damgalar sekmesi, Pasaport'taki "Resmi sınır mühürleri" bölümü, yeni gezi eklenince çıkan büyük damga animasyonu (yerine yalnızca konfeti kaldı), ilgili çeviri anahtarları ve "mühürle/damgala" gibi metinler ("Pasaporta Ekle", "İlk Ülkeni Ekle" vb.) silindi veya değiştirildi. Rozet bildirimi ve konfeti duruyor. `utils/stamp.ts` daha önce silinmişti.
