@@ -25,6 +25,24 @@ const CONTINENTS: { id: ContinentFilter; tr: string; en: string }[] = [
 
 const PAGE = 30;
 
+interface Collection {
+  id: string;
+  labelKey: 'colFreeEurope' | 'colFreeAsia' | 'colFreeAmericas' | 'colEasyNext' | 'colSchengenNext';
+  visa: VisaFilter;
+  continent: ContinentFilter;
+  schengen: boolean;
+  notVisited: boolean;
+}
+
+/** Ready-made filter combinations. They only set the filters below, so they stay editable afterwards. */
+const COLLECTIONS: Collection[] = [
+  { id: 'free-europe', labelKey: 'colFreeEurope', visa: 'free', continent: 'Europe', schengen: false, notVisited: false },
+  { id: 'free-asia', labelKey: 'colFreeAsia', visa: 'free', continent: 'Asia', schengen: false, notVisited: false },
+  { id: 'free-americas', labelKey: 'colFreeAmericas', visa: 'free', continent: 'Americas', schengen: false, notVisited: false },
+  { id: 'easy-next', labelKey: 'colEasyNext', visa: 'easy', continent: 'all', schengen: false, notVisited: true },
+  { id: 'schengen-next', labelKey: 'colSchengenNext', visa: 'all', continent: 'all', schengen: true, notVisited: true },
+];
+
 /** Normalises Turkish and accented letters so "istanbul" finds "İstanbul" and "turkiye" finds "Türkiye". */
 const fold = (value: string) =>
   value
@@ -47,6 +65,8 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
   const [continent, setContinent] = useState<ContinentFilter>('all');
   const [visa, setVisa] = useState<VisaFilter>('all');
   const [schengenOnly, setSchengenOnly] = useState(false);
+  const [notVisitedOnly, setNotVisitedOnly] = useState(false);
+  const [collection, setCollection] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE);
 
   const statusById = useMemo(() => {
@@ -63,6 +83,10 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
         const facts = getCountryFacts(c.id);
         if (visa !== 'all' && (!facts || visaGroup(facts.visa.status) !== visa)) return false;
         if (schengenOnly && !facts?.schengen) return false;
+        if (notVisitedOnly) {
+          const status = statusById.get(c.id);
+          if (status === 'visited' || status === 'lived') return false;
+        }
         if (q) {
           const haystack = fold(
             [c.name, c.nameTr, facts?.capital.en, facts?.capital.tr].filter(Boolean).join(' ')
@@ -81,7 +105,7 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
         }
         return byRank;
       });
-  }, [query, continent, visa, schengenOnly, currentLang]);
+  }, [query, continent, visa, schengenOnly, notVisitedOnly, statusById, currentLang]);
 
   const visaColor = (group: VisaGroup | null) =>
     group === 'free' ? colors.status.lived.color : group === 'easy' ? colors.gold.base : group === 'required' ? colors.danger : colors.text.muted;
@@ -99,6 +123,30 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
     setContinent('all');
     setVisa('all');
     setSchengenOnly(false);
+    setNotVisitedOnly(false);
+    setCollection(null);
+  };
+
+  /** Any manual filter change leaves the collection, since the list no longer matches it. */
+  const edit = (apply: () => void) => {
+    apply();
+    setCollection(null);
+    setLimit(PAGE);
+  };
+
+  const applyCollection = (item: Collection) => {
+    Haptics.selectionAsync();
+    if (collection === item.id) {
+      resetFilters();
+      return;
+    }
+    setQuery('');
+    setVisa(item.visa);
+    setContinent(item.continent);
+    setSchengenOnly(item.schengen);
+    setNotVisitedOnly(item.notVisited);
+    setCollection(item.id);
+    setLimit(PAGE);
   };
 
   return (
@@ -119,13 +167,21 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
         />
       </View>
 
+      <Text style={styles.filterLabel}>{pt('collectionsLabel', currentLang)}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        {COLLECTIONS.map((item) => (
+          <Chip key={item.id} label={pt(item.labelKey, currentLang)} selected={collection === item.id} onPress={() => applyCollection(item)} />
+        ))}
+      </ScrollView>
+
       <Text style={styles.filterLabel}>{pt('visaFilter', currentLang)}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        <Chip label={pt('filterAll', currentLang)} selected={visa === 'all'} onPress={() => { setVisa('all'); setLimit(PAGE); }} />
-        <Chip label={pt('filterFree', currentLang)} selected={visa === 'free'} onPress={() => { setVisa('free'); setLimit(PAGE); }} />
-        <Chip label={pt('filterEasy', currentLang)} selected={visa === 'easy'} onPress={() => { setVisa('easy'); setLimit(PAGE); }} />
-        <Chip label={pt('filterRequired', currentLang)} selected={visa === 'required'} onPress={() => { setVisa('required'); setLimit(PAGE); }} />
-        <Chip label={pt('filterSchengen', currentLang)} selected={schengenOnly} onPress={() => { setSchengenOnly(!schengenOnly); setLimit(PAGE); }} />
+        <Chip label={pt('filterAll', currentLang)} selected={visa === 'all'} onPress={() => edit(() => setVisa('all'))} />
+        <Chip label={pt('filterFree', currentLang)} selected={visa === 'free'} onPress={() => edit(() => setVisa('free'))} />
+        <Chip label={pt('filterEasy', currentLang)} selected={visa === 'easy'} onPress={() => edit(() => setVisa('easy'))} />
+        <Chip label={pt('filterRequired', currentLang)} selected={visa === 'required'} onPress={() => edit(() => setVisa('required'))} />
+        <Chip label={pt('filterSchengen', currentLang)} selected={schengenOnly} onPress={() => edit(() => setSchengenOnly(!schengenOnly))} />
+        <Chip label={pt('filterNotVisited', currentLang)} selected={notVisitedOnly} onPress={() => edit(() => setNotVisitedOnly(!notVisitedOnly))} />
       </ScrollView>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
@@ -134,7 +190,7 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
             key={item.id}
             label={item[currentLang]}
             selected={continent === item.id}
-            onPress={() => { setContinent(item.id); setLimit(PAGE); }}
+            onPress={() => edit(() => setContinent(item.id))}
           />
         ))}
       </ScrollView>

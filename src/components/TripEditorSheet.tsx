@@ -51,7 +51,7 @@ export default function TripEditorSheet({ visible, onClose, currentLang, country
     if (!visible) return;
     setPickedCountryId(null);
     setSearch('');
-    setYear(trip ? Number(trip.year) : thisYear());
+    setYear(trip && trip.year ? Number(trip.year) : thisYear());
     setMonth(trip?.month ?? null);
     setDays(trip?.days ? String(trip.days) : '');
     setCities(trip?.cities.join(', ') ?? '');
