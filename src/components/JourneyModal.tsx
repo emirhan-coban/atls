@@ -138,7 +138,7 @@ export default function JourneyModal({
               ) : (
                 byYear.map((group) => (
                   <View key={group.year} style={styles.yearBlock}>
-                    <Text style={styles.yearHeading}>{group.year}</Text>
+                    <Text style={styles.yearHeading}>{group.year || jt('yearUnknown', currentLang)}</Text>
                     {group.trips.map((trip) => (
                       <TouchableOpacity
                         key={trip.id}

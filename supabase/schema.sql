@@ -240,3 +240,40 @@ DROP POLICY IF EXISTS "Users can delete their own trips" ON public.trips;
 CREATE POLICY "Users can delete their own trips"
   ON public.trips FOR DELETE USING (auth.uid() = user_id);
 
+-- 11. Planned trips (schema v4): upcoming trips with their checklist and budget.
+-- Notification ids are per device and are not stored. Photos stay on the device too.
+CREATE TABLE IF NOT EXISTS public.planned_trips (
+  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
+  id TEXT NOT NULL,
+  country_id TEXT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  cities JSONB DEFAULT '[]'::jsonb,
+  notes TEXT DEFAULT '',
+  checklist JSONB DEFAULT '[]'::jsonb,
+  budget JSONB DEFAULT '[]'::jsonb,
+  currency TEXT DEFAULT 'EUR',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
+  PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS planned_trips_user_start_idx ON public.planned_trips (user_id, start_date);
+
+ALTER TABLE public.planned_trips ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own planned trips" ON public.planned_trips;
+CREATE POLICY "Users can view their own planned trips"
+  ON public.planned_trips FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own planned trips" ON public.planned_trips;
+CREATE POLICY "Users can insert their own planned trips"
+  ON public.planned_trips FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own planned trips" ON public.planned_trips;
+CREATE POLICY "Users can update their own planned trips"
+  ON public.planned_trips FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own planned trips" ON public.planned_trips;
+CREATE POLICY "Users can delete their own planned trips"
+  ON public.planned_trips FOR DELETE USING (auth.uid() = user_id);

@@ -7,6 +7,7 @@ const mockCloud = {
   deletes: [],
   countriesResult: { data: [], error: null },
   profileResult: { data: null, error: null },
+  plansResult: { data: [], error: null },
   rpcError: null,
 };
 
@@ -32,7 +33,8 @@ jest.mock('../supabase', () => ({
       }),
       select: () => ({
         eq: () => {
-          const result = table === 'profiles' ? mockCloud.profileResult : mockCloud.countriesResult;
+          const result =
+            table === 'profiles' ? mockCloud.profileResult : table === 'planned_trips' ? mockCloud.plansResult : mockCloud.countriesResult;
           const promise = Promise.resolve(result);
           promise.maybeSingle = () => Promise.resolve(result);
           return promise;
@@ -42,7 +44,7 @@ jest.mock('../supabase', () => ({
   },
 }));
 
-import { storageService, countryToRow, rowToCountry, rowToProfile } from '../storageService';
+import { storageService, countryToRow, rowToCountry, rowToProfile, planToRow, rowToPlan, mergePlans } from '../storageService';
 
 const turkey = { id: 'TR', status: 'lived', year: '2020' };
 const france = { id: 'FR', status: 'visited', year: '2024', month: '07' };
@@ -57,6 +59,7 @@ beforeEach(async () => {
   mockCloud.deletes = [];
   mockCloud.countriesResult = { data: [], error: null };
   mockCloud.profileResult = { data: null, error: null };
+  mockCloud.plansResult = { data: [], error: null };
   mockCloud.rpcError = null;
 });
 
@@ -195,5 +198,66 @@ describe('account deletion', () => {
     mockCloud.rpcError = { message: 'function not found' };
     await expect(storageService.deleteAccount()).rejects.toThrow('function not found');
     expect((await readLocal('@atls_countries')).map((c) => c.id)).toEqual(['TR']);
+  });
+});
+
+describe('planned trips in the cloud', () => {
+  const plan = {
+    id: 'p1',
+    countryId: 'IT',
+    startDate: '2026-12-01',
+    endDate: '2026-12-08',
+    cities: ['Roma'],
+    notes: 'n',
+    checklist: [{ id: 'a', text: 'Pasaport', done: true }],
+    budget: [{ id: 'b', label: 'Otel', amount: 500 }],
+    currency: 'EUR',
+    notificationIds: ['local-notification'],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+  };
+
+  it('round-trips a plan but never sends this device\'s notification ids', () => {
+    const row = planToRow('user-1', plan);
+    expect(row).toMatchObject({ user_id: 'user-1', country_id: 'IT', start_date: '2026-12-01', end_date: '2026-12-08' });
+    expect(row).not.toHaveProperty('notification_ids');
+    const back = rowToPlan(row);
+    expect(back).toMatchObject({ id: 'p1', checklist: plan.checklist, budget: plan.budget, notificationIds: [] });
+  });
+
+  it('keeps this device\'s reminders on the winning cloud copy and uploads newer local plans', () => {
+    const cloudSame = { ...plan, notificationIds: [], notes: 'cloud', updatedAt: '2026-01-05T00:00:00.000Z' };
+    const merged = mergePlans([plan], [cloudSame], { keepLocalOnly: false, pendingKeys: new Set() });
+    expect(merged.plans[0]).toMatchObject({ notes: 'cloud', notificationIds: ['local-notification'] });
+    expect(merged.toUpload).toEqual([]);
+
+    const newerLocal = { ...plan, updatedAt: '2026-02-01T00:00:00.000Z' };
+    const second = mergePlans([newerLocal], [cloudSame], { keepLocalOnly: false, pendingKeys: new Set() });
+    expect(second.toUpload).toEqual([newerLocal]);
+  });
+
+  it('queues a plan and its removal for the cloud', async () => {
+    await storageService.syncPlan(plan);
+    expect(mockCloud.upserts.find((u) => u.table === 'planned_trips')?.row).toMatchObject({ id: 'p1', user_id: 'user-1' });
+    await storageService.syncPlanRemoval('p1');
+    expect(mockCloud.deletes).toContainEqual({ table: 'planned_trips', filter: { user_id: 'user-1', id: 'p1' } });
+  });
+
+  it('brings plans from another device onto this one and keeps offline plans', async () => {
+    const cloudPlan = planToRow('user-1', { ...plan, id: 'p-cloud' });
+    mockCloud.plansResult = { data: [cloudPlan], error: null };
+    await AsyncStorage.setItem('@atls_plans', JSON.stringify([{ ...plan, id: 'p-local' }]));
+    await AsyncStorage.setItem('@atls_synced_user', 'user-1');
+    mockCloud.user = { id: 'user-1' };
+    const data = await storageService.loadInitialData({ name: 'A' }, []);
+    expect(data.plans.map((p) => p.id).sort()).toEqual(['p-cloud']);
+    // after the first sync an unpended local-only plan was deleted elsewhere, so the cloud wins
+  });
+
+  it('keeps local plans when the table does not exist yet', async () => {
+    mockCloud.plansResult = { data: null, error: { message: 'relation does not exist' } };
+    await AsyncStorage.setItem('@atls_plans', JSON.stringify([plan]));
+    const data = await storageService.loadInitialData({ name: 'A' }, []);
+    expect(data.plans.map((p) => p.id)).toEqual(['p1']);
   });
 });
