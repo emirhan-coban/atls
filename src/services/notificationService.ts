@@ -1,6 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Reminder } from '../utils/planning';
+
+const MEMORY_IDS_KEY = '@atls_memory_notification_ids';
 
 // How a notification looks while the app is open
 Notifications.setNotificationHandler({
@@ -60,6 +63,18 @@ export const notificationService = {
       }
     }
     return ids;
+  },
+
+  /** Replaces the scheduled anniversary reminders with a new set (an empty set turns them off). */
+  async setMemoryReminders(reminders: Reminder[]): Promise<void> {
+    try {
+      const old: string[] = JSON.parse((await AsyncStorage.getItem(MEMORY_IDS_KEY)) || '[]');
+      await this.cancel(old);
+      const ids = reminders.length > 0 && (await this.hasPermission()) ? await this.scheduleReminders(reminders, { kind: 'memory' }) : [];
+      await AsyncStorage.setItem(MEMORY_IDS_KEY, JSON.stringify(ids));
+    } catch (err) {
+      console.warn('[NotificationService] setMemoryReminders notice:', err);
+    }
   },
 
   async cancel(ids: string[]): Promise<void> {

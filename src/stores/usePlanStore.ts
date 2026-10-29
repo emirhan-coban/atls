@@ -4,6 +4,7 @@ import { storageService } from '../services/storageService';
 import { notificationService } from '../services/notificationService';
 import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { buildReminders, daysUntil } from '../utils/planning';
+import { removePlanDocuments } from '../utils/vault';
 
 export interface PlanInput {
   countryId: string;
@@ -110,6 +111,7 @@ export const usePlanStore = create<PlanState>((set, get) => {
       if (current) await notificationService.cancel(current.notificationIds);
       await persist(get().plans.filter((p) => p.id !== id));
       await storageService.syncPlanRemoval(id);
+      removePlanDocuments(id).catch(() => {});
     },
 
     clearPlans: () => {

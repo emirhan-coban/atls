@@ -54,6 +54,12 @@
           "iosUrlScheme": "com.googleusercontent.apps.903672843406-236ejm0d5r0tcrg762jm1od1uu181a87"
         }
       ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "atls. belgelerini korumak için Face ID kullanır."
+        }
+      ],
       "expo-router"
     ],
     "extra": {

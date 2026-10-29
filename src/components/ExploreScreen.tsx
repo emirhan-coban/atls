@@ -1,4 +1,5 @@
 import CountryBrowser from './CountryBrowser';
+import SwipeDiscoveryCard from './SwipeDiscoveryCard';
 import { pt } from '../localization/profile';
 import Chip from './ui/Chip';
 import EmptyState from './EmptyState';
@@ -31,6 +32,9 @@ import {
   ChevronUp
 } from 'lucide-react-native';
 import { CURATED_DESTINATIONS, CuratedDestination, MapPoint } from '../data/curatedDestinations';
+import { MORE_DESTINATIONS } from '../data/moreDestinations';
+
+const ALL_DESTINATIONS = [...CURATED_DESTINATIONS, ...MORE_DESTINATIONS];
 import { openAppleMaps, openGoogleMaps } from '../utils/mapHelper';
 import { Country, Profile } from '../stores/types';
 
@@ -51,6 +55,7 @@ const CONTINENTS = [
   { id: 'Asia', tr: 'Asya', en: 'Asia' },
   { id: 'Americas', tr: 'Amerika', en: 'Americas' },
   { id: 'Africa', tr: 'Afrika', en: 'Africa' },
+  { id: 'Oceania', tr: 'Okyanusya', en: 'Oceania' },
 ];
 
 function ExploreScreen({
@@ -60,8 +65,9 @@ function ExploreScreen({
   currentLang,
   onToggleLang,
   onSelectCountry,
+  t,
 }: ExploreScreenProps) {
-  const [mode, setMode] = useState<'routes' | 'countries'>('routes');
+  const [mode, setMode] = useState<'routes' | 'countries' | 'swipe'>('routes');
   const { colors } = useTheme();
   const styles = useStyles();
   const [selectedContinent, setSelectedContinent] = useState('all');
@@ -87,7 +93,7 @@ function ExploreScreen({
 
   // Filter destinations
   const filteredDestinations = useMemo(() => {
-    return CURATED_DESTINATIONS.filter((item) => {
+    return ALL_DESTINATIONS.filter((item) => {
       if (selectedContinent !== 'all') {
         const itemContinent = (item.continent || '').toLowerCase();
         const selContinent = selectedContinent.toLowerCase();
@@ -236,9 +242,12 @@ function ExploreScreen({
         <View style={styles.modeRow}>
           <Chip label={pt('exploreRoutes', currentLang)} selected={mode === 'routes'} onPress={() => setMode('routes')} />
           <Chip label={pt('exploreCountries', currentLang)} selected={mode === 'countries'} onPress={() => setMode('countries')} />
+          <Chip label={pt('exploreSwipe', currentLang)} selected={mode === 'swipe'} onPress={() => setMode('swipe')} />
         </View>
 
-        {mode === 'countries' && onSelectCountry ? (
+        {mode === 'swipe' ? (
+          <SwipeDiscoveryCard existingCountries={countries} currentLang={currentLang} onAddToWishlist={onAddToWishlist} t={t} />
+        ) : mode === 'countries' && onSelectCountry ? (
           <CountryBrowser countries={countries} currentLang={currentLang} onSelectCountry={onSelectCountry} />
         ) : (
           <>
@@ -315,11 +324,16 @@ function ExploreScreen({
                   onPress={() => handleToggleExpand(dest.id)}
                   style={styles.thumbnailContainer}
                 >
-                  <Image
-                    source={{ uri: dest.heroImage }}
-                    style={styles.thumbnail}
-                    resizeMode="cover"
-                  />
+                  {dest.heroImage ? (
+                    <Image source={{ uri: dest.heroImage }} style={styles.thumbnail} resizeMode="cover" />
+                  ) : (
+                    <LinearGradient
+                      colors={[colors.panel.raised, colors.panel.base]}
+                      style={[styles.thumbnail, styles.thumbnailFallback]}
+                    >
+                      <Text style={styles.fallbackFlag}>{dest.flag}</Text>
+                    </LinearGradient>
+                  )}
                   <LinearGradient
                     colors={['transparent', 'rgba(9, 11, 14, 0.95)']}
                     style={styles.thumbnailGradient}
@@ -534,6 +548,8 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     color: colors.text.primary,
     fontSize: 14,
   },
+  thumbnailFallback: { alignItems: 'center', justifyContent: 'center' },
+  fallbackFlag: { fontSize: 72, opacity: 0.5 },
   modeRow: {
     flexDirection: 'row',
     gap: 8,

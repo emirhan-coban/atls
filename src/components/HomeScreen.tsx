@@ -30,6 +30,26 @@ import InteractiveMapModal from './InteractiveMapModal';
 import AnimatedCounter from './AnimatedCounter';
 import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
 import { getCountryTrivia } from '../data/countryTrivia';
+import { Country, Profile } from '../stores/types';
+
+type StatusFilter = Country['status'] | 'all';
+
+interface HomeScreenProps {
+  countries: Country[];
+  profile: Profile;
+  onOpenAddModal: () => void;
+  onSelectCountry: (countryId: string) => void;
+  onNavigateToPassport: () => void;
+  onNavigateToExplore: () => void;
+  t: Record<string, any>;
+  currentLang: 'tr' | 'en';
+  onToggleLang: () => void;
+  onOpenAuth?: () => void;
+  tripCount?: number;
+  onOpenJourney: () => void;
+  onOpenPlanner: () => void;
+  [key: string]: any;
+}
 
 function HomeScreen({
   countries,
@@ -45,11 +65,11 @@ function HomeScreen({
   tripCount = 0,
   onOpenJourney,
   onOpenPlanner,
-}) {
+}: HomeScreenProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const [countryCardIndex, setCountryCardIndex] = useState(0);
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   const markedCountries = countries.filter((c) => c.status === 'visited' || c.status === 'lived');
@@ -90,8 +110,8 @@ function HomeScreen({
     setCountryCardIndex((prev) => (prev - 1 + markedCountries.length) % markedCountries.length);
   };
 
-  const handleFilterPress = (filter) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Selection);
+  const handleFilterPress = (filter: StatusFilter) => {
+    Haptics.selectionAsync();
     setActiveFilter((prev) => (prev === filter ? 'all' : filter));
   };
 
@@ -116,7 +136,7 @@ function HomeScreen({
         </View>
 
         {/* HERO CARD: Empty State OR Visited Country Highlight */}
-        {!hasCountries ? (
+        {!currentMarkedCountry ? (
           /* EMPTY STATE: Call to action when no country has been added yet */
           <View style={styles.emptyHeroCard}>
             <View style={styles.emptyBadgeRow}>

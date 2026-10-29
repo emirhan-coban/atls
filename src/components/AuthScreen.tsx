@@ -69,17 +69,24 @@ const AppleIcon = () => {
 };
 
 // Email validation regex (standard RFC 5322 compatible)
-const isValidEmailAddress = (email) => {
+const isValidEmailAddress = (email: string) => {
   const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return re.test(String(email).trim().toLowerCase());
 };
+
+interface AuthScreenProps {
+  onLoginSuccess: (userData: any) => void;
+  t: Record<string, any>;
+  currentLang: 'tr' | 'en';
+  onToggleLang: () => void;
+}
 
 export default function AuthScreen({
   onLoginSuccess,
   t,
   currentLang,
   onToggleLang,
-}) {
+}: AuthScreenProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const [tab, setTab] = useState('login'); // 'login' | 'register'
@@ -87,7 +94,7 @@ export default function AuthScreen({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // OTP Verification state
@@ -95,10 +102,10 @@ export default function AuthScreen({
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [otpTimer, setOtpTimer] = useState(60);
   const [canResendOtp, setCanResendOtp] = useState(false);
-  const otpInputsRef = useRef([]);
-  const nameInputRef = useRef(null);
-  const emailInputRef = useRef(null);
-  const passwordInputRef = useRef(null);
+  const otpInputsRef = useRef<(TextInput | null)[]>([]);
+  const nameInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
 
   // Password Strength Evaluation
   const hasMinLength = password.length >= 8;
@@ -137,14 +144,14 @@ export default function AuthScreen({
   }, [isOtpStep, otpTimer]);
 
   // Handle OTP digit entry with auto-forward and backspace
-  const handleOtpChange = (val, index) => {
+  const handleOtpChange = (val: string, index: number) => {
     const clean = val.replace(/[^0-9]/g, '');
     const updated = [...otpDigits];
 
     // If user pastes full 6 digit code
     if (clean.length > 1) {
       const chars = clean.slice(0, 6).split('');
-      chars.forEach((c, i) => {
+      chars.forEach((c: string, i: number) => {
         updated[i] = c;
       });
       setOtpDigits(updated);
@@ -160,7 +167,7 @@ export default function AuthScreen({
     }
   };
 
-  const handleOtpKeyPress = (e, index) => {
+  const handleOtpKeyPress = (e: any, index: number) => {
     if (e.nativeEvent.key === 'Backspace' && !otpDigits[index] && index > 0) {
       otpInputsRef.current[index - 1]?.focus();
     }
@@ -262,7 +269,7 @@ export default function AuthScreen({
           avatarInitials: cleanName.substring(0, 2).toUpperCase(),
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
       let errorMsg = err.message || (currentLang === 'tr' ? 'İşlem sırasında bir hata oluştu.' : 'An error occurred.');
@@ -339,7 +346,7 @@ export default function AuthScreen({
         currentLang === 'tr' ? 'Kod Gönderildi' : 'Code Sent',
         t?.otpCodeSent || (currentLang === 'tr' ? 'Yeni bir güvenlik kodu e-posta adresinize gönderildi.' : 'A new verification code has been sent.')
       );
-    } catch (err) {
+    } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         currentLang === 'tr' ? 'Hata' : 'Error',
@@ -380,7 +387,7 @@ export default function AuthScreen({
         email: res?.user?.email || res?.profile?.email || 'apple_traveler@icloud.com',
         avatarInitials: cleanName.substring(0, 2).toUpperCase(),
       });
-    } catch (err) {
+    } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         currentLang === 'tr' ? 'Apple Girişi' : 'Apple Sign-In',
@@ -408,7 +415,7 @@ export default function AuthScreen({
         email: res?.user?.email || res?.profile?.email || 'traveler@gmail.com',
         avatarInitials: cleanName.substring(0, 2).toUpperCase(),
       });
-    } catch (err) {
+    } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         currentLang === 'tr' ? 'Google Girişi' : 'Google Sign-In',
@@ -489,7 +496,9 @@ export default function AuthScreen({
                     ]}
                   >
                     <TextInput
-                      ref={(el) => (otpInputsRef.current[idx] = el)}
+                      ref={(el) => {
+                        otpInputsRef.current[idx] = el;
+                      }}
                       value={digit}
                       onChangeText={(val) => handleOtpChange(val, idx)}
                       onKeyPress={(e) => handleOtpKeyPress(e, idx)}

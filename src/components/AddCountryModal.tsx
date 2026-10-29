@@ -32,6 +32,19 @@ import {
   getLocalizedContinent,
   MONTHS,
 } from '../data/travelData';
+import type { CatalogCountry } from '../data/travelData';
+import { Country } from '../stores/types';
+
+interface AddCountryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAddCountry: (country: any) => void;
+  onUpdateCountry?: (country: any) => void;
+  existingCountryIds?: string[];
+  existingCountries?: Country[];
+  t: Record<string, any>;
+  currentLang: 'tr' | 'en';
+}
 
 export default function AddCountryModal({
   isOpen,
@@ -42,7 +55,7 @@ export default function AddCountryModal({
   existingCountries = [],
   t,
   currentLang,
-}) {
+}: AddCountryModalProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const now = new Date();
@@ -50,13 +63,13 @@ export default function AddCountryModal({
   const currentYearStr = now.getFullYear().toString();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState<CatalogCountry | null>(null);
   const [selectedStatus, setSelectedStatus] = useState('visited');
   const [selectedMonth, setSelectedMonth] = useState(currentMonthId);
   const [selectedYear, setSelectedYear] = useState(currentYearStr);
   const [notes, setNotes] = useState('');
 
-  const normalizeText = (str) => {
+  const normalizeText = (str?: string | null) => {
     if (!str) return '';
     return str
       .replace(/İ/g, 'i')
@@ -87,7 +100,7 @@ export default function AddCountryModal({
     return matchCode || matchEn || matchTr;
   });
 
-  const handleStepYear = (delta) => {
+  const handleStepYear = (delta: number) => {
     Haptics.selectionAsync();
     const cur = parseInt(selectedYear, 10) || now.getFullYear();
     setSelectedYear(String(cur + delta));
