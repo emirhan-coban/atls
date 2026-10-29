@@ -43,7 +43,8 @@ import {
 } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import WorldMap from './WorldMap';
-import { availableCatalog } from '../data/travelData';
+import { availableCatalog, CatalogCountry } from '../data/travelData';
+import { Country } from '../stores/types';
 import { authService } from '../services/authService';
 import { generateHandle } from '../services/storageService';
 
@@ -85,12 +86,19 @@ const AppleIcon = () => {
   );
 };
 
-const isValidEmail = (email) => {
+const isValidEmail = (email: string) => {
   const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return re.test(String(email).trim().toLowerCase());
 };
 
-export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', onToggleLang }) {
+interface OnboardingScreenProps {
+  onComplete: (payload: { onboardingCountries: Country[]; homeLocation: string; userData: any }) => void;
+  t: Record<string, any>;
+  currentLang?: 'tr' | 'en';
+  onToggleLang: () => void;
+}
+
+export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', onToggleLang }: OnboardingScreenProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   // Funnel Step: 1 = Hook, 2 = Home Country, 3 = Visited Countries, 4 = Payoff/Badge, 5 = Wishlist, 6 = Save/Auth
@@ -98,9 +106,9 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   const [isMapInteracting, setIsMapInteracting] = useState(false);
 
   // User Selections
-  const [homeCountry, setHomeCountry] = useState(null);
-  const [visitedIds, setVisitedIds] = useState([]);
-  const [wishlistIds] = useState([]); // wishlist is picked in Explore after sign-up
+  const [homeCountry, setHomeCountry] = useState<CatalogCountry | null>(null);
+  const [visitedIds, setVisitedIds] = useState<string[]>([]);
+  const [wishlistIds] = useState<string[]>([]); // wishlist is picked in Explore after sign-up
 
   // Search & Filter States
   const [homeSearch, setHomeSearch] = useState('');
@@ -114,17 +122,17 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // OTP Verification States (Step 6 sub-step)
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [otpTimer, setOtpTimer] = useState(60);
   const [canResendOtp, setCanResendOtp] = useState(false);
-  const otpInputsRef = useRef([]);
-  const nameInputRef = useRef(null);
-  const emailInputRef = useRef(null);
-  const passwordInputRef = useRef(null);
+  const otpInputsRef = useRef<(TextInput | null)[]>([]);
+  const nameInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
 
   // Password rules
   const hasMinLength = password.length >= 8;
@@ -156,7 +164,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
 
   // Combined country list for the live WorldMap preview
   const mapPreviewCountries = useMemo(() => {
-    const list = [];
+    const list: any[] = [];
     if (homeCountry) {
       list.push({ id: homeCountry.id, status: 'lived' });
     }
@@ -224,7 +232,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   }, [visitedSearch, continentFilter]);
 
   // Toggle country in visited list
-  const toggleVisitedCountry = (id) => {
+  const toggleVisitedCountry = (id: string) => {
     Haptics.selectionAsync();
     setVisitedIds((prev) => {
       if (prev.includes(id)) {
@@ -236,7 +244,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
 
   // Assemble full country models to transfer to passport
   const buildPayloadCountries = () => {
-    const result = [];
+    const result: any[] = [];
     if (homeCountry) {
       result.push({
         ...homeCountry,
@@ -273,7 +281,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   };
 
   // Complete Onboarding & Save
-  const finalizeOnboarding = (userData) => {
+  const finalizeOnboarding = (userData: any) => {
     const finalCountries = buildPayloadCountries();
     const locationName = homeCountry ? (currentLang === 'tr' ? homeCountry.nameTr : homeCountry.name) : 'Global Citizen';
     onComplete({
@@ -358,7 +366,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
           avatarInitials: cleanName.substring(0, 2).toUpperCase(),
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       let errorMsg = err.message || 'İşlem sırasında bir hata oluştu.';
       if (errorMsg.includes('Invalid login credentials')) {
@@ -422,7 +430,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   };
 
   // Apple & Google Sign In
-  const handleSocialAuth = async (provider) => {
+  const handleSocialAuth = async (provider: 'apple' | 'google') => {
     try {
       setIsLoading(true);
       const res = provider === 'apple' ? await authService.signInWithApple() : await authService.signInWithGoogle();
@@ -438,7 +446,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
         email: res?.user?.email || res?.profile?.email || 'traveler@atls.app',
         avatarInitials: cleanName.substring(0, 2).toUpperCase(),
       });
-    } catch (err) {
+    } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Giriş Başarısız', err.message || 'Lütfen tekrar deneyiniz.');
     } finally {
@@ -447,7 +455,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   };
 
   // Top Bar Progress Component
-  const renderTopBar = (currentStepIndex, totalSteps = 4) => (
+  const renderTopBar = (currentStepIndex: number, totalSteps = 4) => (
     <View style={styles.funnelHeader}>
       <View style={styles.topBarRow}>
         {currentStepIndex > 1 ? (
@@ -1022,7 +1030,9 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                 {otpDigits.map((digit, idx) => (
                   <View key={idx} style={[styles.otpBox, digit && styles.otpBoxFilled]}>
                     <TextInput
-                      ref={(el) => (otpInputsRef.current[idx] = el)}
+                      ref={(el) => {
+                        otpInputsRef.current[idx] = el;
+                      }}
                       value={digit}
                       onChangeText={(val) => {
                         const clean = val.replace(/[^0-9]/g, '');

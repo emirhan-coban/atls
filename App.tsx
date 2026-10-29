@@ -27,6 +27,8 @@ import PlannerModal from './src/components/PlannerModal';
 import { useProgressStore } from './src/stores/useProgressStore';
 import { SkeletonItem, SkeletonCountryCard } from './src/components/SkeletonLoader';
 import { storageService } from './src/services/storageService';
+import { refreshMemoryReminders } from './src/services/memoryReminders';
+import { clearVault } from './src/utils/vault';
 
 // Silence on-screen warning popups/banners only for screen recordings and demos
 // (set EXPO_PUBLIC_DEMO_MODE=1); normal builds keep warnings visible.
@@ -65,7 +67,8 @@ function AppContent() {
   const ensureLegacyTrips = useTripStore((state) => state.ensureLegacyTrips);
   const tripsHydrated = useTripStore((state) => state.isHydrated);
   const startAccountUpgrade = useProfileStore((state) => state.startAccountUpgrade);
-  const [selectedCountryDetailId, setSelectedCountryDetailId] = useState<string | null>(null);
+  const selectedCountryDetailId = useAppStore((state) => state.selectedCountryId);
+  const setSelectedCountryDetailId = useAppStore((state) => state.setSelectedCountryId);
   const [countryToEdit, setCountryToEdit] = useState<Country | null>(null);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false);
   const [isJourneyOpen, setIsJourneyOpen] = useState<boolean>(false);
@@ -185,6 +188,8 @@ function AppContent() {
     clearCountries();
     useTripStore.getState().clearTrips();
     usePlanStore.getState().clearPlans();
+    await refreshMemoryReminders(false, currentLang);
+    await clearVault();
     await logout();
   };
 
@@ -194,6 +199,8 @@ function AppContent() {
       clearCountries();
       useTripStore.getState().clearTrips();
       usePlanStore.getState().clearPlans();
+      await refreshMemoryReminders(false, currentLang);
+      await clearVault();
       setTimeout(() => {
         Alert.alert(
           t?.deleteAccount || 'Hesap Silindi',

@@ -6,7 +6,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   PanResponder,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
+import { Country } from '../stores/types';
 import Svg, { G, Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { Plus, Minus, RotateCcw } from 'lucide-react-native';
@@ -24,6 +27,20 @@ const BASE_VIEWBOX = {
 const CENTER_X = BASE_VIEWBOX.minX + BASE_VIEWBOX.width / 2;
 const CENTER_Y = BASE_VIEWBOX.minY + BASE_VIEWBOX.height / 2;
 
+interface WorldMapProps {
+  countries?: Country[];
+  activeFilter?: string;
+  onSelectCountry?: (countryId: string) => void;
+  t?: Record<string, any>;
+  currentLang?: 'tr' | 'en';
+  selectedCountryId?: string | null;
+  interactive?: boolean;
+  showControls?: boolean | null;
+  onInteractionChange?: ((active: boolean) => void) | null;
+  style?: StyleProp<ViewStyle> | null;
+  fullScreen?: boolean;
+}
+
 export default function WorldMap({
   countries = [],
   activeFilter = 'all',
@@ -36,25 +53,25 @@ export default function WorldMap({
   onInteractionChange = null,
   style = null,
   fullScreen = false,
-}) {
+}: WorldMapProps) {
   const { colors } = useTheme();
   const styles = useStyles();
-  const [selectedCountryInfo, setSelectedCountryInfo] = useState(null);
+  const [selectedCountryInfo, setSelectedCountryInfo] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [containerSize, setContainerSize] = useState({ width: 340, height: 200 });
 
-  const activeT = t || translations[currentLang] || translations.tr;
+  const activeT = t || (translations as Record<string, any>)[currentLang] || translations.tr;
 
   // Refs for gesture tracking without stale closures
   const zoomRef = useRef(1);
   const panRef = useRef({ x: 0, y: 0 });
-  const initialPinchDist = useRef(null);
+  const initialPinchDist = useRef<number | null>(null);
   const baseZoomOnPinch = useRef(1);
   const basePanOnDrag = useRef({ x: 0, y: 0 });
   const dragStartTouch = useRef({ x: 0, y: 0 });
   const lastTapTime = useRef(0);
-  const rafId = useRef(null);
+  const rafId = useRef<number | null>(null);
 
   // Sync refs with state
   useEffect(() => {
@@ -83,7 +100,7 @@ export default function WorldMap({
     return `${minX.toFixed(3)} ${minY.toFixed(3)} ${w.toFixed(3)} ${h.toFixed(3)}`;
   }, [zoom, panOffset]);
 
-  const updateViewBoxThrottled = (newZoom, newPan) => {
+  const updateViewBoxThrottled = (newZoom: number, newPan: { x: number; y: number }) => {
     if (rafId.current) cancelAnimationFrame(rafId.current);
     rafId.current = requestAnimationFrame(() => {
       setZoom(newZoom);
@@ -143,7 +160,6 @@ export default function WorldMap({
           }
         },
         onPanResponderTerminationRequest: () => false,
-        onShouldBlockAppResponder: () => true,
         onPanResponderMove: (evt, gesture) => {
           if (evt.nativeEvent.touches.length === 2 && initialPinchDist.current) {
             const [t1, t2] = evt.nativeEvent.touches;
@@ -191,14 +207,14 @@ export default function WorldMap({
 
   // Fast country lookup map by ISO-2 code
   const countryStatusMap = useMemo(() => {
-    const map = {};
+    const map: Record<string, Country> = {};
     countries.forEach((c) => {
       map[c.id.toUpperCase()] = c;
     });
     return map;
   }, [countries]);
 
-  const getCountryColor = (id) => {
+  const getCountryColor = (id: string) => {
     const country = countryStatusMap[id];
     if (!country) return colors.map.land;
 
@@ -218,7 +234,7 @@ export default function WorldMap({
     }
   };
 
-  const handleCountryPress = (id) => {
+  const handleCountryPress = (id: string) => {
     if (!interactive) return;
 
     // Double-tap zoom into country
@@ -392,7 +408,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'center',
   },
   watermarkGrid: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     opacity: 0.06,
   },
   svg: {

@@ -43,11 +43,34 @@ import {
   Smartphone,
 } from 'lucide-react-native';
 import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
-import { PASSPORT_THEMES } from '../theme/passportThemes';
+import { PASSPORT_THEMES, PassportThemeKey } from '../theme/passportThemes';
+import { Country, Profile, ThemePreference } from '../stores/types';
 import EditProfileModal from './EditProfileModal';
 import CountryStatusModal from './CountryStatusModal';
 import AnimatedCounter from './AnimatedCounter';
 import { getDynamicLocation } from '../utils/locationHelper';
+
+interface PassportScreenProps {
+  profile: Profile;
+  countries: Country[];
+  onRemoveCountry: (countryId: string) => void;
+  onUpdateCountry: (country: any) => void;
+  onOpenAddModal: () => void;
+  onOpenShareModal: () => void;
+  onUpdateProfile: (profile: any) => void;
+  onLogout: () => void;
+  onDeleteAccount: () => void;
+  onCreateAccount?: () => void;
+  onOpenJourney: () => void;
+  onOpenPlanner: () => void;
+  onSelectCountry: (countryId: string) => void;
+  t: Record<string, any>;
+  currentLang: 'tr' | 'en';
+  onToggleLang: () => void;
+  isAccountModalOpen?: boolean;
+  onCloseAccountModal?: () => void;
+  [key: string]: any;
+}
 
 function PassportScreen({
   profile,
@@ -68,14 +91,14 @@ function PassportScreen({
   onToggleLang,
   isAccountModalOpen: isAccountModalOpenExternal,
   onCloseAccountModal: onCloseAccountModalExternal,
-}) {
+}: PassportScreenProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const allTrips = useTripStore((state) => state.trips);
 
   const handleExport = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const run = async (format) => {
+    const run = async (format: any) => {
       try {
         await exportAndShare(format, { profile, countries, trips: allTrips });
       } catch (err) {
@@ -97,20 +120,20 @@ function PassportScreen({
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [internalAccountModalOpen, setInternalAccountModalOpen] = useState(false);
   const isAccountModalOpen = isAccountModalOpenExternal !== undefined ? isAccountModalOpenExternal : internalAccountModalOpen;
-  const setIsAccountModalOpen = (val) => {
+  const setIsAccountModalOpen = (val: boolean) => {
     if (onCloseAccountModalExternal && !val) {
       onCloseAccountModalExternal();
     }
     setInternalAccountModalOpen(val);
   };
-  const [selectedCountryToEdit, setSelectedCountryToEdit] = useState(null);
+  const [selectedCountryToEdit, setSelectedCountryToEdit] = useState<Country | null>(null);
 
   const visitedCountries = countries.filter((c) => c.status === 'visited');
   const livedCountries = countries.filter((c) => c.status === 'lived');
   const wantCountries = countries.filter((c) => c.status === 'want');
 
   const currentThemeKey = profile?.passportTheme || 'classic_navy';
-  const currentTheme = PASSPORT_THEMES[currentThemeKey] || PASSPORT_THEMES.classic_navy;
+  const currentTheme = PASSPORT_THEMES[currentThemeKey as PassportThemeKey] || PASSPORT_THEMES.classic_navy;
 
   // Dynamic stamps generated from user's actual visited countries
   const passportStampsList = visitedCountries.slice(0, 8).map((c, idx) => ({
@@ -139,8 +162,8 @@ function PassportScreen({
     }
   };
 
-  const handleTabPress = (tab) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Selection);
+  const handleTabPress = (tab: string) => {
+    Haptics.selectionAsync();
     setActiveTab((prev) => (prev === tab ? 'all' : tab));
   };
 
@@ -703,7 +726,7 @@ function PassportScreen({
             </View>
             <View style={styles.themePickerRow}>
               {(Object.keys(PASSPORT_THEMES)).map((themeKey) => {
-                const tObj = PASSPORT_THEMES[themeKey];
+                const tObj = PASSPORT_THEMES[themeKey as PassportThemeKey];
                 const isSelected = (profile?.passportTheme || 'classic_navy') === themeKey;
                 return (
                   <TouchableOpacity
@@ -748,7 +771,7 @@ function PassportScreen({
                     key={key}
                     onPress={() => {
                       Haptics.selectionAsync();
-                      setThemePreference(key);
+                      setThemePreference(key as ThemePreference);
                     }}
                     activeOpacity={0.8}
                     accessibilityRole="button"

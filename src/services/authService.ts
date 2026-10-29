@@ -17,13 +17,13 @@ try {
     iosClientId: GOOGLE_IOS_CLIENT_ID || undefined,
     scopes: ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
   });
-} catch (e) {
+} catch (e: any) {
   console.log('[authService] GoogleSignin configure notice:', e?.message);
 }
 
 export const authService = {
   // Sign up with Email & Password
-  async signUp({ email, password, name }) {
+  async signUp({ email, password, name }: { email: string; password: string; name?: string }): Promise<any> {
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.auth.signUp({
@@ -51,7 +51,7 @@ export const authService = {
               avatar_initials: localProfile.avatarInitials,
               passport_no: localProfile.passportNo,
             });
-          } catch (profileErr) {
+          } catch (profileErr: any) {
             console.warn('[authService] Profile upsert notice:', profileErr);
           }
         }
@@ -60,7 +60,7 @@ export const authService = {
         const needsOtp = Boolean(data?.user && !data?.session);
 
         return { ...data, needsOtp };
-      } catch (err) {
+      } catch (err: any) {
         // If Supabase has a database trigger error (schema not executed yet)
         if (err.message && err.message.includes('Database error saving new user')) {
           console.warn('[authService] Supabase trigger error (schema.sql needed in SQL editor):', err.message);
@@ -80,7 +80,7 @@ export const authService = {
   },
 
   // Verify OTP Code for Sign-Up Confirmation
-  async verifyOtp({ email, token, name }) {
+  async verifyOtp({ email, token, name }: { email: string; token: string; name?: string }): Promise<any> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.auth.verifyOtp({
         email,
@@ -103,7 +103,7 @@ export const authService = {
             avatar_initials: localProfile.avatarInitials,
             passport_no: localProfile.passportNo,
           });
-        } catch (pErr) {
+        } catch (pErr: any) {
           console.warn('[authService] verifyOtp profile upsert notice:', pErr);
         }
       }
@@ -118,7 +118,7 @@ export const authService = {
   },
 
   // Resend OTP Code
-  async resendOtp({ email }) {
+  async resendOtp({ email }: { email: string }): Promise<any> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.auth.resend({
         type: 'signup',
@@ -131,7 +131,7 @@ export const authService = {
   },
 
   // Sign in with Email & Password
-  async signIn({ email, password }) {
+  async signIn({ email, password }: { email: string; password: string }): Promise<any> {
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -141,7 +141,7 @@ export const authService = {
 
         if (error) throw error;
         return data;
-      } catch (err) {
+      } catch (err: any) {
         throw err;
       }
     }
@@ -156,7 +156,7 @@ export const authService = {
   },
 
   // Sign in with Apple
-  async signInWithApple() {
+  async signInWithApple(): Promise<any> {
     try {
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       if (!isAvailable) {
@@ -198,12 +198,12 @@ export const authService = {
                 avatar_initials: localProfile.avatarInitials,
                 passport_no: localProfile.passportNo,
               });
-            } catch (pErr) {
+            } catch (pErr: any) {
               console.log('[authService] Profile upsert notice:', pErr);
             }
           }
           return data;
-        } catch (supabaseErr) {
+        } catch (supabaseErr: any) {
           console.log('[authService] Supabase Apple Auth note:', supabaseErr.message);
         }
       }
@@ -212,7 +212,7 @@ export const authService = {
       const profile = buildNewProfile({ name: fullName, email: userEmail });
       await storageService.saveProfile(profile);
       return { user: { email: userEmail, id: credential.user || 'apple-user' }, profile };
-    } catch (err) {
+    } catch (err: any) {
       if (err.code === 'ERR_REQUEST_CANCELED') {
         return null; // User tapped cancel
       }
@@ -221,13 +221,13 @@ export const authService = {
   },
 
   // Sign in with Google (Native iOS Sheet first, Web OAuth fallback)
-  async signInWithGoogle() {
+  async signInWithGoogle(): Promise<any> {
     try {
       // 1. Try Native Google Sign-In if client ID is configured (no browser, no redirect)
       if (GOOGLE_IOS_CLIENT_ID || GOOGLE_WEB_CLIENT_ID) {
         try {
           await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: false });
-          const response = await GoogleSignin.signIn();
+          const response: any = await GoogleSignin.signIn();
 
           if (response?.type === 'cancelled') {
             return null; // User cancelled
@@ -263,7 +263,7 @@ export const authService = {
             await storageService.saveProfile(profile);
             return { user: { email: googleUser.email, id: googleUser.id || 'google-user' }, profile };
           }
-        } catch (nativeErr) {
+        } catch (nativeErr: any) {
           if (nativeErr?.code === 'SIGN_IN_CANCELLED' || nativeErr?.code === '12501') {
             return null;
           }
@@ -327,7 +327,7 @@ export const authService = {
               return null; // User cancelled
             }
           }
-        } catch (oauthErr) {
+        } catch (oauthErr: any) {
           console.log('[authService] Supabase Google OAuth note:', oauthErr.message);
         }
       }
@@ -336,30 +336,30 @@ export const authService = {
       const profile = buildNewProfile({ name: 'Google Traveler', email: 'traveler@gmail.com' });
       await storageService.saveProfile(profile);
       return { user: { email: 'traveler@gmail.com', id: 'google-user' }, profile };
-    } catch (err) {
+    } catch (err: any) {
       throw err;
     }
   },
 
   // Sign out
-  async signOut() {
+  async signOut(): Promise<any> {
     if (isSupabaseConfigured && supabase) {
       try {
         const { error } = await supabase.auth.signOut();
         if (error) console.warn('[authService] SignOut error:', error);
-      } catch (e) {
+      } catch (e: any) {
         console.warn('[authService] SignOut exception:', e);
       }
     }
   },
 
   // Check current session
-  async getSession() {
+  async getSession(): Promise<any> {
     if (isSupabaseConfigured && supabase) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         return session;
-      } catch (e) {
+      } catch (e: any) {
         console.warn('[authService] getSession error:', e);
       }
     }
