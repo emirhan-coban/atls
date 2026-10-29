@@ -1,13 +1,17 @@
 import { create } from 'zustand';
-import { AppLanguage, ActiveTab } from './types';
+import { AppLanguage, ActiveTab, ThemePreference } from './types';
 import { initialProfile, initialCountries } from '../data/travelData';
 import { storageService } from '../services/storageService';
 import { useCountryStore } from './useCountryStore';
 import { useProfileStore } from './useProfileStore';
+import { useTripStore } from './useTripStore';
+import { useProgressStore } from './useProgressStore';
+import { usePlanStore } from './usePlanStore';
 
 interface AppState {
   isLoaded: boolean;
   currentLang: AppLanguage;
+  themePreference: ThemePreference;
   hasCompletedOnboarding: boolean;
   activeTab: ActiveTab;
   isAddModalOpen: boolean;
@@ -16,6 +20,7 @@ interface AppState {
   // Actions
   initApp: () => Promise<void>;
   setLang: (lang: AppLanguage) => Promise<void>;
+  setThemePreference: (theme: ThemePreference) => Promise<void>;
   toggleLang: () => Promise<AppLanguage>;
   setActiveTab: (tab: ActiveTab) => void;
   setIsAddModalOpen: (open: boolean) => void;
@@ -26,6 +31,7 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
   isLoaded: false,
   currentLang: 'tr',
+  themePreference: 'system',
   hasCompletedOnboarding: false,
   activeTab: 'home',
   isAddModalOpen: false,
@@ -37,6 +43,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       
       set({
         currentLang: (data.lang as AppLanguage) || 'tr',
+        themePreference: (data.theme as ThemePreference) || 'system',
         hasCompletedOnboarding: Boolean(data.hasCompletedOnboarding),
         isLoaded: true,
       });
@@ -48,6 +55,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (data.countries) {
         useCountryStore.getState().setCountries(data.countries);
       }
+      useTripStore.getState().setTrips(data.trips || [], data.tripsSeeded || []);
+      useProgressStore.getState().hydrate(data.progress);
+      usePlanStore.getState().setPlans(data.plans || []);
     } catch (error) {
       console.warn('[AppStore] initApp error:', error);
       set({ isLoaded: true });
@@ -57,6 +67,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLang: async (lang) => {
     set({ currentLang: lang });
     await storageService.saveLang(lang);
+  },
+
+  setThemePreference: async (theme) => {
+    set({ themePreference: theme });
+    await storageService.saveTheme(theme);
   },
 
   toggleLang: async () => {

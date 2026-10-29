@@ -1,3 +1,4 @@
+import { makeStyles } from '../theme/ThemeContext';
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
 
@@ -14,6 +15,7 @@ export function SkeletonItem({
   borderRadius = 8,
   style,
 }: SkeletonProps) {
+  const styles = useStyles();
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export function SkeletonItem({
 }
 
 export function SkeletonCountryCard() {
+  const styles = useStyles();
   return (
     <View style={styles.cardContainer}>
       <View style={styles.cardHeader}>
@@ -66,16 +69,16 @@ export function SkeletonCountryCard() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   skeleton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
   },
   cardContainer: {
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     marginBottom: 16,
   },
   cardHeader: {
@@ -83,4 +86,4 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-});
+}));

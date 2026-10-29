@@ -1,6 +1,7 @@
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
+import GlassCard from './GlassCard';
 import * as Haptics from 'expo-haptics';
 import { Home, Compass, User } from 'lucide-react-native';
 
@@ -11,6 +12,8 @@ interface BottomNavProps {
 }
 
 function BottomNav({ activeTab, onTabChange, t }: BottomNavProps) {
+  const { colors, scheme } = useTheme();
+  const styles = useStyles();
   // Optimistic tab state for instantaneous visual reaction without waiting for parent tree re-render
   const [selectedTab, setSelectedTab] = useState(activeTab);
 
@@ -44,12 +47,8 @@ function BottomNav({ activeTab, onTabChange, t }: BottomNavProps) {
 
   return (
     <View style={styles.container} pointerEvents="box-none">
-      <View style={styles.dockOuter}>
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 45 : 80}
-          tint="dark"
-          style={styles.blurContainer}
-        >
+      <GlassCard style={styles.dockOuter} intensity={60} tintOpacity={Platform.OS === 'ios' ? (scheme === 'light' ? 0.7 : 0.45) : 0.9}>
+        <View style={styles.blurContainer}>
           <View style={styles.dockInner}>
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -74,7 +73,7 @@ function BottomNav({ activeTab, onTabChange, t }: BottomNavProps) {
                 >
                   <Icon
                     size={17}
-                    color={isActive ? '#E5A93C' : '#94A3B8'}
+                    color={isActive ? colors.gold.base : colors.text.secondary}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                   <Text
@@ -89,13 +88,13 @@ function BottomNav({ activeTab, onTabChange, t }: BottomNavProps) {
               );
             })}
           </View>
-        </BlurView>
-      </View>
+        </View>
+      </GlassCard>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 28 : 20,
@@ -106,15 +105,11 @@ const styles = StyleSheet.create({
   },
   dockOuter: {
     borderRadius: 36,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    shadowColor: '#000000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.45,
     shadowRadius: 20,
     elevation: 10,
-    backgroundColor: 'rgba(10, 13, 18, 0.75)',
   },
   blurContainer: {
     paddingHorizontal: 6,
@@ -136,19 +131,19 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   tabButtonActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(229, 169, 60, 0.35)',
+    backgroundColor: colors.glass.fillStrong,
+    borderColor: colors.gold.border,
   },
   tabLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 0.2,
   },
   tabLabelActive: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontWeight: '800',
   },
-});
+}));
 
 export default React.memo(BottomNav);

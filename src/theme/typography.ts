@@ -1,3 +1,9 @@
+/** Display (headline) faces, loaded in App.tsx via @expo-google-fonts/fraunces. */
+export const fonts = {
+  display: 'Fraunces_700Bold',
+  displayHeavy: 'Fraunces_900Black',
+};
+
 export const typography = {
   fontSize: {
     xxs: 10,

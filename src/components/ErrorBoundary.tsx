@@ -1,3 +1,4 @@
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ShieldAlert, RotateCcw } from 'lucide-react-native';
@@ -37,36 +38,43 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      return (
-        <View style={styles.container}>
-          <View style={styles.iconCircle}>
-            <ShieldAlert size={36} color="#EF4444" />
-          </View>
-          <Text style={styles.title}>Beklenmeyen Bir Hata Oluştu</Text>
-          <Text style={styles.message}>
-            Uygulama çalışırken bir sorunla karşılaştı. Verileriniz güvende.
-          </Text>
-
-          <TouchableOpacity
-            style={styles.retryBtn}
-            onPress={this.handleReset}
-            activeOpacity={0.8}
-          >
-            <RotateCcw size={16} color="#FFFFFF" strokeWidth={2.5} />
-            <Text style={styles.retryText}>Yeniden Dene</Text>
-          </TouchableOpacity>
-        </View>
-      );
+      return <ErrorFallback onReset={this.handleReset} />;
     }
 
     return this.props.children;
   }
 }
 
-const styles = StyleSheet.create({
+
+function ErrorFallback({ onReset }: { onReset: () => void }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  return (
+    <View style={styles.container}>
+      <View style={styles.iconCircle}>
+        <ShieldAlert size={36} color={colors.danger} />
+      </View>
+      <Text style={styles.title}>Beklenmeyen Bir Hata Oluştu</Text>
+      <Text style={styles.message}>
+        Uygulama çalışırken bir sorunla karşılaştı. Verileriniz güvende.
+      </Text>
+
+      <TouchableOpacity
+        style={styles.retryBtn}
+        onPress={onReset}
+        activeOpacity={0.8}
+      >
+        <RotateCcw size={16} color={colors.text.primary} strokeWidth={2.5} />
+        <Text style={styles.retryText}>Yeniden Dene</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090B0E',
+    backgroundColor: colors.canvas.base,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
@@ -75,23 +83,23 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: colors.dangerTint,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: colors.dangerBorder,
   },
   title: {
     fontSize: theme.typography.fontSize.xl,
     fontWeight: theme.typography.fontWeight.black,
-    color: '#F8FAFC',
+    color: colors.text.primary,
     marginBottom: 8,
     textAlign: 'center',
   },
   message: {
     fontSize: theme.typography.fontSize.sm,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 28,
@@ -100,19 +108,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.gold.base,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: theme.borderRadius.full,
-    shadowColor: '#FF6B35',
+    shadowColor: colors.gold.base,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 4,
   },
   retryText: {
-    color: '#FFFFFF',
+    color: colors.canvas.base,
     fontSize: theme.typography.fontSize.sm,
     fontWeight: theme.typography.fontWeight.bold,
   },
-});
+}));
