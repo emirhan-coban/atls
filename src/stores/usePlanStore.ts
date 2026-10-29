@@ -3,7 +3,7 @@ import { BudgetItem, PlanItem, PlannedTrip } from './types';
 import { storageService } from '../services/storageService';
 import { notificationService } from '../services/notificationService';
 import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
-import { buildReminders } from '../utils/planning';
+import { buildReminders, daysUntil } from '../utils/planning';
 
 export interface PlanInput {
   countryId: string;
@@ -25,6 +25,8 @@ interface PlanState {
   setBudget: (id: string, budget: BudgetItem[], currency?: string) => Promise<void>;
   removePlan: (id: string) => Promise<void>;
   clearPlans: () => void;
+  /** Schedules reminders for plans that have none, e.g. plans that arrived from the cloud on a new device. */
+  restoreReminders: (lang: 'tr' | 'en') => Promise<void>;
   /** Re-creates reminders for all plans, e.g. after the user turns notifications on in system settings. */
   rescheduleAll: (lang: 'tr' | 'en') => Promise<void>;
 }
@@ -45,9 +47,10 @@ async function refreshReminders(plan: PlannedTrip, lang: 'tr' | 'en'): Promise<s
 }
 
 export const usePlanStore = create<PlanState>((set, get) => {
-  const persist = async (plans: PlannedTrip[]) => {
+  const persist = async (plans: PlannedTrip[], changed?: PlannedTrip) => {
     set({ plans });
     await storageService.savePlans(plans);
+    if (changed) await storageService.syncPlan(changed);
   };
   const replace = (plan: PlannedTrip) => get().plans.map((p) => (p.id === plan.id ? plan : p));
 
@@ -74,7 +77,7 @@ export const usePlanStore = create<PlanState>((set, get) => {
         updatedAt: now,
       };
       plan = { ...plan, notificationIds: await refreshReminders(plan, lang) };
-      await persist([plan, ...get().plans]);
+      await persist([plan, ...get().plans], plan);
       return plan;
     },
 
@@ -83,7 +86,7 @@ export const usePlanStore = create<PlanState>((set, get) => {
       if (!current) return;
       let updated: PlannedTrip = { ...current, ...changes, cities: changes.cities ?? current.cities, updatedAt: new Date().toISOString() };
       updated = { ...updated, notificationIds: await refreshReminders(updated, lang) };
-      await persist(replace(updated));
+      await persist(replace(updated), updated);
     },
 
     setChecklist: async (id, checklist, lang) => {
@@ -92,19 +95,21 @@ export const usePlanStore = create<PlanState>((set, get) => {
       let updated: PlannedTrip = { ...current, checklist, updatedAt: new Date().toISOString() };
       // the "items left" reminder depends on the list, so it is refreshed when the list changes
       updated = { ...updated, notificationIds: await refreshReminders(updated, lang) };
-      await persist(replace(updated));
+      await persist(replace(updated), updated);
     },
 
     setBudget: async (id, budget, currency) => {
       const current = get().plans.find((p) => p.id === id);
       if (!current) return;
-      await persist(replace({ ...current, budget, currency: currency ?? current.currency, updatedAt: new Date().toISOString() }));
+      const updated = { ...current, budget, currency: currency ?? current.currency, updatedAt: new Date().toISOString() };
+      await persist(replace(updated), updated);
     },
 
     removePlan: async (id) => {
       const current = get().plans.find((p) => p.id === id);
       if (current) await notificationService.cancel(current.notificationIds);
       await persist(get().plans.filter((p) => p.id !== id));
+      await storageService.syncPlanRemoval(id);
     },
 
     clearPlans: () => {
@@ -112,6 +117,15 @@ export const usePlanStore = create<PlanState>((set, get) => {
       const ids = get().plans.flatMap((p) => p.notificationIds);
       notificationService.cancel(ids);
       set({ plans: [] });
+    },
+
+    restoreReminders: async (lang) => {
+      const needs = get().plans.filter((p) => p.notificationIds.length === 0 && (daysUntil(p.startDate) ?? 0) > 0);
+      if (needs.length === 0 || !(await notificationService.hasPermission())) return;
+      const ids = new Map<string, string[]>();
+      for (const plan of needs) ids.set(plan.id, await refreshReminders(plan, lang));
+      // reminders are per device, so this is a local-only write and does not touch updatedAt or the cloud
+      await persist(get().plans.map((p) => (ids.has(p.id) ? { ...p, notificationIds: ids.get(p.id)! } : p)));
     },
 
     rescheduleAll: async (lang) => {

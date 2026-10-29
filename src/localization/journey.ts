@@ -17,6 +17,7 @@ const strings = {
   chooseCountry: { tr: 'Ülke seç', en: 'Choose country' },
   searchCountry: { tr: 'Ülke ara...', en: 'Search country...' },
   year: { tr: 'YIL', en: 'YEAR' },
+  yearUnknown: { tr: 'Yıl bilinmiyor', en: 'Year unknown' },
   month: { tr: 'AY (İSTEĞE BAĞLI)', en: 'MONTH (OPTIONAL)' },
   days: { tr: 'KAÇ GÜN (İSTEĞE BAĞLI)', en: 'HOW MANY DAYS (OPTIONAL)' },
   daysPlaceholder: { tr: 'Örn: 7', en: 'e.g. 7' },
