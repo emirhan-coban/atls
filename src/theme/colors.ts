@@ -25,6 +25,7 @@ export const darkColors = {
     borderStrong: 'rgba(255, 255, 255, 0.22)',
     tint: 'rgba(9, 11, 14, 0.38)',   // dark scrim laid over BlurView
     scrimRgb: '9, 11, 14',            // rgb of the scrim GlassCard lays over the blur
+    scrimOpacity: 0.38,               // how strongly that scrim covers the blur
     blurTint: 'dark' as 'dark' | 'light',
     blur: 55,                         // default BlurView intensity
   },
@@ -45,8 +46,8 @@ export const darkColors = {
     primary: '#FFFFFF',
     soft: '#E2E8F0',
     secondary: '#94A3B8',
-    muted: '#64748B',
-    faint: '#475569',
+    muted: '#7D8BA1',
+    faint: '#5E6E85',
   },
 
   // Dark translucent panels that sit above content without blur
@@ -170,15 +171,16 @@ export const lightColors: ColorsType = {
   },
 
   glass: {
-    fill: 'rgba(20, 24, 31, 0.04)',
-    fillStrong: 'rgba(20, 24, 31, 0.07)',
-    fillActive: 'rgba(20, 24, 31, 0.11)',
-    border: 'rgba(20, 24, 31, 0.14)',
+    fill: 'rgba(20, 24, 31, 0.05)',
+    fillStrong: 'rgba(20, 24, 31, 0.08)',
+    fillActive: 'rgba(20, 24, 31, 0.12)',
+    border: 'rgba(20, 24, 31, 0.16)',
     borderSoft: 'rgba(20, 24, 31, 0.06)',
     hairline: 'rgba(20, 24, 31, 0.10)',
     borderStrong: 'rgba(20, 24, 31, 0.20)',
     tint: 'rgba(255, 255, 255, 0.62)',
     scrimRgb: '255, 255, 255',
+    scrimOpacity: 0.8,                // light glass needs a near-opaque scrim or text reads poorly over the blur
     blurTint: 'light',
     blur: 55,
   },
@@ -196,9 +198,9 @@ export const lightColors: ColorsType = {
   text: {
     primary: '#14181F',
     soft: '#2A3140',
-    secondary: '#586174',
-    muted: '#7A8397',
-    faint: '#9AA3B5',
+    secondary: '#454D5E',
+    muted: '#5A6275',
+    faint: '#7A8292',
   },
 
   panel: {

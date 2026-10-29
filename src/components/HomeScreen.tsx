@@ -18,7 +18,6 @@ import {
   ChevronRight, 
   ChevronLeft, 
   Plane,
-  ArrowUpRight,
   Compass,
   Calendar,
   Sparkles,
@@ -31,6 +30,7 @@ import AnimatedCounter from './AnimatedCounter';
 import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
 import { getCountryTrivia } from '../data/countryTrivia';
 import { Country, Profile } from '../stores/types';
+import Heading from './ui/Heading';
 
 type StatusFilter = Country['status'] | 'all';
 
@@ -78,19 +78,9 @@ function HomeScreen({
     ? markedCountries[countryCardIndex % markedCountries.length]
     : null;
 
-  const stamps = markedCountries.slice(0, 6).map((c, idx) => {
-    const locName = getLocalizedCountryName(c, currentLang);
-    return {
-      id: `stamp-${c.id}`,
-      code: c.id,
-      city: locName,
-      country: locName,
-      date: formatCountryDate(c, currentLang) || c.year || c.visitedYear || new Date().getFullYear().toString(),
-      type: c.status === 'lived' ? (currentLang === 'tr' ? 'İKAMET' : 'RESIDENCE') : (currentLang === 'tr' ? 'GİRİŞ' : 'ENTRY'),
-      accentColor: idx % 3 === 0 ? colors.status.visited.color : idx % 3 === 1 ? colors.status.lived.color : colors.gold.base,
-      bg: idx % 3 === 0 ? colors.status.visited.light : idx % 3 === 1 ? colors.status.lived.light : colors.gold.tint,
-    };
-  });
+  // Newest trips first: by year, then month. Countries without a year go last.
+  const dateKey = (c: Country) => Number(c.visitedYear || c.year || 0) * 100 + Number(c.visitedMonth || c.month || 0);
+  const recent = [...markedCountries].sort((x, y) => dateKey(y) - dateKey(x)).slice(0, 4);
 
   const visitedCount = countries.filter((c) => c.status === 'visited').length;
   const livedCount = countries.filter((c) => c.status === 'lived').length;
@@ -125,9 +115,9 @@ function HomeScreen({
       >
         {/* Clean Travel Passport Greeting */}
         <View style={styles.explorerGreetingRow}>
-          <Text style={styles.explorerGreetingText}>
+          <Heading style={styles.explorerGreetingText}>
             {currentLang === 'tr' ? 'Dünya Pasaportun' : 'World Passport'}
-          </Text>
+          </Heading>
           <Text style={styles.explorerGreetingSub}>
             {currentLang === 'tr'
               ? 'Rotaların, vizelerin ve seyahat haritan.'
@@ -256,7 +246,7 @@ function HomeScreen({
 
         {/* SECTION: Planetary Reach */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.planetaryReach}</Text>
+          <Heading style={styles.sectionTitle}>{t.planetaryReach}</Heading>
           <View style={styles.reachBadge}>
             <Plane size={11} color={colors.status.visited.bright} style={{ transform: [{ rotate: '45deg' }] }} />
           <AnimatedCounter
@@ -470,7 +460,7 @@ function HomeScreen({
         </TouchableOpacity>
       </View>
 
-      {stamps.length === 0 ? (
+      {recent.length === 0 ? (
         <TouchableOpacity
           onPress={onOpenAddModal}
           activeOpacity={0.8}
@@ -487,54 +477,37 @@ function HomeScreen({
           </View>
         </TouchableOpacity>
       ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.stampsScroll}
-        >
-          {stamps.map((stamp, idx) => (
-            <TouchableOpacity
-              key={stamp.id}
-              style={[
-                styles.stampCard,
-                {
-                  borderColor: stamp.accentColor,
-                  transform: [{ rotate: idx % 2 === 0 ? '-1.5deg' : '1.5deg' }],
-                },
-              ]}
-              activeOpacity={0.8}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                if (onSelectCountry) onSelectCountry(stamp.code);
-              }}
-            >
-              <View style={styles.stampHeader}>
-                <View style={styles.codeBadge}>
-                  <Text style={styles.codeText}>{stamp.code}</Text>
+        <View style={styles.recentList}>
+          {recent.map((c) => {
+            const when = formatCountryDate(c, currentLang) || c.year || c.visitedYear || '';
+            const dot = c.status === 'lived' ? colors.status.lived.color : colors.status.visited.color;
+            return (
+              <TouchableOpacity
+                key={c.id}
+                style={styles.recentRow}
+                activeOpacity={0.7}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  if (onSelectCountry) onSelectCountry(c.id);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={getLocalizedCountryName(c, currentLang)}
+              >
+                <Text style={styles.recentFlag}>{c.flag}</Text>
+                <View style={styles.recentBody}>
+                  <Text style={styles.recentName} numberOfLines={1}>{getLocalizedCountryName(c, currentLang)}</Text>
+                  <View style={styles.recentMeta}>
+                    <View style={[styles.recentDot, { backgroundColor: dot }]} />
+                    <Text style={styles.recentDate} numberOfLines={1}>
+                      {[c.status === 'lived' ? (currentLang === 'tr' ? 'Yaşadın' : 'Lived') : (currentLang === 'tr' ? 'Gittin' : 'Visited'), when].filter(Boolean).join(' · ')}
+                    </Text>
+                  </View>
                 </View>
-                <View style={[styles.typeBadge, { backgroundColor: stamp.bg }]}>
-                  <Text style={[styles.typeText, { color: stamp.accentColor }]}>
-                    {stamp.type}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.stampBody}>
-                <Text style={styles.cityText} numberOfLines={1} ellipsizeMode="tail">
-                  {stamp.city}
-                </Text>
-                <Text style={styles.countryText} numberOfLines={1} ellipsizeMode="tail">
-                  {stamp.country}
-                </Text>
-              </View>
-              <View style={styles.stampFooter}>
-                <Text style={styles.dateText} numberOfLines={1} ellipsizeMode="tail">
-                  {stamp.date}
-                </Text>
-                <ArrowUpRight size={12} color={colors.text.secondary} />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <ChevronRight size={16} color={colors.text.muted} />
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       )}
     </ScrollView>
 
@@ -594,16 +567,17 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 12,
   },
   explorerGreetingText: {
-    fontSize: 22,
+    fontSize: 36,
+    lineHeight: 40,
     color: colors.text.primary,
-    letterSpacing: -0.5,
     fontFamily: fonts.display,
   },
   explorerGreetingSub: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 19,
+    lineHeight: 24,
     color: colors.text.secondary,
     marginTop: 2,
+    fontFamily: fonts.displayItalic,
   },
   subtitleText: {
     fontSize: 10,
@@ -713,7 +687,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 18,
   },
   emptyHeroTitle: {
-    fontSize: 22,
+    fontSize: 28,
     color: colors.text.primary,
     letterSpacing: -0.5,
     marginBottom: 6,
@@ -797,7 +771,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 16,
   },
   countryHeroTitle: {
-    fontSize: 24,
+    fontSize: 30,
     color: colors.text.primary,
     letterSpacing: -0.6,
     marginBottom: 6,
@@ -862,7 +836,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     paddingHorizontal: 2,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 21,
     color: colors.text.primary,
     letterSpacing: -0.3,
     fontFamily: fonts.display,
@@ -1053,75 +1027,29 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     fontWeight: '800',
     color: colors.gold.base,
   },
-  stampsScroll: {
-    gap: 12,
-    paddingVertical: 6,
-  },
-  stampCard: {
-    width: 152,
+  recentList: {
+    gap: 0,
+    borderRadius: 20,
     backgroundColor: colors.panel.base,
-    borderRadius: 18,
-    padding: 12,
     borderWidth: 1,
-    borderStyle: 'solid',
     borderColor: colors.glass.hairline,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 2,
+    overflow: 'hidden',
   },
-  stampHeader: {
+  recentRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.glass.border,
   },
-  codeBadge: {
-    backgroundColor: colors.glass.fillStrong,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  codeText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: colors.text.primary,
-  },
-  typeBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  typeText: {
-    fontSize: 8,
-    fontWeight: '800',
-  },
-  stampBody: {
-    marginBottom: 8,
-  },
-  cityText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.text.primary,
-  },
-  countryText: {
-    fontSize: 10,
-    color: colors.text.secondary,
-  },
-  stampFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: colors.glass.fillStrong,
-    paddingTop: 6,
-  },
-  dateText: {
-    fontSize: 9,
-    color: colors.text.muted,
-    fontWeight: '600',
-  },
+  recentFlag: { fontSize: 30 },
+  recentBody: { flex: 1, gap: 1 },
+  recentName: { fontSize: 24, lineHeight: 28, color: colors.text.primary, fontFamily: fonts.display },
+  recentMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  recentDot: { width: 7, height: 7, borderRadius: 4 },
+  recentDate: { fontSize: 13, fontWeight: '600', color: colors.text.secondary },
   emptyRecentCard: {
     flexDirection: 'row',
     alignItems: 'center',

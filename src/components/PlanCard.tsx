@@ -73,7 +73,7 @@ const useStyles = makeStyles((colors) =>
     },
     body: { flex: 1, gap: 4 },
     eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: colors.gold.base },
-    countdown: { fontSize: 22, color: colors.text.primary, fontFamily: fonts.display },
+    countdown: { fontSize: 28, color: colors.text.primary, fontFamily: fonts.display },
     cta: { fontSize: 14, fontWeight: '700', color: colors.text.primary },
   })
 );

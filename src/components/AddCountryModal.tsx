@@ -34,6 +34,7 @@ import {
 } from '../data/travelData';
 import type { CatalogCountry } from '../data/travelData';
 import { Country } from '../stores/types';
+import Heading from './ui/Heading';
 
 interface AddCountryModalProps {
   isOpen: boolean;
@@ -183,7 +184,7 @@ export default function AddCountryModal({
           <View style={styles.header}>
             <View>
               <View style={styles.titleRow}>
-                <Text style={styles.title}>{t.markCountry}</Text>
+                <Heading style={styles.title}>{t.markCountry}</Heading>
                 <Text style={styles.titleDot}>.</Text>
               </View>
               <Text style={styles.subtitle}>
@@ -510,7 +511,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'baseline',
   },
   title: {
-    fontSize: 22,
+    fontSize: 28,
     color: colors.text.primary,
     letterSpacing: -0.5,
     fontFamily: fonts.display,

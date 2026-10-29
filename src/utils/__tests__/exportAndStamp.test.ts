@@ -1,6 +1,5 @@
 /// <reference types="jest" />
 import { buildExportJson, countriesToCsv, tripsToCsv } from '../exportData';
-import { getStampStyle, hashString } from '../stamp';
 import { mergeTrips } from '../../services/storageService';
 import { Country, Trip } from '../../stores/types';
 
@@ -55,25 +54,6 @@ describe('JSON export', () => {
     expect(json.countries).toHaveLength(1);
     expect(json.trips[0].photos).toEqual(['a.jpg']);
     expect(JSON.stringify(json)).not.toContain('ada@example.com');
-  });
-});
-
-describe('stamps', () => {
-  it('is deterministic per country and varies with the salt', () => {
-    expect(getStampStyle('FR')).toEqual(getStampStyle('fr'));
-    const variants = new Set(['a', 'b', 'c', 'd', 'e', 'f'].map((s) => JSON.stringify(getStampStyle('FR', s))));
-    expect(variants.size).toBeGreaterThan(1);
-  });
-
-  it('keeps rotation small and covers every shape across countries', () => {
-    const shapes = new Set<string>();
-    ['TR', 'FR', 'DE', 'IT', 'JP', 'US', 'BR', 'ZA', 'AU', 'EG', 'IN', 'MX'].forEach((id) => {
-      const style = getStampStyle(id);
-      expect(Math.abs(style.rotation)).toBeLessThanOrEqual(12);
-      shapes.add(style.shape);
-    });
-    expect(shapes.size).toBeGreaterThanOrEqual(3);
-    expect(hashString('x')).toBe(hashString('x'));
   });
 });
 

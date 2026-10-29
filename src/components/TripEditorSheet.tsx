@@ -13,6 +13,7 @@ import { jt, TRIP_TYPES } from '../localization/journey';
 import { Trip, TripType } from '../stores/types';
 import { TripInput, useTripStore } from '../stores/useTripStore';
 import { deletePhotoFile, MAX_PHOTOS_PER_TRIP, photoUri, pickTripPhotos } from '../utils/photos';
+import Heading from './ui/Heading';
 
 interface TripEditorSheetProps {
   visible: boolean;
@@ -149,7 +150,7 @@ export default function TripEditorSheet({ visible, onClose, currentLang, country
     <Sheet visible={visible} onClose={handleClose} maxHeight="92%">
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>{trip ? jt('editTrip', currentLang) : jt('addTrip', currentLang)}</Text>
+          <Heading style={styles.title}>{trip ? jt('editTrip', currentLang) : jt('addTrip', currentLang)}</Heading>
           {activeCountry ? (
             <Text style={styles.subtitle}>
               {activeCountry.flag} {getLocalizedCountryName(activeCountry, currentLang)}
@@ -359,7 +360,7 @@ const useStyles = makeStyles((colors) =>
     },
     headerText: { flex: 1 },
     title: {
-      fontSize: 24,
+      fontSize: 30,
       color: colors.text.primary,
       fontFamily: fonts.display,
     },

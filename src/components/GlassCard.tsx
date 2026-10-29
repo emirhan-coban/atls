@@ -30,7 +30,7 @@ function GlassCard({
 }: GlassCardProps) {
   const { colors } = useTheme();
   const isIOS = Platform.OS === 'ios';
-  const scrimOpacity = tintOpacity ?? (isIOS ? 0.38 : 0.92);
+  const scrimOpacity = tintOpacity ?? (isIOS ? colors.glass.scrimOpacity : 0.92);
   const blurIntensity = intensity ?? colors.glass.blur;
 
   return (
