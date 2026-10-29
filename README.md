@@ -31,7 +31,7 @@ npx expo run:ios
 Projede `app.json` ve `eas.json` yapılandırmaları App Store için hazırlandı:
 - **Bundle ID:** `com.atls.passport`
 - **Display Name:** `atls.`
-- **Version:** `1.0.0 (Build 1)`
+- **Version:** `1.1.0 (Build 11)`
 - **ITSAppUsesNonExemptEncryption:** `false` (Ek evrak gerektirmez)
 
 Terminalden tek komutla bulutta IPA derleyip TestFlight / App Store'a gönderebilirsiniz:
@@ -51,4 +51,4 @@ npx eas-cli build --platform ios
 - **Dil Desteği:** Türkçe & İngilizce tek dokunuşla anlık geçiş.
 - **Spotify Tarzı Paylaşım Kartı:** 9:16 Instagram Story formatında, aydınlatılmış mini dünya haritalı, istatistikli hikaye kartı.
 - **Vektör Dünya Haritası:** 180+ ülkeyi içeren interaktif SVG dünya haritası.
-- **2 Sekmeli Alt Kapsül Menü:** Ana Sayfa (Home) ve Profil (Passport).
+- **3 Sekmeli Alt Kapsül Menü:** Ana Sayfa (Home), Keşfet (Explore) ve Pasaport (Passport).
