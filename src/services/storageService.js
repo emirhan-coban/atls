@@ -27,8 +27,8 @@ export function enrichCountry(c) {
     continent: cat ? cat.continent : (c.continent || ''),
     continentTr: cat ? cat.continentTr : (c.continentTr || c.continent || ''),
     flag: cat ? cat.flag : (c.flag || '🌍'),
-    year: c.year || c.visitedYear || (c.status === 'want' ? null : new Date().getFullYear().toString()),
-    visitedYear: c.visitedYear || c.year || (c.status === 'want' ? null : new Date().getFullYear().toString()),
+    year: c.year || c.visitedYear || null,
+    visitedYear: c.visitedYear || c.year || null,
     month: c.month || c.visitedMonth || null,
     visitedMonth: c.visitedMonth || c.month || null,
   };
@@ -158,7 +158,7 @@ export function countryToRow(userId, country) {
     continent: country.continent,
     continent_tr: country.continentTr || null,
     status: country.status,
-    visited_year: country.visitedYear || country.year || new Date().getFullYear().toString(),
+    visited_year: country.visitedYear || country.year || null,
     visited_month: country.visitedMonth || country.month || null,
     notes: country.notes || '',
     photos: Array.isArray(country.photos) ? country.photos : [],
@@ -216,15 +216,51 @@ export function rowToTrip(row) {
   };
 }
 
-// Last write wins per trip, using updatedAt. Returns the merged list plus the local trips that are
-// newer than (or missing from) the cloud, which still need to be uploaded.
-export function mergeTrips(localTrips, cloudTrips, { keepLocalOnly, pendingKeys }) {
-  const cloudById = new Map(cloudTrips.map((t) => [t.id, t]));
+export function planToRow(userId, plan) {
+  return {
+    user_id: userId,
+    id: plan.id,
+    country_id: plan.countryId,
+    start_date: plan.startDate,
+    end_date: plan.endDate || null,
+    cities: Array.isArray(plan.cities) ? plan.cities : [],
+    notes: plan.notes || '',
+    checklist: Array.isArray(plan.checklist) ? plan.checklist : [],
+    budget: Array.isArray(plan.budget) ? plan.budget : [],
+    currency: plan.currency || 'EUR',
+    created_at: plan.createdAt,
+    updated_at: plan.updatedAt,
+  };
+}
+
+// notificationIds are scheduled on one device and mean nothing on another, so they are never synced.
+export function rowToPlan(row) {
+  return {
+    id: row.id,
+    countryId: row.country_id,
+    startDate: row.start_date,
+    endDate: row.end_date || null,
+    cities: Array.isArray(row.cities) ? row.cities : [],
+    notes: row.notes || '',
+    checklist: Array.isArray(row.checklist) ? row.checklist : [],
+    budget: Array.isArray(row.budget) ? row.budget : [],
+    currency: row.currency || 'EUR',
+    notificationIds: [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+// Last write wins per record, using updatedAt. Returns the merged list plus the local records that are
+// newer than (or missing from) the cloud, which still need to be uploaded. `keep` copies fields that
+// only exist on this device (photos, notification ids) onto the winning cloud copy.
+function mergeByUpdatedAt(localItems, cloudItems, { keepLocalOnly, pendingKeys, prefix, keep }) {
+  const cloudById = new Map(cloudItems.map((t) => [t.id, t]));
   const merged = new Map(cloudById);
   const toUpload = [];
-  for (const local of localTrips) {
+  for (const local of localItems) {
     const cloud = cloudById.get(local.id);
-    const pending = pendingKeys.has(`trip:${local.id}`);
+    const pending = pendingKeys.has(`${prefix}:${local.id}`);
     if (!cloud) {
       if (keepLocalOnly || pending) {
         merged.set(local.id, local);
@@ -233,12 +269,33 @@ export function mergeTrips(localTrips, cloudTrips, { keepLocalOnly, pendingKeys 
     } else if ((local.updatedAt || '') > (cloud.updatedAt || '')) {
       merged.set(local.id, local);
       toUpload.push(local);
-    } else if (local.photos && local.photos.length > 0) {
-      // Photos stay on the device, so the cloud version never has them: keep them on the winning copy
-      merged.set(local.id, { ...cloud, photos: local.photos });
+    } else {
+      const extra = keep(local);
+      if (extra) merged.set(local.id, { ...cloud, ...extra });
     }
   }
-  return { trips: [...merged.values()], toUpload };
+  return { items: [...merged.values()], toUpload };
+}
+
+export function mergeTrips(localTrips, cloudTrips, { keepLocalOnly, pendingKeys }) {
+  const { items, toUpload } = mergeByUpdatedAt(localTrips, cloudTrips, {
+    keepLocalOnly,
+    pendingKeys,
+    prefix: 'trip',
+    // Photos stay on the device, so the cloud version never has them
+    keep: (local) => (local.photos && local.photos.length > 0 ? { photos: local.photos } : null),
+  });
+  return { trips: items, toUpload };
+}
+
+export function mergePlans(localPlans, cloudPlans, { keepLocalOnly, pendingKeys }) {
+  const { items, toUpload } = mergeByUpdatedAt(localPlans, cloudPlans, {
+    keepLocalOnly,
+    pendingKeys,
+    prefix: 'plan',
+    keep: (local) => ({ notificationIds: local.notificationIds || [] }),
+  });
+  return { plans: items, toUpload };
 }
 
 function sanitizeProfile(profile) {
@@ -350,6 +407,16 @@ async function applyOp(userId, op) {
     const { error } = await supabase.from('trips').delete().match({ user_id: userId, id: op.tripId });
     return !error;
   }
+  if (op.kind === 'plan-upsert') {
+    const { error } = await supabase
+      .from('planned_trips')
+      .upsert(planToRow(userId, op.plan), { onConflict: 'user_id,id' });
+    return !error;
+  }
+  if (op.kind === 'plan-remove') {
+    const { error } = await supabase.from('planned_trips').delete().match({ user_id: userId, id: op.planId });
+    return !error;
+  }
   if (op.kind === 'profile-upsert') {
     const { error } = await upsertWithFallback(
       'profiles',
@@ -411,13 +478,14 @@ async function flushOutbox() {
 
 // Pulls cloud state for a signed-in user without ever deleting local data on failure.
 // Returns null when the cloud could not be reached, so callers fall back to local data.
-async function pullCloudState(user, localCountries, localProfile, localTrips = []) {
+async function pullCloudState(user, localCountries, localProfile, localTrips = [], localPlans = []) {
   await flushOutbox();
 
-  const [profileRes, countriesRes, tripsRes] = await Promise.all([
+  const [profileRes, countriesRes, tripsRes, plansRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
     supabase.from('user_countries').select('*').eq('user_id', user.id),
     supabase.from('trips').select('*').eq('user_id', user.id),
+    supabase.from('planned_trips').select('*').eq('user_id', user.id),
   ]);
   if (profileRes.error || countriesRes.error) return null;
   const pendingKeys = new Set(Object.keys(await readJson(KEYS.OUTBOX, {})));
@@ -462,11 +530,26 @@ async function pullCloudState(user, localCountries, localProfile, localTrips = [
   }
   await AsyncStorage.setItem(KEYS.TRIPS, JSON.stringify(trips));
 
+  // Plans: same rules as trips. Without the table they stay on this device.
+  let plans = localPlans;
+  if (!plansRes.error) {
+    const merged = mergePlans(localPlans, (plansRes.data || []).map(rowToPlan), {
+      keepLocalOnly: syncedUser !== user.id,
+      pendingKeys,
+    });
+    plans = merged.plans;
+    for (const plan of merged.toUpload) {
+      await enqueue({ key: `plan:${plan.id}`, kind: 'plan-upsert', plan });
+    }
+    if (merged.toUpload.length > 0) flushOutbox().catch(() => {});
+  }
+  await AsyncStorage.setItem(KEYS.PLANS, JSON.stringify(plans));
+
   const baseProfile = profileRes.data ? rowToProfile(profileRes.data, localProfile) : localProfile;
   const profile = baseProfile ? { ...baseProfile, isGuest: false } : baseProfile;
   await AsyncStorage.setItem(KEYS.COUNTRIES, JSON.stringify(countries));
   if (profile) await AsyncStorage.setItem(KEYS.PROFILE, JSON.stringify(profile));
-  return { profile, countries, trips };
+  return { profile, countries, trips, plans };
 }
 
 export const storageService = {
@@ -498,7 +581,7 @@ export const storageService = {
       const user = await getSessionUser();
       if (user) {
         try {
-          const cloud = await pullCloudState(user, localCountries, localProfile, storedTrips || []);
+          const cloud = await pullCloudState(user, localCountries, localProfile, storedTrips || [], storedPlans || []);
           if (cloud) {
             return {
               lang,
@@ -510,7 +593,7 @@ export const storageService = {
               trips: cloud.trips,
               tripsSeeded: storedSeeded || [],
               progress: storedProgress,
-              plans: storedPlans || [],
+              plans: cloud.plans,
             };
           }
         } catch (err) {
@@ -593,13 +676,14 @@ export const storageService = {
     const user = await getSessionUser();
     if (!user) return null;
     try {
-      const [localProfile, localCountries, localTrips] = await Promise.all([
+      const [localProfile, localCountries, localTrips, localPlans] = await Promise.all([
         readJson(KEYS.PROFILE, null),
         readJson(KEYS.COUNTRIES, []),
         readJson(KEYS.TRIPS, []),
+        readJson(KEYS.PLANS, []),
       ]);
       const seedProfile = { ...(localProfile || {}), ...(fallbackUserData || {}) };
-      const cloud = await pullCloudState(user, localCountries, seedProfile, localTrips);
+      const cloud = await pullCloudState(user, localCountries, seedProfile, localTrips, localPlans);
       if (cloud) return cloud;
     } catch (err) {
       console.log('[storageService] loadUserSessionData notice:', err?.message);
@@ -677,6 +761,25 @@ export const storageService = {
       await AsyncStorage.setItem(KEYS.PLANS, JSON.stringify(plans));
     } catch (err) {
       console.warn('[storageService] Failed to save plans:', err);
+    }
+  },
+
+  // The local list is written by savePlans; these two queue the cloud write for one plan.
+  async syncPlan(plan) {
+    try {
+      await enqueue({ key: `plan:${plan.id}`, kind: 'plan-upsert', plan });
+      await flushOutbox();
+    } catch (err) {
+      console.warn('[storageService] Failed to sync plan:', err);
+    }
+  },
+
+  async syncPlanRemoval(planId) {
+    try {
+      await enqueue({ key: `plan:${planId}`, kind: 'plan-remove', planId });
+      await flushOutbox();
+    } catch (err) {
+      console.warn('[storageService] Failed to sync plan removal:', err);
     }
   },
 
