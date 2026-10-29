@@ -24,6 +24,7 @@ import { computeStats, getGoalProgress, sortTripsNewestFirst } from '../utils/st
 import { Country, Profile, Trip } from '../stores/types';
 import { useProgressStore } from '../stores/useProgressStore';
 import { useAppStore } from '../stores/useAppStore';
+import Heading from './ui/Heading';
 
 type Tab = 'timeline' | 'stamps' | 'stats' | 'badges';
 
@@ -109,7 +110,7 @@ export default function JourneyModal({
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.screen} edges={['bottom']}>
         <View style={styles.header}>
-          <Text style={styles.title}>{jt('title', currentLang)}</Text>
+          <Heading style={styles.title}>{jt('title', currentLang)}</Heading>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close">
             <X size={18} color={colors.text.muted} />
           </TouchableOpacity>
