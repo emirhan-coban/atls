@@ -14,6 +14,7 @@ import { daysUntil, parseDate, toDateKey } from '../utils/planning';
 import { PlannedTrip } from '../stores/types';
 import { usePlanStore } from '../stores/usePlanStore';
 import { notificationService } from '../services/notificationService';
+import Heading from './ui/Heading';
 
 interface PlanEditorSheetProps {
   visible: boolean;
@@ -134,7 +135,7 @@ export default function PlanEditorSheet({ visible, onClose, currentLang, country
     <Sheet visible={visible} onClose={onClose} maxHeight="92%">
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>{plan ? lt('editPlan', currentLang) : lt('addPlan', currentLang)}</Text>
+          <Heading style={styles.title}>{plan ? lt('editPlan', currentLang) : lt('addPlan', currentLang)}</Heading>
           <Text style={styles.subtitle}>
             {country ? `${country.flag} ${getLocalizedCountryName(country, currentLang)}` : lt('chooseCountry', currentLang)}
           </Text>

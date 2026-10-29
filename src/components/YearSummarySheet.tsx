@@ -14,6 +14,7 @@ import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { jt } from '../localization/journey';
 import { computeYearSummary, yearsWithTrips } from '../utils/stats';
 import { Trip } from '../stores/types';
+import Heading from './ui/Heading';
 
 interface YearSummarySheetProps {
   visible: boolean;
@@ -59,7 +60,7 @@ export default function YearSummarySheet({ visible, onClose, trips, currentLang 
 
   return (
     <Sheet visible={visible} onClose={onClose} maxHeight="94%">
-      <Text style={styles.title}>{jt('shareYear', currentLang)}</Text>
+      <Heading style={styles.title}>{jt('shareYear', currentLang)}</Heading>
       <ScrollView showsVerticalScrollIndicator={false}>
         {years.length > 1 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.years}>

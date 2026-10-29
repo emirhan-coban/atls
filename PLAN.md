@@ -432,6 +432,6 @@ Bu bölüm kalan her maddeyi ya yapıldı ya da gerekçesiyle yapılmadı olarak
 
 | Madde | Durum |
 |---|---|
-| Font | Fraunces yerine **Instrument Serif** (normal) ve **Instrument Serif İtalik**. Ailede yalnızca bu iki stil var, bu yüzden başlıklar ağırlıkla değil boyutla ayrışıyor; tüm başlık boyutları %25 büyütüldü. İtalik: Ana Sayfa alt başlığı. İtalik yalnızca büyük boyutta ve cümle başına bir vurgu için kullanılmalı. |
+| Font | Fraunces yerine **Instrument Serif** (normal) ve **Instrument Serif İtalik**. Ailede yalnızca bu iki stil var, bu yüzden başlıklar ağırlıkla değil boyutla ayrışıyor; tüm başlık boyutları %25 büyütüldü. İtalik: alt başlıklar ve başlıkların son kelimesi (`Heading` bileşeni, `src/components/ui/Heading.tsx`: "Dünya *Pasaportun*"). Gövde metni iOS'un sistem fontunda (SF Pro) kaldı; Inter'e geçmek her `Text` stilinde ağırlık eşlemesi gerektirir ve görsel kazancı yok denecek kadar az. İtalik yalnızca büyük boyutta ve cümle başına bir vurgu için kullanılmalı. |
 | Kaldırılanlar | Kartlarla Keşfet (`SwipeDiscoveryCard` silindi), rozetteki yarım görünen tik, pasaport rengi seçici. |
 | Sırada | Açık temada okunabilirlik (cam kartlar, soluk metin), Keşfet geçiş hızı, mühür/son girişler yeniden tasarımı, Rotalar 2.0. |

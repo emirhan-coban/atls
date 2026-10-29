@@ -36,6 +36,7 @@ import { MORE_DESTINATIONS } from '../data/moreDestinations';
 const ALL_DESTINATIONS = [...CURATED_DESTINATIONS, ...MORE_DESTINATIONS];
 import { openAppleMaps, openGoogleMaps } from '../utils/mapHelper';
 import { Country, Profile } from '../stores/types';
+import Heading from './ui/Heading';
 
 interface ExploreScreenProps {
   countries: Country[];
@@ -228,9 +229,9 @@ function ExploreScreen({
               {currentLang === 'tr' ? 'GEZGİN REHBERİ' : 'CURATED GUIDE'}
             </Text>
           </View>
-          <Text style={styles.title}>
+          <Heading style={styles.title}>
             {currentLang === 'tr' ? 'Nerede Ne Yenir & Ne Gezilir?' : 'Eat & Wander Guide'}
-          </Text>
+          </Heading>
           <Text style={styles.subtitle}>
             {currentLang === 'tr'
               ? 'Popüler rotaların konum noktaları, mekan önerileri ve harita bağlantıları.'
