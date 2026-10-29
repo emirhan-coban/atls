@@ -67,8 +67,6 @@ export default function CelebrationLayer({ hostId, active = true, currentLang }:
             dateText={dateText}
             status={stamp.status}
             size={230}
-            salt={String(stamp.id)}
-            tilted={false}
           />
           <Text style={styles.caption}>{jt('stamped', currentLang)}</Text>
         </StampSlam>
