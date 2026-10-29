@@ -12,8 +12,9 @@ export function deriveLegacyTrips(countries: Country[], trips: Trip[], now = new
   const created: Trip[] = [];
   for (const c of countries) {
     if (!isVisited(c) || withTrips.has(c.id)) continue;
-    const year = (c.visitedYear || c.year || '').toString();
-    if (!/^\d{4}$/.test(year)) continue;
+    // A country added without a year (onboarding) gets a trip with an unknown year, not "this year".
+    const raw = (c.visitedYear || c.year || '').toString();
+    const year = /^\d{4}$/.test(raw) ? raw : '';
     const stamp = now.toISOString();
     created.push({
       id: `legacy-${c.id}`,
@@ -55,6 +56,21 @@ export interface TravelStats {
   newCountriesByYear: Record<string, string[]>;
 }
 
+/**
+ * Year of the first trip per country. A country with any trip of unknown year is left out: it was
+ * visited at some point we cannot place, so a later dated trip must not count as a "new" country.
+ */
+function firstVisitYears(trips: Trip[]): Map<string, string> {
+  const undated = new Set(trips.filter((t) => !t.year).map((t) => t.countryId));
+  const first = new Map<string, string>();
+  for (const t of trips) {
+    if (!t.year || undated.has(t.countryId)) continue;
+    const seen = first.get(t.countryId);
+    if (!seen || t.year < seen) first.set(t.countryId, t.year);
+  }
+  return first;
+}
+
 export function computeStats(countries: Country[], trips: Trip[]): TravelStats {
   const visited = countries.filter(isVisited);
   const byYear = new Map<string, number>();
@@ -65,7 +81,7 @@ export function computeStats(countries: Country[], trips: Trip[]): TravelStats {
   let ratingCount = 0;
 
   for (const t of trips) {
-    byYear.set(t.year, (byYear.get(t.year) || 0) + 1);
+    if (t.year) byYear.set(t.year, (byYear.get(t.year) || 0) + 1);
     byCountry.set(t.countryId, (byCountry.get(t.countryId) || 0) + 1);
     if (t.days && t.days > 0) {
       totalDays += t.days;
@@ -77,14 +93,11 @@ export function computeStats(countries: Country[], trips: Trip[]): TravelStats {
     }
   }
 
-  const ordered = sortTripsNewestFirst(trips);
+  // Trips without a year count toward totals but cannot be placed on a timeline.
+  const ordered = sortTripsNewestFirst(trips.filter((t) => t.year));
 
   // first year each country was visited
-  const firstYear = new Map<string, string>();
-  for (const t of trips) {
-    const seen = firstYear.get(t.countryId);
-    if (!seen || t.year < seen) firstYear.set(t.countryId, t.year);
-  }
+  const firstYear = firstVisitYears(trips);
   const newCountriesByYear: Record<string, string[]> = {};
   firstYear.forEach((year, countryId) => {
     (newCountriesByYear[year] ||= []).push(countryId);
@@ -145,11 +158,7 @@ export interface YearSummary {
 
 export function computeYearSummary(trips: Trip[], year: string): YearSummary {
   const inYear = trips.filter((t) => t.year === year);
-  const firstYear = new Map<string, string>();
-  for (const t of trips) {
-    const seen = firstYear.get(t.countryId);
-    if (!seen || t.year < seen) firstYear.set(t.countryId, t.year);
-  }
+  const firstYear = firstVisitYears(trips);
   const countryIds = [...new Set(inYear.map((t) => t.countryId))];
   const counts = new Map<string, number>();
   inYear.forEach((t) => counts.set(t.countryId, (counts.get(t.countryId) || 0) + 1));
@@ -166,5 +175,5 @@ export function computeYearSummary(trips: Trip[], year: string): YearSummary {
 
 /** Years that have at least one trip, newest first. */
 export function yearsWithTrips(trips: Trip[]): string[] {
-  return [...new Set(trips.map((t) => t.year))].sort((a, b) => b.localeCompare(a));
+  return [...new Set(trips.map((t) => t.year).filter(Boolean))].sort((a, b) => b.localeCompare(a));
 }
