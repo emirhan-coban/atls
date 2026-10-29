@@ -1101,9 +1101,9 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   {totalCount} Ülke • %{exploredPercent} Dünya Keşfi
                 </Text>
               </View>
-              <Text style={styles.savePassportTitle}>
+              <Heading style={styles.savePassportTitle}>
                 {t?.savePassportTitle || 'Pasaportunu Kaydet & Kilitle'}
-              </Text>
+              </Heading>
               <Text style={styles.savePassportSub}>
                 {t?.savePassportSub || 'Emek verdiğin bu harita ve istatistiklerinin silinmemesi için hesabını oluştur.'}
               </Text>
@@ -1875,11 +1875,11 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     elevation: 5,
   },
   statHeroPercent: {
-    fontSize: 64,
-    fontWeight: '900',
+    fontSize: 84,
+    fontFamily: fonts.display,
     color: colors.gold.base,
-    letterSpacing: -2,
-    lineHeight: 68,
+    lineHeight: 96,
+    paddingTop: 6,
   },
   statHeroLabel: {
     fontSize: 11,
@@ -2010,8 +2010,9 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     color: colors.gold.base,
   },
   savePassportTitle: {
-    fontSize: 24,
-    fontWeight: '900',
+    fontSize: 34,
+    lineHeight: 38,
+    fontFamily: fonts.display,
     color: colors.text.primary,
     letterSpacing: -0.6,
     marginBottom: 6,

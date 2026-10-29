@@ -46,8 +46,10 @@ import { PASSPORT_THEMES, PassportThemeKey } from '../theme/passportThemes';
 import { Country, Profile, ThemePreference } from '../stores/types';
 import EditProfileModal from './EditProfileModal';
 import CountryStatusModal from './CountryStatusModal';
+import StampView from './StampView';
 import AnimatedCounter from './AnimatedCounter';
 import { getDynamicLocation } from '../utils/locationHelper';
+import { monthShort } from '../data/months';
 
 interface PassportScreenProps {
   profile: Profile;
@@ -134,16 +136,14 @@ function PassportScreen({
   const currentThemeKey = profile?.passportTheme || 'classic_navy';
   const currentTheme = PASSPORT_THEMES[currentThemeKey as PassportThemeKey] || PASSPORT_THEMES.classic_navy;
 
-  // Dynamic stamps generated from user's actual visited countries
-  const passportStampsList = visitedCountries.slice(0, 8).map((c, idx) => ({
+  // Flat entry stamps for the countries the user has visited (same design as the journal's Stamps tab)
+  const passportStampsList = visitedCountries.slice(0, 8).map((c) => ({
     id: `stamp-${c.id}`,
     code: c.id,
-    city: currentLang === 'tr' ? (c.nameTr || c.name) : c.name,
-    country: currentLang === 'tr' ? (c.nameTr || c.name) : c.name,
-    date: formatCountryDate(c, currentLang) || c.year || new Date().getFullYear().toString(),
-    type: c.status === 'lived' ? (currentLang === 'tr' ? 'İKAMET' : 'RESIDENCE') : (currentLang === 'tr' ? 'GİRİŞ' : 'ENTRY'),
-    accentColor: idx % 3 === 0 ? colors.status.visited.color : idx % 3 === 1 ? colors.status.lived.color : colors.gold.base,
-    bg: idx % 3 === 0 ? colors.status.visited.light : idx % 3 === 1 ? colors.status.lived.light : colors.gold.tint,
+    name: currentLang === 'tr' ? (c.nameTr || c.name) : c.name,
+    date:
+      [monthShort(c.visitedMonth || c.month, currentLang), c.visitedYear || c.year].filter(Boolean).join(' ') ||
+      '',
   }));
 
   // Dynamic MRZ Code based on profile
@@ -612,27 +612,8 @@ function PassportScreen({
         ) : (
           <View style={styles.stampsGrid}>
             {passportStampsList.map((stamp) => (
-              <View key={stamp.id} style={styles.visaCard}>
-                <View style={styles.visaTop}>
-                  <Text style={styles.visaCode} numberOfLines={1}>{stamp.code}</Text>
-                  <View style={[styles.visaBadge, { backgroundColor: stamp.bg }]}>
-                    <Text
-                      style={[styles.visaBadgeText, { color: stamp.accentColor }]}
-                      numberOfLines={1}
-                    >
-                      {stamp.type}
-                    </Text>
-                  </View>
-                </View>
-                <Text style={styles.visaCity} numberOfLines={1} ellipsizeMode="tail">
-                  {stamp.city}
-                </Text>
-                <Text style={styles.visaCountry} numberOfLines={1} ellipsizeMode="tail">
-                  {stamp.country}
-                </Text>
-                <Text style={styles.visaDate} numberOfLines={1}>
-                  {stamp.date}
-                </Text>
+              <View key={stamp.id} style={styles.stampCell}>
+                <StampView countryId={stamp.code} title={stamp.name} dateText={stamp.date} status="visited" size={156} />
               </View>
             ))}
           </View>
@@ -1453,53 +1434,12 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
   stampsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 6,
     justifyContent: 'space-between',
   },
-  visaCard: {
+  stampCell: {
     width: '48.5%',
-    backgroundColor: colors.panel.base,
-    borderRadius: 18,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-  },
-  visaTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
-  },
-  visaCode: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: colors.text.primary,
-  },
-  visaBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  visaBadgeText: {
-    fontSize: 8,
-    fontWeight: '800',
-  },
-  visaCity: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.text.primary,
-  },
-  visaCountry: {
-    fontSize: 10,
-    color: colors.text.secondary,
-  },
-  visaDate: {
-    fontSize: 9,
-    color: colors.text.muted,
-    marginTop: 6,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: colors.glass.borderSoft,
   },
   shareButton: {
     marginTop: 20,
