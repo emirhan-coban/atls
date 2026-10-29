@@ -19,10 +19,20 @@ export const stampsData = {
   tr: [],
 };
 
-export const getPassportStamps = (lang = 'en') => stampsData[lang] || stampsData.en;
+export const getPassportStamps = (lang = 'en') => stampsData[lang as 'en' | 'tr'] || stampsData.en;
 export const passportStamps = stampsData.en;
 
-export const availableCatalog = [
+/** One entry of the 196-country catalog. */
+export interface CatalogCountry {
+  id: string;
+  name: string;
+  nameTr: string;
+  flag: string;
+  continent: string;
+  continentTr: string;
+}
+
+export const availableCatalog: CatalogCountry[] = [
   {
     "id": "AF",
     "name": "Afghanistan",
@@ -350,6 +360,14 @@ export const availableCatalog = [
     "flag": "🇨🇷",
     "continent": "North America",
     "continentTr": "Kuzey Amerika"
+  },
+  {
+    "id": "CI",
+    "name": "Ivory Coast",
+    "nameTr": "Fildişi Sahili",
+    "flag": "🇨🇮",
+    "continent": "Africa",
+    "continentTr": "Afrika"
   },
   {
     "id": "HR",
@@ -692,6 +710,22 @@ export const availableCatalog = [
     "name": "Japan",
     "nameTr": "Japonya",
     "flag": "🇯🇵",
+    "continent": "Asia",
+    "continentTr": "Asya"
+  },
+  {
+    "id": "KR",
+    "name": "South Korea",
+    "nameTr": "Güney Kore",
+    "flag": "🇰🇷",
+    "continent": "Asia",
+    "continentTr": "Asya"
+  },
+  {
+    "id": "KP",
+    "name": "North Korea",
+    "nameTr": "Kuzey Kore",
+    "flag": "🇰🇵",
     "continent": "Asia",
     "continentTr": "Asya"
   },
@@ -1576,7 +1610,7 @@ availableCatalog.forEach((c) => {
   }
 });
 
-export const getLocalizedCountryName = (countryOrId, lang = 'en') => {
+export const getLocalizedCountryName = (countryOrId: any, lang = 'en') => {
   if (!countryOrId) return '';
   const id = (typeof countryOrId === 'string' ? countryOrId : countryOrId.id)?.toUpperCase();
   const catalogItem = id ? catalogMap.get(id) : null;
@@ -1587,7 +1621,7 @@ export const getLocalizedCountryName = (countryOrId, lang = 'en') => {
   return catalogItem?.name || (typeof countryOrId === 'object' ? countryOrId.name || countryOrId.nameTr : catalogItem?.nameTr || id || '');
 };
 
-export const getLocalizedContinent = (countryOrId, lang = 'en') => {
+export const getLocalizedContinent = (countryOrId: any, lang = 'en') => {
   if (!countryOrId) return '';
   const id = (typeof countryOrId === 'string' ? countryOrId : countryOrId.id)?.toUpperCase();
   const catalogItem = id ? catalogMap.get(id) : null;
@@ -1613,7 +1647,7 @@ export const MONTHS = [
   { id: '12', nameEn: 'December', nameTr: 'Aralık', shortEn: 'Dec', shortTr: 'Ara' },
 ];
 
-export function formatCountryDate(country, lang = 'tr') {
+export function formatCountryDate(country: any, lang = 'tr') {
   if (!country) return '';
   if (country.status === 'want') return '';
 
