@@ -1394,6 +1394,39 @@ export const COUNTRY_FACTS: Record<string, CountryFacts> = {
       }
     }
   },
+  "CI": {
+    "capital": {
+      "tr": "Yamoussoukro",
+      "en": "Yamoussoukro"
+    },
+    "languages": {
+      "en": [
+        "French"
+      ],
+      "tr": [
+        "Fransızca"
+      ]
+    },
+    "currency": {
+      "code": "XOF",
+      "symbol": "Fr",
+      "nameEn": "West African CFA franc",
+      "nameTr": "Batı Afrika CFA frangı"
+    },
+    "callingCode": "+225",
+    "drivesOn": "right",
+    "landlocked": false,
+    "areaKm2": 322463,
+    "schengen": false,
+    "eu": false,
+    "visa": {
+      "status": "evisa",
+      "stay": {
+        "value": 3,
+        "unit": "months"
+      }
+    }
+  },
   "HR": {
     "capital": {
       "tr": "Zagreb",
@@ -2791,6 +2824,69 @@ export const COUNTRY_FACTS: Record<string, CountryFacts> = {
         "value": 90,
         "unit": "days"
       }
+    }
+  },
+  "KR": {
+    "capital": {
+      "tr": "Seul",
+      "en": "Seoul"
+    },
+    "languages": {
+      "en": [
+        "Korean"
+      ],
+      "tr": [
+        "Korece"
+      ]
+    },
+    "currency": {
+      "code": "KRW",
+      "symbol": "₩",
+      "nameEn": "South Korean won",
+      "nameTr": "Güney Kore wonu"
+    },
+    "callingCode": "+82",
+    "drivesOn": "right",
+    "landlocked": false,
+    "areaKm2": 100210,
+    "schengen": false,
+    "eu": false,
+    "visa": {
+      "status": "eta",
+      "stay": {
+        "value": 90,
+        "unit": "days"
+      }
+    }
+  },
+  "KP": {
+    "capital": {
+      "tr": "Pyongyang",
+      "en": "Pyongyang"
+    },
+    "languages": {
+      "en": [
+        "Korean"
+      ],
+      "tr": [
+        "Korece"
+      ]
+    },
+    "currency": {
+      "code": "KPW",
+      "symbol": "₩",
+      "nameEn": "North Korean won",
+      "nameTr": "Kuzey Kore wonu"
+    },
+    "callingCode": "+850",
+    "drivesOn": "right",
+    "landlocked": false,
+    "areaKm2": 120538,
+    "schengen": false,
+    "eu": false,
+    "visa": {
+      "status": "required",
+      "stay": null
     }
   },
   "JO": {
