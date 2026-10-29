@@ -23,3 +23,7 @@ ios/build/
 .env*.local
 !.env.example
 
+
+# Native projects are generated (CNG): npx expo prebuild
+/ios
+/android
