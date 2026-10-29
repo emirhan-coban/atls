@@ -1,4 +1,16 @@
-import React from 'react';
+import CountryProfileSection from './CountryProfileSection';
+import TripEditorSheet from './TripEditorSheet';
+import PlanEditorSheet from './PlanEditorSheet';
+import { lt as lt2 } from '../localization/planner';
+import CelebrationLayer from './CelebrationLayer';
+import Button from './ui/Button';
+import { useTripStore } from '../stores/useTripStore';
+import { sortTripsNewestFirst } from '../utils/stats';
+import { monthShort } from '../data/months';
+import { jt } from '../localization/journey';
+import { fonts } from '../theme/typography';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,32 +18,27 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
-  Image,
-  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import * as ImagePicker from 'expo-image-picker';
 import {
   X,
   Calendar,
   MapPin,
-  Heart,
   Plane,
   Edit3,
   Sparkles,
   BookOpen,
   Share2,
-  Camera,
-  Image as ImageIcon,
+  Plus,
+  CalendarClock,
 } from 'lucide-react-native';
 import { availableCatalog, getLocalizedCountryName, formatCountryDate } from '../data/travelData';
 import { getCountryTrivia } from '../data/countryTrivia';
-import { Country } from '../stores/types';
+import { Country, Trip } from '../stores/types';
+import GlassCard from './GlassCard';
 import { theme } from '../theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface CountryDetailModalProps {
   isOpen: boolean;
@@ -58,6 +65,11 @@ export default function CountryDetailModal({
   currentLang,
   t,
 }: CountryDetailModalProps) {
+  const [editor, setEditor] = useState<{ trip?: Trip | null } | null>(null);
+  const [planOpen, setPlanOpen] = useState(false);
+  const { colors } = useTheme();
+  const styles = useStyles();
+  const allTrips = useTripStore((s) => s.trips);
   if (!isOpen || !countryId) return null;
 
   // Find in user's marked countries or catalog
@@ -88,6 +100,7 @@ export default function CountryDetailModal({
   const isLived = userCountry?.status === 'lived';
   const isWant = userCountry?.status === 'want';
   const isMarked = isVisited || isLived;
+  const countryTrips = sortTripsNewestFirst(allTrips.filter((trip) => trip.countryId === baseCountry.id));
 
   // Continent-themed gradient
   const getContinentGradient = () => {
@@ -97,8 +110,11 @@ export default function CountryDetailModal({
     if (cont.includes('america')) return theme.colors.continents.americas.gradient;
     if (cont.includes('africa')) return theme.colors.continents.africa.gradient;
     if (cont.includes('oceania')) return theme.colors.continents.oceania.gradient;
-    return ['#4F46E5', '#6366F1'];
+    return [colors.gold.deep, colors.gold.base];
   };
+
+  // Soft continent glow: a translucent wash of the continent colour fading into the sheet
+  const bannerGradient: [string, string] = [`${getContinentGradient()[0]}40`, 'rgba(0, 0, 0, 0)'];
 
   const handleQuickStamp = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -124,46 +140,6 @@ export default function CountryDetailModal({
     onClose();
   };
 
-  const handlePickPhotos = async () => {
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          currentLang === 'tr' ? 'İzin Gerekli' : 'Permission Required',
-          currentLang === 'tr'
-            ? 'Fotoğraf eklemek için galeri erişim izni vermelisiniz.'
-            : 'Please grant camera roll permissions to add travel photos.'
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        quality: 0.8,
-        allowsMultipleSelection: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        const newUris = result.assets.map((a) => a.uri);
-        const existingPhotos = userCountry?.photos || [];
-        const mergedPhotos = [...existingPhotos, ...newUris];
-
-        const updatedCountry: Country = {
-          ...(userCountry || baseCountry),
-          status: userCountry?.status || 'visited',
-          photos: mergedPhotos,
-        };
-
-        if (onUpdateCountry) {
-          onUpdateCountry(updatedCountry);
-        }
-      }
-    } catch (err) {
-      console.warn('Error picking image:', err);
-    }
-  };
-
   return (
     <Modal
       visible={isOpen}
@@ -172,12 +148,12 @@ export default function CountryDetailModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
+        <GlassCard style={styles.modalContainer}>
           {/* Header Banner with Continent Gradient */}
           <LinearGradient
-            colors={getContinentGradient() as [string, string]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            colors={bannerGradient}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
             style={styles.bannerHeader}
           >
             <TouchableOpacity
@@ -188,14 +164,14 @@ export default function CountryDetailModal({
               style={styles.closeBtn}
               activeOpacity={0.8}
             >
-              <X size={18} color="#FFFFFF" strokeWidth={2.5} />
+              <X size={18} color={colors.text.primary} strokeWidth={2.5} />
             </TouchableOpacity>
 
             <View style={styles.bannerContent}>
               <Text style={styles.flagEmoji}>{baseCountry.flag}</Text>
               <View style={styles.bannerBadgeRow}>
                 <View style={styles.continentPill}>
-                  <Sparkles size={11} color="#FFFFFF" />
+                  <Sparkles size={11} color={colors.text.primary} />
                   <Text style={styles.continentPillText}>{continent}</Text>
                 </View>
 
@@ -243,7 +219,7 @@ export default function CountryDetailModal({
               <View style={styles.metaCard}>
                 <View style={styles.metaRow}>
                   <View style={styles.metaItem}>
-                    <Calendar size={14} color="#6366F1" />
+                    <Calendar size={14} color={colors.gold.base} />
                     <Text style={styles.metaLabel}>
                       {currentLang === 'tr' ? 'Ziyaret Yılı' : 'Visited Year'}
                     </Text>
@@ -258,7 +234,7 @@ export default function CountryDetailModal({
                   <View style={styles.metaDivider} />
 
                   <View style={styles.metaItem}>
-                    <MapPin size={14} color="#10B981" />
+                    <MapPin size={14} color={colors.status.lived.color} />
                     <Text style={styles.metaLabel}>
                       {currentLang === 'tr' ? 'Mühür Kodu' : 'Stamp ID'}
                     </Text>
@@ -268,57 +244,74 @@ export default function CountryDetailModal({
 
                 {userCountry?.notes ? (
                   <View style={styles.notesBox}>
-                    <BookOpen size={13} color="#4F46E5" />
+                    <BookOpen size={13} color={colors.gold.base} />
                     <Text style={styles.notesText}>{userCountry.notes}</Text>
                   </View>
                 ) : null}
               </View>
             )}
 
-            {/* PHOTO MEMORIES GALLERY */}
-            <View style={styles.memoriesCard}>
-              <View style={styles.memoriesHeader}>
-                <View style={styles.memoriesTitleRow}>
-                  <Camera size={15} color="#4F46E5" />
-                  <Text style={styles.memoriesTitle}>
-                    {currentLang === 'tr' ? 'SEYAHAT ANILARI' : 'TRAVEL MEMORIES'}
+            <CountryProfileSection
+              countryId={baseCountry.id}
+              currentLang={currentLang}
+              isHomeCountry={baseCountry.id === 'TR' && userCountry?.status === 'lived'}
+            />
+
+            {/* Wishlist country: plan the trip */}
+            {isWant && (
+              <Button
+                label={lt2('planTrip', currentLang)}
+                onPress={() => setPlanOpen(true)}
+                icon={(color) => <CalendarClock size={16} color={color} />}
+                style={{ marginBottom: 16 }}
+              />
+            )}
+
+            {/* Trips to this country */}
+            {isMarked && (
+              <View style={styles.tripsSection}>
+                <View style={styles.tripsHeader}>
+                  <Text style={styles.tripsTitle}>
+                    {jt('tripsOfCountry', currentLang)} ({countryTrips.length})
                   </Text>
+                  {(
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      label={jt('addTrip', currentLang)}
+                      onPress={() => setEditor({})}
+                      icon={(color) => <Plus size={14} color={color} strokeWidth={2.5} />}
+                    />
+                  )}
                 </View>
-
-                <TouchableOpacity
-                  onPress={handlePickPhotos}
-                  activeOpacity={0.7}
-                  style={styles.addPhotoPill}
-                >
-                  <Camera size={12} color="#4F46E5" />
-                  <Text style={styles.addPhotoPillText}>
-                    {currentLang === 'tr' ? '+ Fotoğraf' : '+ Photo'}
-                  </Text>
-                </TouchableOpacity>
+                {countryTrips.map((trip) => (
+                  <TouchableOpacity
+                    key={trip.id}
+                    onPress={() => setEditor({ trip })}
+                    activeOpacity={0.8}
+                    style={styles.tripRow}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.tripRowDate}>
+                      {[monthShort(trip.month, currentLang), trip.year].filter(Boolean).join(' ')}
+                    </Text>
+                    <Text style={styles.tripRowMeta} numberOfLines={1}>
+                      {[
+                        trip.days ? `${trip.days} ${jt('daysUnit', currentLang)}` : null,
+                        trip.cities.join(', ') || null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-
-              {userCountry?.photos && userCountry.photos.length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photosScroll}>
-                  {userCountry.photos.map((uri, idx) => (
-                    <View key={idx} style={styles.photoContainer}>
-                      <Image source={{ uri }} style={styles.photoThumbnail} />
-                    </View>
-                  ))}
-                </ScrollView>
-              ) : (
-                <TouchableOpacity onPress={handlePickPhotos} activeOpacity={0.8} style={styles.emptyPhotosBox}>
-                  <ImageIcon size={20} color="#94A3B8" />
-                  <Text style={styles.emptyPhotosText}>
-                    {currentLang === 'tr' ? 'Bu seyahatten ilk fotoğrafını ekle' : 'Add your first photo from this trip'}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            )}
 
             {/* Cultural Fun Fact & Trivia */}
             <View style={styles.triviaCard}>
               <View style={styles.triviaHeader}>
-                <Sparkles size={14} color="#F59E0B" />
+                <Sparkles size={14} color={colors.gold.base} />
                 <Text style={styles.triviaHeaderTitle}>
                   {currentLang === 'tr' ? 'BUNU BİLİYOR MUYDUN?' : 'CULTURAL TRIVIA'}
                 </Text>
@@ -335,10 +328,10 @@ export default function CountryDetailModal({
                   activeOpacity={0.85}
                 >
                   <LinearGradient
-                    colors={['#FF6B35', '#FF8A5B']}
+                    colors={[colors.gold.base, colors.gold.light]}
                     style={styles.gradientBtn}
                   >
-                    <Plane size={18} color="#090B0E" strokeWidth={2.5} />
+                    <Plane size={18} color={colors.canvas.base} strokeWidth={2.5} />
                     <Text style={styles.primaryActionText}>
                       {currentLang === 'tr' ? 'Pasaporta Mühürle ✈️' : 'Stamp into Passport ✈️'}
                     </Text>
@@ -357,7 +350,7 @@ export default function CountryDetailModal({
                     style={styles.secondaryBtn}
                     activeOpacity={0.8}
                   >
-                    <Edit3 size={16} color="#FFFFFF" />
+                    <Edit3 size={16} color={colors.text.primary} />
                     <Text style={styles.secondaryBtnText}>
                       {currentLang === 'tr' ? 'Mühürü Düzenle' : 'Edit Stamp'}
                     </Text>
@@ -374,8 +367,8 @@ export default function CountryDetailModal({
                     style={styles.secondaryBtn}
                     activeOpacity={0.8}
                   >
-                    <Share2 size={16} color="#E5A93C" />
-                    <Text style={[styles.secondaryBtnText, { color: '#E5A93C' }]}>
+                    <Share2 size={16} color={colors.gold.base} />
+                    <Text style={[styles.secondaryBtnText, { color: colors.gold.base }]}>
                       {currentLang === 'tr' ? 'Kartı Paylaş' : 'Share Card'}
                     </Text>
                   </TouchableOpacity>
@@ -383,24 +376,32 @@ export default function CountryDetailModal({
               </View>
             </View>
           </ScrollView>
-        </View>
+        </GlassCard>
+        <CelebrationLayer hostId="detail" active={isOpen} currentLang={currentLang} />
+        <PlanEditorSheet visible={planOpen} onClose={() => setPlanOpen(false)} currentLang={currentLang} countryId={baseCountry.id} />
+        <TripEditorSheet
+          visible={editor !== null}
+          onClose={() => setEditor(null)}
+          currentLang={currentLang}
+          countryId={baseCountry.id}
+          trip={editor?.trip}
+        />
       </View>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#0D111A',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     maxHeight: '85%',
     overflow: 'hidden',
   },
@@ -422,7 +423,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.glass.fillActive,
   },
   bannerContent: {
     alignItems: 'center',
@@ -441,33 +442,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: colors.glass.fillActive,
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: colors.glass.borderStrong,
   },
   continentPillText: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontSize: 11,
     fontWeight: '800',
     textTransform: 'uppercase',
   },
   statusPill: {
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.glass.fillActive,
   },
   wishlistPill: {
-    backgroundColor: 'rgba(255, 107, 53, 0.2)',
-    borderColor: '#FF6B35',
+    backgroundColor: colors.gold.glow,
+    borderColor: colors.gold.base,
   },
   statusPillText: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontSize: 11,
     fontWeight: '800',
   },
@@ -484,24 +485,24 @@ const styles = StyleSheet.create({
   },
   countryTitle: {
     fontSize: 26,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     textAlign: 'center',
     letterSpacing: -0.5,
+    fontFamily: fonts.display,
   },
   countrySubtitle: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     marginTop: 2,
     fontWeight: '600',
   },
   metaCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
   },
   metaRow: {
     flexDirection: 'row',
@@ -515,19 +516,19 @@ const styles = StyleSheet.create({
   },
   metaLabel: {
     fontSize: 10,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   metaValue: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   metaDivider: {
     width: 1,
     height: 36,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: colors.glass.hairline,
   },
   notesBox: {
     flexDirection: 'row',
@@ -536,21 +537,58 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    borderTopColor: colors.glass.fillStrong,
   },
   notesText: {
     fontSize: 13,
-    color: '#E2E8F0',
+    color: colors.text.soft,
     lineHeight: 18,
     flex: 1,
     fontStyle: 'italic',
   },
+  tripsSection: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  tripsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  tripsTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: colors.text.secondary,
+  },
+  tripRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: colors.glass.fill,
+    borderWidth: 1,
+    borderColor: colors.glass.hairline,
+  },
+  tripRowDate: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.text.primary,
+  },
+  tripRowMeta: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.secondary,
+  },
   triviaCard: {
-    backgroundColor: 'rgba(255, 107, 53, 0.10)',
+    backgroundColor: colors.gold.tint,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 53, 0.25)',
+    borderColor: colors.gold.glow,
     marginBottom: 24,
   },
   triviaHeader: {
@@ -562,12 +600,12 @@ const styles = StyleSheet.create({
   triviaHeaderTitle: {
     fontSize: 10,
     fontWeight: '900',
-    color: '#FF8A5B',
+    color: colors.gold.light,
     letterSpacing: 0.8,
   },
   triviaBody: {
     fontSize: 13,
-    color: '#FDBA74',
+    color: colors.text.soft,
     lineHeight: 20,
   },
   actionsContainer: {
@@ -585,7 +623,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   primaryActionText: {
-    color: '#090B0E',
+    color: colors.canvas.base,
     fontSize: 15,
     fontWeight: '900',
   },
@@ -599,91 +637,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     paddingVertical: 14,
     borderRadius: theme.borderRadius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   secondaryBtnText: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontSize: 13,
     fontWeight: '700',
   },
   shareBtnHighlight: {
-    borderColor: 'rgba(226, 249, 82, 0.3)',
-    backgroundColor: 'rgba(226, 249, 82, 0.10)',
+    borderColor: colors.gold.glow,
+    backgroundColor: colors.gold.tint,
   },
-  memoriesCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  memoriesHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  memoriesTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  memoriesTitle: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#60A5FA',
-    letterSpacing: 0.8,
-  },
-  addPhotoPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
-  },
-  addPhotoPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#60A5FA',
-  },
-  photosScroll: {
-    gap: 10,
-  },
-  photoContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 14,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  photoThumbnail: {
-    width: '100%',
-    height: '100%',
-  },
-  emptyPhotosBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
-    borderStyle: 'dashed',
-    gap: 6,
-  },
-  emptyPhotosText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-});
+}));

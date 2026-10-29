@@ -1,3 +1,4 @@
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
@@ -9,8 +10,8 @@ import {
 import Svg, { G, Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { Plus, Minus, RotateCcw } from 'lucide-react-native';
-import { worldViewBox, worldMapFeatures } from '../data/worldMapPaths';
-import { getLocalizedCountryName } from '../data/travelData';
+import { worldMapFeatures } from '../data/worldMapPaths';
+import { getLocalizedCountryName, availableCatalog } from '../data/travelData';
 import { translations } from '../localization/translations';
 
 // Base world coordinates
@@ -34,7 +35,10 @@ export default function WorldMap({
   showControls = null,
   onInteractionChange = null,
   style = null,
+  fullScreen = false,
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [selectedCountryInfo, setSelectedCountryInfo] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -98,7 +102,7 @@ export default function WorldMap({
 
   const zoomIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const target = Math.min(5.5, zoomRef.current * 1.5);
+    const target = Math.min(8.0, zoomRef.current * 1.5);
     zoomRef.current = target;
     setZoom(target);
   };
@@ -145,7 +149,7 @@ export default function WorldMap({
             const [t1, t2] = evt.nativeEvent.touches;
             const dist = Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY);
             const factor = dist / initialPinchDist.current;
-            const nextZoom = Math.max(1, Math.min(5.5, baseZoomOnPinch.current * factor));
+            const nextZoom = Math.max(1, Math.min(8.0, baseZoomOnPinch.current * factor));
             zoomRef.current = nextZoom;
             updateViewBoxThrottled(nextZoom, panRef.current);
           } else if (evt.nativeEvent.touches.length === 1 && (zoomRef.current > 1.05 || Math.abs(gesture.dx) > 6)) {
@@ -196,21 +200,21 @@ export default function WorldMap({
 
   const getCountryColor = (id) => {
     const country = countryStatusMap[id];
-    if (!country) return '#182235'; // Deep obsidian-navy landmass
+    if (!country) return colors.map.land;
 
     if (activeFilter && activeFilter !== 'all' && country.status !== activeFilter) {
-      return '#101624'; // Dimmed if not in active filter
+      return colors.map.landDim; // Dimmed if not in active filter
     }
 
     switch (country.status) {
       case 'lived':
-        return '#10B981'; // Emerald beacon
+        return colors.status.lived.color; // Emerald beacon
       case 'visited':
-        return '#3B82F6'; // Electric sapphire
+        return colors.status.visited.color; // Electric sapphire
       case 'want':
-        return '#FF6B35'; // Solar flare orange
+        return colors.gold.base; // Solar flare orange
       default:
-        return '#182235';
+        return colors.map.land;
     }
   };
 
@@ -230,15 +234,18 @@ export default function WorldMap({
     }
     lastTapTime.current = now;
 
-    const country = countryStatusMap[id];
+    const country = countryStatusMap[id] || availableCatalog.find((c) => c.id.toUpperCase() === id.toUpperCase());
     if (country) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const countryName = getLocalizedCountryName(country, currentLang);
-      const statusLabel = country.status === 'lived' 
-        ? (activeT?.livedIn || (currentLang === 'tr' ? 'YAŞANAN' : 'LIVED'))
-        : country.status === 'want' 
-          ? (activeT?.wishlist || (currentLang === 'tr' ? 'HEDEF' : 'WISHLIST'))
-          : (activeT?.visited || (currentLang === 'tr' ? 'GEZİLEN' : 'VISITED'));
+      const isMarked = Boolean(countryStatusMap[id]);
+      const statusLabel = isMarked
+        ? (country.status === 'lived' 
+            ? (activeT?.livedIn || (currentLang === 'tr' ? 'YAŞANAN' : 'LIVED'))
+            : country.status === 'want' 
+              ? (activeT?.wishlist || (currentLang === 'tr' ? 'HEDEF' : 'WISHLIST'))
+              : (activeT?.visited || (currentLang === 'tr' ? 'GEZİLEN' : 'VISITED')))
+        : (currentLang === 'tr' ? 'KEŞFEDİLMEDİ' : 'UNEXPLORED');
       setSelectedCountryInfo(`${country.flag || '🌍'} ${countryName} (${statusLabel})`);
       if (onSelectCountry) onSelectCountry(country.id);
     }
@@ -248,9 +255,13 @@ export default function WorldMap({
   const zoomDisplay = (Math.round(zoom * 10) / 10).toFixed(1);
   const shouldShowControls = showControls !== null ? showControls : interactive;
 
+  const containerStyle = fullScreen
+    ? [styles.fullScreenContainer, style]
+    : [styles.container, style];
+
   return (
     <View
-      style={[styles.container, style]}
+      style={containerStyle}
       onLayout={(e) => {
         const { width, height } = e.nativeEvent.layout;
         setContainerSize({ width, height });
@@ -270,7 +281,7 @@ export default function WorldMap({
         style={styles.svg}
       >
         <G
-          stroke="#25324B"
+          stroke={colors.map.border}
           strokeWidth={0.5}
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -278,15 +289,15 @@ export default function WorldMap({
         >
           {worldMapFeatures.map((feature, idx) => {
             const fill = getCountryColor(feature.id);
-            const isInteractive = interactive && Boolean(countryStatusMap[feature.id]);
+            const isInteractive = interactive;
             const isSelected = selectedCountryId && selectedCountryId.toUpperCase() === feature.id;
 
             return (
               <Path
                 key={`${feature.id}-${idx}`}
                 d={feature.d}
-                fill={isSelected ? '#6366F1' : fill}
-                stroke={isSelected ? '#FFFFFF' : '#25324B'}
+                fill={isSelected ? colors.gold.light : fill}
+                stroke={isSelected ? colors.text.primary : colors.map.border}
                 strokeWidth={isSelected ? 1.0 : 0.5}
                 vectorEffect="non-scaling-stroke"
                 onPress={() => isInteractive && handleCountryPress(feature.id)}
@@ -321,7 +332,7 @@ export default function WorldMap({
               activeOpacity={0.75}
               style={styles.resetButton}
             >
-              <RotateCcw size={10} color="#2563EB" strokeWidth={2.5} />
+              <RotateCcw size={10} color={colors.gold.base} strokeWidth={2.5} />
               <Text style={styles.resetText}>{`${zoomDisplay}x`}</Text>
             </TouchableOpacity>
           )}
@@ -332,7 +343,7 @@ export default function WorldMap({
               activeOpacity={0.75}
               style={styles.zoomBtn}
             >
-              <Plus size={11} color="#FFFFFF" strokeWidth={2.5} />
+              <Plus size={11} color={colors.text.primary} strokeWidth={2.5} />
             </TouchableOpacity>
 
             {isZoomed && (
@@ -341,7 +352,7 @@ export default function WorldMap({
                 activeOpacity={0.75}
                 style={styles.zoomBtn}
               >
-                <Minus size={11} color="#FFFFFF" strokeWidth={2.5} />
+                <Minus size={11} color={colors.text.primary} strokeWidth={2.5} />
               </TouchableOpacity>
             )}
           </View>
@@ -357,14 +368,24 @@ export default function WorldMap({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     width: '100%',
     aspectRatio: 16 / 9.5,
-    backgroundColor: '#090B0E',
+    backgroundColor: colors.canvas.base,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
+    overflow: 'hidden',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenContainer: {
+    width: '100%',
+    height: '100%',
+    flex: 1,
+    backgroundColor: colors.canvas.base,
     overflow: 'hidden',
     position: 'relative',
     justifyContent: 'center',
@@ -382,7 +403,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     left: 8,
-    backgroundColor: 'rgba(11, 15, 25, 0.90)',
+    backgroundColor: colors.panel.raised,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
@@ -395,19 +416,19 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     maxWidth: '75%',
   },
   blueDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#3B82F6',
+    backgroundColor: colors.status.visited.color,
   },
   badgeText: {
     fontSize: 9.5,
     fontWeight: '800',
-    color: '#F1F5F9',
+    color: colors.text.primary,
     letterSpacing: 0.4,
   },
   topRightControls: {
@@ -422,26 +443,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(59, 130, 246, 0.16)',
+    backgroundColor: colors.status.visited.light,
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.35)',
+    borderColor: colors.status.visited.border,
   },
   resetText: {
     fontSize: 8.5,
     fontWeight: '800',
-    color: '#60A5FA',
+    color: colors.gold.light,
     fontVariant: ['tabular-nums'],
   },
   zoomButtonsGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 20, 32, 0.90)',
+    backgroundColor: colors.panel.base,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -457,17 +478,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   coordBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
   },
   coordText: {
     fontSize: 8.5,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontVariant: ['tabular-nums'],
   },
-});
+}));

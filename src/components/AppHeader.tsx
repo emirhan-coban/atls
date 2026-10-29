@@ -1,3 +1,5 @@
+import { fonts } from '../theme/typography';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -10,6 +12,8 @@ interface AppHeaderProps {
 }
 
 function AppHeader({ currentLang, onToggleLang, onOpenProfile }: AppHeaderProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const handleToggleLang = () => {
     Haptics.selectionAsync();
     if (onToggleLang) {
@@ -43,7 +47,7 @@ function AppHeader({ currentLang, onToggleLang, onOpenProfile }: AppHeaderProps)
             accessibilityRole="button"
             accessibilityLabel="Language switch"
           >
-            <Languages size={13} color="#E5A93C" />
+            <Languages size={13} color={colors.gold.base} />
             <Text style={styles.langPillText}>
               {currentLang === 'tr' ? 'EN' : 'TR'}
             </Text>
@@ -59,7 +63,7 @@ function AppHeader({ currentLang, onToggleLang, onOpenProfile }: AppHeaderProps)
             accessibilityRole="button"
             accessibilityLabel="Profile and account"
           >
-            <User size={16} color="#FFFFFF" />
+            <User size={16} color={colors.text.primary} />
           </TouchableOpacity>
         )}
       </View>
@@ -67,14 +71,14 @@ function AppHeader({ currentLang, onToggleLang, onOpenProfile }: AppHeaderProps)
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   headerContainer: {
     height: 52,
     paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#090B0E', // 60% dominant canvas
+    backgroundColor: colors.canvas.base, // 60% dominant canvas
     zIndex: 90,
   },
   logoRow: {
@@ -83,14 +87,14 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 27,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.8,
+    fontFamily: fonts.displayHeavy,
   },
   logoDot: {
     fontSize: 29,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
+    fontFamily: fonts.displayHeavy,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -101,9 +105,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.glass.fill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     paddingHorizontal: 11,
     height: 34,
     borderRadius: 17,
@@ -111,18 +115,18 @@ const styles = StyleSheet.create({
   langPillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   profileBtn: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.glass.fill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     justifyContent: 'center',
     alignItems: 'center',
   },
-});
+}));
 
 export default React.memo(AppHeader);

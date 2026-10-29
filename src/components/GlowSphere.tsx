@@ -1,3 +1,4 @@
+import { makeStyles } from '../theme/ThemeContext';
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,10 +12,11 @@ interface GlowSphereProps {
 
 export default function GlowSphere({
   size = 320,
-  colors = ['#2E5CFF', '#FF6B35'],
+  colors = ['#3B82F6', '#E5A93C'],
   style,
   opacity = 0.45,
 }: GlowSphereProps) {
+  const styles = useStyles();
   return (
     <View
       pointerEvents="none"
@@ -39,7 +41,7 @@ export default function GlowSphere({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     position: 'absolute',
     overflow: 'hidden',
@@ -50,4 +52,4 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 9999,
   },
-});
+}));

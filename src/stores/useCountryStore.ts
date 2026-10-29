@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Country, CountryStatus } from './types';
+import { Country } from './types';
 import { initialCountries } from '../data/travelData';
 import { storageService, enrichCountry } from '../services/storageService';
 

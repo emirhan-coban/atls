@@ -1,7 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { Reminder } from '../utils/planning';
 
-// Configure notification behavior
+// How a notification looks while the app is open
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -13,29 +14,30 @@ Notifications.setNotificationHandler({
 });
 
 export const notificationService = {
+  /** Current permission without asking the user. */
+  async hasPermission(): Promise<boolean> {
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      return status === 'granted';
+    } catch {
+      return false;
+    }
+  },
+
+  /** Asks for permission (only shows the system prompt the first time). Call it from a moment that explains why. */
   async requestPermissions(): Promise<boolean> {
     try {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
-        return false;
-      }
+      if (await this.hasPermission()) return true;
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') return false;
 
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'default',
           importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#4F46E5',
+          lightColor: '#E5A93C',
         });
       }
-
       return true;
     } catch (err) {
       console.warn('[NotificationService] requestPermissions notice:', err);
@@ -43,47 +45,30 @@ export const notificationService = {
     }
   },
 
-  async sendLocalNotification(title: string, body: string, data = {}) {
-    try {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          data,
-          sound: true,
-        },
-        trigger: null, // send immediately
-      });
-    } catch (err) {
-      console.warn('[NotificationService] sendLocalNotification notice:', err);
+  /** Schedules each reminder for its own date and returns the notification ids, so they can be cancelled later. */
+  async scheduleReminders(reminders: Reminder[], data: Record<string, string> = {}): Promise<string[]> {
+    const ids: string[] = [];
+    for (const reminder of reminders) {
+      try {
+        const id = await Notifications.scheduleNotificationAsync({
+          content: { title: reminder.title, body: reminder.body, data, sound: true },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.at },
+        });
+        ids.push(id);
+      } catch (err) {
+        console.warn('[NotificationService] scheduleReminders notice:', err);
+      }
     }
+    return ids;
   },
 
-  async scheduleTravelReminder(
-    countryName: string,
-    seconds: number = 86400,
-    lang: 'tr' | 'en' = 'tr'
-  ) {
-    try {
-      const title = lang === 'tr' ? `Hedefin Seni Bekliyor! ✈️` : `Your Destination Awaits! ✈️`;
-      const body =
-        lang === 'tr'
-          ? `${countryName} hâlâ istek listende! Yeni anılar biriktirmeye hazır mısın?`
-          : `${countryName} is still on your bucket list! Ready to explore?`;
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          sound: true,
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds,
-        },
-      });
-    } catch (err) {
-      console.warn('[NotificationService] scheduleTravelReminder notice:', err);
+  async cancel(ids: string[]): Promise<void> {
+    for (const id of ids) {
+      try {
+        await Notifications.cancelScheduledNotificationAsync(id);
+      } catch (err) {
+        console.warn('[NotificationService] cancel notice:', err);
+      }
     }
   },
 };

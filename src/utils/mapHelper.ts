@@ -1,4 +1,4 @@
-import { Linking, Platform, Alert } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 export function openAppleMaps(query: string) {
   const encoded = encodeURIComponent(query);

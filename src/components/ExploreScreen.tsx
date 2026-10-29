@@ -1,3 +1,9 @@
+import CountryBrowser from './CountryBrowser';
+import { pt } from '../localization/profile';
+import Chip from './ui/Chip';
+import EmptyState from './EmptyState';
+import { fonts } from '../theme/typography';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useState, useMemo } from 'react';
 import {
   View,
@@ -7,7 +13,6 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
-  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -19,7 +24,6 @@ import {
   Lightbulb, 
   Plus, 
   Check, 
-  Languages,
   Navigation,
   ExternalLink,
   BookmarkCheck,
@@ -38,6 +42,7 @@ interface ExploreScreenProps {
   t?: any;
   currentLang: 'tr' | 'en';
   onToggleLang?: () => void;
+  onSelectCountry?: (countryId: string) => void;
 }
 
 const CONTINENTS = [
@@ -54,7 +59,11 @@ function ExploreScreen({
   onMarkVisited,
   currentLang,
   onToggleLang,
+  onSelectCountry,
 }: ExploreScreenProps) {
+  const [mode, setMode] = useState<'routes' | 'countries'>('routes');
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [selectedContinent, setSelectedContinent] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCountryId, setExpandedCountryId] = useState<string | null>('IT'); // Default first expanded
@@ -153,9 +162,9 @@ function ExploreScreen({
         <View style={styles.pointHeader}>
           <View style={[styles.pointIconBox, isFood ? styles.foodIconBox : styles.seeIconBox]}>
             {isFood ? (
-              <Utensils size={13} color="#E5A93C" />
+              <Utensils size={13} color={colors.gold.base} />
             ) : (
-              <MapPin size={13} color="#3B82F6" />
+              <MapPin size={13} color={colors.status.visited.color} />
             )}
           </View>
           <View style={styles.pointTitles}>
@@ -178,7 +187,7 @@ function ExploreScreen({
             }}
             activeOpacity={0.75}
           >
-            <Navigation size={12} color="#FFFFFF" />
+            <Navigation size={12} color={colors.text.primary} />
             <Text style={styles.mapBtnTextApple}>Apple Maps</Text>
           </TouchableOpacity>
 
@@ -190,7 +199,7 @@ function ExploreScreen({
             }}
             activeOpacity={0.75}
           >
-            <ExternalLink size={12} color="#CBD5E1" />
+            <ExternalLink size={12} color={colors.text.soft} />
             <Text style={styles.mapBtnTextGoogle}>Google Maps</Text>
           </TouchableOpacity>
         </View>
@@ -209,7 +218,7 @@ function ExploreScreen({
         {/* Page Subheader */}
         <View style={styles.pageSubheader}>
           <View style={styles.badgeRow}>
-            <Compass size={14} color="#E5A93C" />
+            <Compass size={14} color={colors.gold.base} />
             <Text style={styles.badgeText}>
               {currentLang === 'tr' ? 'GEZGİN REHBERİ' : 'CURATED GUIDE'}
             </Text>
@@ -224,9 +233,18 @@ function ExploreScreen({
           </Text>
         </View>
 
+        <View style={styles.modeRow}>
+          <Chip label={pt('exploreRoutes', currentLang)} selected={mode === 'routes'} onPress={() => setMode('routes')} />
+          <Chip label={pt('exploreCountries', currentLang)} selected={mode === 'countries'} onPress={() => setMode('countries')} />
+        </View>
+
+        {mode === 'countries' && onSelectCountry ? (
+          <CountryBrowser countries={countries} currentLang={currentLang} onSelectCountry={onSelectCountry} />
+        ) : (
+          <>
         {/* Search Bar */}
         <View style={styles.searchWrapper}>
-          <Search size={17} color="#64748B" style={styles.searchIcon} />
+          <Search size={17} color={colors.text.muted} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder={
@@ -234,7 +252,7 @@ function ExploreScreen({
                 ? 'Ülke, şehir veya lezzet ara... (Örn. Roma, Ramen, Paris)'
                 : 'Search country, city or dish... (e.g. Rome, Ramen, Paris)'
             }
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.text.muted}
             value={searchQuery}
             onChangeText={setSearchQuery}
             clearButtonMode="while-editing"
@@ -251,21 +269,12 @@ function ExploreScreen({
           {CONTINENTS.map((item) => {
             const isActive = selectedContinent === item.id;
             return (
-              <TouchableOpacity
+              <Chip
                 key={item.id}
+                label={item[currentLang]}
+                selected={isActive}
                 onPress={() => handleContinentSelect(item.id)}
-                activeOpacity={0.7}
-                style={[styles.filterChip, isActive && styles.filterChipActive]}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    isActive && styles.filterChipTextActive,
-                  ]}
-                >
-                  {item[currentLang]}
-                </Text>
-              </TouchableOpacity>
+              />
             );
           })}
         </ScrollView>
@@ -277,6 +286,18 @@ function ExploreScreen({
             {currentLang === 'tr' ? 'özenle hazırlanmış rota' : 'handcrafted destinations'}
           </Text>
         </View>
+
+        {filteredDestinations.length === 0 && (
+          <EmptyState
+            type="search"
+            title={currentLang === 'tr' ? 'Sonuç bulunamadı' : 'No results'}
+            description={
+              currentLang === 'tr'
+                ? 'Aramanı veya kıta filtresini değiştirmeyi dene.'
+                : 'Try a different search or continent filter.'
+            }
+          />
+        )}
 
         {/* Curated Destination Cards */}
         <View style={styles.destinationList}>
@@ -311,9 +332,9 @@ function ExploreScreen({
                     </View>
                     <View style={styles.expandChevron}>
                       {isExpanded ? (
-                        <ChevronUp size={16} color="#FFFFFF" />
+                        <ChevronUp size={16} color={colors.white} />
                       ) : (
-                        <ChevronDown size={16} color="#FFFFFF" />
+                        <ChevronDown size={16} color={colors.white} />
                       )}
                     </View>
                   </View>
@@ -334,7 +355,7 @@ function ExploreScreen({
                     {/* SECTION: Gezilecek Yerler */}
                     <View style={styles.sectionBlock}>
                       <View style={styles.sectionHeader}>
-                        <MapPin size={15} color="#3B82F6" />
+                        <MapPin size={15} color={colors.status.visited.color} />
                         <Text style={styles.sectionTitle}>
                           {currentLang === 'tr' ? 'MUTLAKA GEZİLECEK YERLER' : 'MUST-SEE PLACES'}
                         </Text>
@@ -347,7 +368,7 @@ function ExploreScreen({
                     {/* SECTION: Ne Yenir & Nerede Yenir? */}
                     <View style={styles.sectionBlock}>
                       <View style={styles.sectionHeader}>
-                        <Utensils size={15} color="#E5A93C" />
+                        <Utensils size={15} color={colors.gold.base} />
                         <Text style={styles.sectionTitle}>
                           {currentLang === 'tr' ? 'NE YENİR & NEREDE YENİR?' : 'WHAT & WHERE TO EAT'}
                         </Text>
@@ -360,7 +381,7 @@ function ExploreScreen({
                     {/* SECTION: Gezgin Tüyosu */}
                     <View style={styles.tipBox}>
                       <View style={styles.tipHeader}>
-                        <Lightbulb size={15} color="#10B981" />
+                        <Lightbulb size={15} color={colors.status.lived.color} />
                         <Text style={styles.tipLabel}>
                           {currentLang === 'tr' ? 'GEZGİN TÜYOSU' : 'INSIDER TRAVEL HACK'}
                         </Text>
@@ -372,7 +393,7 @@ function ExploreScreen({
                     <View style={styles.cardActions}>
                       {isVisited ? (
                         <View style={styles.visitedBanner}>
-                          <Check size={14} color="#10B981" />
+                          <Check size={14} color={colors.status.lived.color} />
                           <Text style={styles.visitedBannerText}>
                             {currentLang === 'tr' ? 'Pasaportunda Damgalı' : 'Stamped in Passport'}
                           </Text>
@@ -390,14 +411,14 @@ function ExploreScreen({
                           >
                             {isWishlisted ? (
                               <>
-                                <BookmarkCheck size={14} color="#E5A93C" />
+                                <BookmarkCheck size={14} color={colors.gold.base} />
                                 <Text style={styles.wishlistBtnTextActive}>
                                   {currentLang === 'tr' ? 'İstek Listende' : 'In Wishlist'}
                                 </Text>
                               </>
                             ) : (
                               <>
-                                <Plus size={14} color="#CBD5E1" />
+                                <Plus size={14} color={colors.text.soft} />
                                 <Text style={styles.wishlistBtnText}>
                                   {currentLang === 'tr' ? '+ İstek Listesi' : '+ Wishlist'}
                                 </Text>
@@ -410,7 +431,7 @@ function ExploreScreen({
                             activeOpacity={0.7}
                             style={[styles.actionBtn, styles.visitedBtn]}
                           >
-                            <Check size={14} color="#090B0E" />
+                            <Check size={14} color={colors.canvas.base} />
                             <Text style={styles.visitedBtnText}>
                               {currentLang === 'tr' ? 'Gittim, Damgala' : 'I Was Here'}
                             </Text>
@@ -426,15 +447,17 @@ function ExploreScreen({
         </View>
 
         <View style={styles.bottomSpacer} />
+          </>
+        )}
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090B0E', // 60% dominant canvas
+    backgroundColor: colors.canvas.base, // 60% dominant canvas
   },
   scrollView: {
     flex: 1,
@@ -460,27 +483,27 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#E5A93C', // 10% accent
+    color: colors.gold.base, // 10% accent
     letterSpacing: 1.2,
   },
   title: {
     fontSize: 25,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.5,
     marginBottom: 6,
+    fontFamily: fonts.display,
   },
   subtitle: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     lineHeight: 18,
   },
   langPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.glass.fill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
@@ -490,14 +513,14 @@ const styles = StyleSheet.create({
   langPillText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   searchWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     borderRadius: 14,
     paddingHorizontal: 14,
     height: 46,
@@ -508,34 +531,17 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontSize: 14,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
   },
   filterBar: {
     paddingBottom: 14,
     gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    marginRight: 8,
-  },
-  filterChipActive: {
-    backgroundColor: '#E5A93C', // 10% accent
-    borderColor: '#E5A93C',
-  },
-  filterChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#94A3B8',
-  },
-  filterChipTextActive: {
-    color: '#090B0E',
-    fontWeight: '700',
   },
   counterRow: {
     marginBottom: 16,
@@ -543,7 +549,7 @@ const styles = StyleSheet.create({
   },
   counterText: {
     fontSize: 12,
-    color: '#64748B',
+    color: colors.text.muted,
     fontWeight: '500',
   },
   destinationList: {
@@ -551,10 +557,10 @@ const styles = StyleSheet.create({
   },
   // 30% Glass Destination Card
   destinationCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     overflow: 'hidden',
   },
   thumbnailContainer: {
@@ -589,12 +595,12 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.glass.fillActive,
   },
   imageTagText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#E5A93C',
+    color: colors.gold.base,
   },
   expandChevron: {
     width: 28,
@@ -604,7 +610,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
   },
   imageOverlayBottom: {
     zIndex: 2,
@@ -620,13 +626,13 @@ const styles = StyleSheet.create({
   },
   cardCountryName: {
     fontSize: 22,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.white,
     letterSpacing: -0.5,
+    fontFamily: fonts.display,
   },
   cardHeadline: {
     fontSize: 13,
-    color: '#CBD5E1',
+    color: colors.white,
     lineHeight: 18,
   },
   // Expanded Content
@@ -647,17 +653,17 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 0.8,
   },
   pointsList: {
     gap: 10,
   },
   pointCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: colors.glass.borderSoft,
     padding: 12,
   },
   pointHeader: {
@@ -675,10 +681,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   seeIconBox: {
-    backgroundColor: 'rgba(59, 130, 246, 0.14)',
+    backgroundColor: colors.status.visited.light,
   },
   foodIconBox: {
-    backgroundColor: 'rgba(229, 169, 60, 0.14)',
+    backgroundColor: colors.gold.tint,
   },
   pointTitles: {
     flex: 1,
@@ -686,16 +692,16 @@ const styles = StyleSheet.create({
   pointMainTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   pointSubtitle: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     marginTop: 1,
   },
   pointDesc: {
     fontSize: 12,
-    color: '#CBD5E1',
+    color: colors.text.soft,
     lineHeight: 17,
     marginBottom: 10,
   },
@@ -714,28 +720,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   appleMapBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: colors.glass.fillStrong,
+    borderColor: colors.glass.fillActive,
   },
   googleMapBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fill,
+    borderColor: colors.glass.fillStrong,
   },
   mapBtnTextApple: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   mapBtnTextGoogle: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   tipBox: {
-    backgroundColor: 'rgba(16, 185, 129, 0.06)',
+    backgroundColor: colors.status.lived.light,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.20)',
+    borderColor: colors.status.lived.border,
     padding: 12,
   },
   tipHeader: {
@@ -747,12 +753,12 @@ const styles = StyleSheet.create({
   tipLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#10B981',
+    color: colors.status.lived.color,
     letterSpacing: 0.8,
   },
   tipBody: {
     fontSize: 12,
-    color: '#D1FAE5',
+    color: colors.text.soft,
     lineHeight: 17,
     fontStyle: 'italic',
   },
@@ -771,39 +777,39 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   wishlistBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.glass.fill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   wishlistBtnActive: {
-    backgroundColor: 'rgba(229, 169, 60, 0.10)',
-    borderColor: 'rgba(229, 169, 60, 0.40)',
+    backgroundColor: colors.gold.tint,
+    borderColor: colors.gold.border,
   },
   wishlistBtnText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#CBD5E1',
+    color: colors.text.soft,
   },
   wishlistBtnTextActive: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#E5A93C',
+    color: colors.gold.base,
   },
   visitedBtn: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.text.primary,
   },
   visitedBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#090B0E',
+    color: colors.canvas.base,
   },
   visitedBanner: {
     flex: 1,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    backgroundColor: colors.status.lived.light,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
+    borderColor: colors.status.lived.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -812,11 +818,11 @@ const styles = StyleSheet.create({
   visitedBannerText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#10B981',
+    color: colors.status.lived.color,
   },
   bottomSpacer: {
     height: 36,
   },
-});
+}));
 
 export default React.memo(ExploreScreen);

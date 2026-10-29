@@ -1,49 +1,98 @@
 // ==============================================================================
 // ATLS DESIGN SYSTEM: 60-30-10 COLOR ARCHITECTURE
-// 60% Canvas (#090B0E deep slate/graphite)
-// 30% Frosted Glass & Surface Structures (rgba(255,255,255,0.05-0.09) + 1px hairline)
-// 10% Signature Passport Foil / Accent (#E5A93C Warm Amber & #3B82F6 Cobalt)
+// 60% Canvas   — graphite surfaces (#090B0E → #18202C)
+// 30% Glass    — frosted translucent layers + 1px hairline borders
+// 10% Accent   — one signature: Passport Gold (#E5A93C). Cobalt = "visited" ink only.
 // ==============================================================================
 
-export const colors = {
+export const darkColors = {
   // 60% DOMINANT CANVAS
-  cosmic: {
-    void: '#090B0E',        // Deepest neutral slate canvas (calm, zero disco)
-    obsidian: '#0E1218',    // Secondary surface
-    surface: '#131922',     // Subtle card backdrop
-    surfaceElevated: '#18202C',
-    glass: 'rgba(255, 255, 255, 0.05)',
-    glassBorder: 'rgba(255, 255, 255, 0.10)',
-    glassHover: 'rgba(255, 255, 255, 0.08)',
-    glassActive: 'rgba(255, 255, 255, 0.14)',
+  canvas: {
+    base: '#090B0E',        // App background
+    raised: '#0E1218',      // Secondary surface
+    surface: '#131922',     // Card backdrop
+    elevated: '#18202C',    // Sheets, popovers
   },
 
-  // 10% SIGNATURE ACCENTS (Refined & Human)
-  aura: {
-    // Primary Signature: Passport Gold / Warm Amber
-    gold: '#E5A93C',
-    goldLight: '#F3C766',
-    goldGlow: 'rgba(229, 169, 60, 0.25)',
-
-    // Secondary Signature: Ink Cobalt (Traditional passport ink)
-    sapphire: '#3B82F6',
-    sapphireLight: '#60A5FA',
-    sapphireGlow: 'rgba(59, 130, 246, 0.25)',
-
-    // Subtle warm terracotta
-    solar: '#E06D53',
-    solarLight: '#F0907B',
-    solarGlow: 'rgba(224, 109, 83, 0.20)',
-
-    // Calmed secondary tones for accents
-    purple: '#8B5CF6',
-    purpleGlow: 'rgba(139, 92, 246, 0.20)',
-    citron: '#E5A93C',      // Replaced neon lime with warm gold
-    citronMuted: '#B8860B',
-    emerald: '#10B981',     // Soft emerald (not blinding neon)
+  // 30% FROSTED GLASS (use with BlurView for floating layers)
+  glass: {
+    fill: 'rgba(255, 255, 255, 0.05)',
+    fillStrong: 'rgba(255, 255, 255, 0.09)',
+    fillActive: 'rgba(255, 255, 255, 0.14)',
+    border: 'rgba(255, 255, 255, 0.16)',
+    borderSoft: 'rgba(255, 255, 255, 0.06)',
+    hairline: 'rgba(255, 255, 255, 0.11)',      // default 1px divider / card outline
+    borderStrong: 'rgba(255, 255, 255, 0.22)',
+    tint: 'rgba(9, 11, 14, 0.38)',   // dark scrim laid over BlurView
+    scrimRgb: '9, 11, 14',            // rgb of the scrim GlassCard lays over the blur
+    blurTint: 'dark' as 'dark' | 'light',
+    blur: 55,                         // default BlurView intensity
   },
 
-  // Continents in Refined Monocle Style
+  // 10% SIGNATURE ACCENT — Passport Gold
+  gold: {
+    base: '#E5A93C',
+    light: '#F3C766',
+    deep: '#B45309',
+    glow: 'rgba(229, 169, 60, 0.25)',
+    tint: 'rgba(229, 169, 60, 0.12)',
+    border: 'rgba(229, 169, 60, 0.35)',
+    onGold: '#090B0E',      // text/icons placed on solid gold (white fails contrast)
+  },
+
+  // TEXT
+  text: {
+    primary: '#FFFFFF',
+    soft: '#E2E8F0',
+    secondary: '#94A3B8',
+    muted: '#64748B',
+    faint: '#475569',
+  },
+
+  // Dark translucent panels that sit above content without blur
+  panel: {
+    base: 'rgba(15, 20, 32, 0.88)',
+    raised: 'rgba(20, 26, 40, 0.95)',
+  },
+
+  // STATUS — real passport-stamp inks (single source of truth)
+  status: {
+    visited: {
+      color: '#3B82F6',              // Ink blue
+      bright: '#60A5FA',
+      deep: '#2563EB',
+      light: 'rgba(59, 130, 246, 0.12)',
+      border: 'rgba(59, 130, 246, 0.30)',
+    },
+    lived: {
+      color: '#10B981',              // Residence green
+      bright: '#34D399',
+      light: 'rgba(16, 185, 129, 0.12)',
+      border: 'rgba(16, 185, 129, 0.30)',
+    },
+    want: {
+      color: '#E5A93C',              // Wishlist gold
+      light: 'rgba(229, 169, 60, 0.12)',
+      border: 'rgba(229, 169, 60, 0.35)',
+    },
+  },
+
+  danger: '#EF4444',
+  dangerDeep: '#DC2626',
+  dangerTint: 'rgba(239, 68, 68, 0.12)',
+  dangerBorder: 'rgba(239, 68, 68, 0.30)',
+
+  // Scrim behind modals and sheets
+  overlay: 'rgba(0, 0, 0, 0.55)',
+
+  // World map land, dimmed land and borders
+  map: {
+    land: '#18202C',
+    landDim: '#101624',
+    border: '#25324B',
+  },
+
+  // Continents — kept distinct from gold/blue/green status roles where possible
   continents: {
     europe: {
       name: 'Europe',
@@ -58,7 +107,7 @@ export const colors = {
       primary: '#E5A93C',
       gradient: ['#F3C766', '#D97706'],
       bg: 'rgba(229, 169, 60, 0.10)',
-      text: '#FCD34D',
+      text: '#F3C766',
       border: 'rgba(229, 169, 60, 0.25)',
     },
     americas: {
@@ -71,11 +120,11 @@ export const colors = {
     },
     africa: {
       name: 'Africa',
-      primary: '#F59E0B',
-      gradient: ['#FBBF24', '#D97706'],
-      bg: 'rgba(245, 158, 11, 0.10)',
-      text: '#FCD34D',
-      border: 'rgba(245, 158, 11, 0.25)',
+      primary: '#E06D53',
+      gradient: ['#F0907B', '#C2410C'],
+      bg: 'rgba(224, 109, 83, 0.10)',
+      text: '#F0907B',
+      border: 'rgba(224, 109, 83, 0.25)',
     },
     oceania: {
       name: 'Oceania',
@@ -95,70 +144,10 @@ export const colors = {
     },
   },
 
-  // Status with Real Passport Stamp Inks
-  status: {
-    visited: {
-      color: '#3B82F6',               // Ink Blue
-      light: 'rgba(59, 130, 246, 0.12)',
-      border: 'rgba(59, 130, 246, 0.35)',
-    },
-    lived: {
-      color: '#10B981',               // Green Residence Stamp
-      light: 'rgba(16, 185, 129, 0.12)',
-      border: 'rgba(16, 185, 129, 0.35)',
-    },
-    want: {
-      color: '#E5A93C',               // Warm Gold Wishlist
-      light: 'rgba(229, 169, 60, 0.12)',
-      border: 'rgba(229, 169, 60, 0.35)',
-    },
-  },
-
-  // Primary brand palette
-  primary: {
-    50: '#EEF2FF',
-    100: '#E0E7FF',
-    200: '#C7D2FE',
-    300: '#A5B4FC',
-    400: '#818CF8',
-    500: '#3B82F6',
-    600: '#2563EB',
-    700: '#1D4ED8',
-    800: '#1E40AF',
-    900: '#1E3A8A',
-  },
-
-  // 30% Neutrals & Frosted Glass Surfaces
-  dark: {
-    bg: '#090B0E',
-    card: 'rgba(255, 255, 255, 0.05)',
-    cardSecondary: '#131922',
-    border: 'rgba(255, 255, 255, 0.10)',
-    borderLight: 'rgba(255, 255, 255, 0.06)',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#94A3B8',
-    textMuted: '#64748B',
-  },
-
-  light: {
-    bg: '#090B0E',
-    card: 'rgba(255, 255, 255, 0.05)',
-    cardSecondary: '#131922',
-    border: 'rgba(255, 255, 255, 0.10)',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#94A3B8',
-    textMuted: '#64748B',
-  },
-
-  // Tasteful Gradients (no disco rainbow)
   gradients: {
-    cosmicVoid: ['#090B0E', '#0E1218', '#131922'],
-    solarAura: ['#E5A93C', '#D97706'],
-    sapphireAura: ['#3B82F6', '#1D4ED8'],
-    nebula: ['#3B82F6', '#10B981'],
-    sunsetGlass: ['#E5A93C', '#E06D53'],
+    canvas: ['#090B0E', '#0E1218', '#131922'],
+    gold: ['#E5A93C', '#B45309'],
     glassCard: ['rgba(255, 255, 255, 0.07)', 'rgba(255, 255, 255, 0.02)'],
-    passportGold: ['#E5A93C', '#B45309'],
   },
 
   white: '#FFFFFF',
@@ -166,4 +155,110 @@ export const colors = {
   transparent: 'transparent',
 };
 
-export type ColorsType = typeof colors;
+export type ColorsType = typeof darkColors;
+
+// ==============================================================================
+// LIGHT THEME — warm paper canvas, same roles as the dark palette.
+// Gold is deepened so it stays readable as text on a light background.
+// ==============================================================================
+export const lightColors: ColorsType = {
+  canvas: {
+    base: '#F5F1E8',
+    raised: '#FBF9F4',
+    surface: '#FFFFFF',
+    elevated: '#FFFFFF',
+  },
+
+  glass: {
+    fill: 'rgba(20, 24, 31, 0.04)',
+    fillStrong: 'rgba(20, 24, 31, 0.07)',
+    fillActive: 'rgba(20, 24, 31, 0.11)',
+    border: 'rgba(20, 24, 31, 0.14)',
+    borderSoft: 'rgba(20, 24, 31, 0.06)',
+    hairline: 'rgba(20, 24, 31, 0.10)',
+    borderStrong: 'rgba(20, 24, 31, 0.20)',
+    tint: 'rgba(255, 255, 255, 0.62)',
+    scrimRgb: '255, 255, 255',
+    blurTint: 'light',
+    blur: 55,
+  },
+
+  gold: {
+    base: '#B7791F',
+    light: '#9A6208', // in the light theme "light" is the text-safe tone (the dark theme's is a bright tint)
+    deep: '#8A5A12',
+    glow: 'rgba(183, 121, 31, 0.22)',
+    tint: 'rgba(183, 121, 31, 0.12)',
+    border: 'rgba(183, 121, 31, 0.40)',
+    onGold: '#FFFFFF',
+  },
+
+  text: {
+    primary: '#14181F',
+    soft: '#2A3140',
+    secondary: '#586174',
+    muted: '#7A8397',
+    faint: '#9AA3B5',
+  },
+
+  panel: {
+    base: 'rgba(255, 255, 255, 0.88)',
+    raised: 'rgba(255, 255, 255, 0.96)',
+  },
+
+  status: {
+    visited: {
+      color: '#2563EB',
+      bright: '#1D4ED8',
+      deep: '#1E40AF',
+      light: 'rgba(37, 99, 235, 0.10)',
+      border: 'rgba(37, 99, 235, 0.30)',
+    },
+    lived: {
+      color: '#059669',
+      bright: '#047857',
+      light: 'rgba(5, 150, 105, 0.10)',
+      border: 'rgba(5, 150, 105, 0.30)',
+    },
+    want: {
+      color: '#B7791F',
+      light: 'rgba(183, 121, 31, 0.12)',
+      border: 'rgba(183, 121, 31, 0.35)',
+    },
+  },
+
+  danger: '#DC2626',
+  dangerDeep: '#B91C1C',
+  dangerTint: 'rgba(220, 38, 38, 0.10)',
+  dangerBorder: 'rgba(220, 38, 38, 0.30)',
+
+  overlay: 'rgba(20, 24, 31, 0.38)',
+
+  map: {
+    land: '#E6DFCD',
+    landDim: '#EFEADC',
+    border: '#C8BFA6',
+  },
+
+  continents: {
+    europe: { ...darkColors.continents.europe, text: '#1D4ED8' },
+    asia: { ...darkColors.continents.asia, text: '#8A5A12' },
+    americas: { ...darkColors.continents.americas, text: '#047857' },
+    africa: { ...darkColors.continents.africa, text: '#C2410C' },
+    oceania: { ...darkColors.continents.oceania, text: '#0E7490' },
+    antarctica: { ...darkColors.continents.antarctica, text: '#475569' },
+  },
+
+  gradients: {
+    canvas: ['#F5F1E8', '#FBF9F4', '#FFFFFF'],
+    gold: ['#D49A1E', '#8A5A12'],
+    glassCard: ['rgba(255, 255, 255, 0.85)', 'rgba(255, 255, 255, 0.55)'],
+  },
+
+  white: '#FFFFFF',
+  black: '#000000',
+  transparent: 'transparent',
+};
+
+/** Static dark palette. Prefer `useTheme().colors` in components so they follow the theme. */
+export const colors = darkColors;
