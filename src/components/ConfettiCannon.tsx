@@ -1,3 +1,4 @@
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View, Animated, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -18,9 +19,10 @@ interface ConfettiProps {
   onFinish?: () => void;
 }
 
-const COLORS = ['#6366F1', '#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4'];
-
 export default function ConfettiCannon({ active, count = 35, onFinish }: ConfettiProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const COLORS = [colors.gold.base, colors.gold.light, colors.status.visited.color, colors.status.lived.color, '#E06D53', colors.white];
   const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
   const particlesRef = useRef<Particle[]>([]);
 
@@ -122,9 +124,9 @@ export default function ConfettiCannon({ active, count = 35, onFinish }: Confett
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   particle: {
     position: 'absolute',
     borderRadius: 2,
   },
-});
+}));
