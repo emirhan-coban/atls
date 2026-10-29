@@ -427,3 +427,11 @@ Bu bölüm kalan her maddeyi ya yapıldı ya da gerekçesiyle yapılmadı olarak
 - **Sentry / analitik:** DSN ve hesap sahibi tarafından açılmalı, ayrıca gizlilik politikası güncellemesi gerekir.
 - **Modalların tam rotaya bölünmesi:** büyük davranış riski; yalnızca derin bağlantı eklendi.
 - **Fotoğraf ve belge yedeği:** buluta gitmez (gizlilik kararı). Telefon değişirse kaybolur.
+
+### Tasarım turu (font ve temizlik)
+
+| Madde | Durum |
+|---|---|
+| Font | Fraunces yerine **Instrument Serif** (normal) ve **Instrument Serif İtalik**. Ailede yalnızca bu iki stil var, bu yüzden başlıklar ağırlıkla değil boyutla ayrışıyor; tüm başlık boyutları %25 büyütüldü. İtalik: Ana Sayfa alt başlığı. İtalik yalnızca büyük boyutta ve cümle başına bir vurgu için kullanılmalı. |
+| Kaldırılanlar | Kartlarla Keşfet (`SwipeDiscoveryCard` silindi), rozetteki yarım görünen tik, pasaport rengi seçici. |
+| Sırada | Açık temada okunabilirlik (cam kartlar, soluk metin), Keşfet geçiş hızı, mühür/son girişler yeniden tasarımı, Rotalar 2.0. |

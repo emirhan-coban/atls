@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Lock, Check } from 'lucide-react-native';
+import { Lock } from 'lucide-react-native';
 import { Achievement } from '../data/achievements';
 import { Country, Profile, Trip } from '../stores/types';
 import { theme } from '../theme';
@@ -56,9 +56,6 @@ export default function AchievementBadge({
           style={styles.iconCircleUnlocked}
         >
           <Text style={styles.badgeEmoji}>{achievement.badgeEmoji}</Text>
-          <View style={styles.checkPill}>
-            <Check size={10} color={colors.text.primary} strokeWidth={3} />
-          </View>
         </LinearGradient>
       ) : (
         <View style={styles.iconCircleLocked}>
@@ -155,19 +152,6 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
   },
   emojiFaded: {
     opacity: 0.35,
-  },
-  checkPill: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    backgroundColor: colors.status.lived.color,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.canvas.raised,
   },
   lockPill: {
     position: 'absolute',

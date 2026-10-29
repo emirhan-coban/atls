@@ -1,5 +1,4 @@
 import CountryBrowser from './CountryBrowser';
-import SwipeDiscoveryCard from './SwipeDiscoveryCard';
 import { pt } from '../localization/profile';
 import Chip from './ui/Chip';
 import EmptyState from './EmptyState';
@@ -67,7 +66,7 @@ function ExploreScreen({
   onSelectCountry,
   t,
 }: ExploreScreenProps) {
-  const [mode, setMode] = useState<'routes' | 'countries' | 'swipe'>('routes');
+  const [mode, setMode] = useState<'routes' | 'countries'>('routes');
   const { colors } = useTheme();
   const styles = useStyles();
   const [selectedContinent, setSelectedContinent] = useState('all');
@@ -242,12 +241,9 @@ function ExploreScreen({
         <View style={styles.modeRow}>
           <Chip label={pt('exploreRoutes', currentLang)} selected={mode === 'routes'} onPress={() => setMode('routes')} />
           <Chip label={pt('exploreCountries', currentLang)} selected={mode === 'countries'} onPress={() => setMode('countries')} />
-          <Chip label={pt('exploreSwipe', currentLang)} selected={mode === 'swipe'} onPress={() => setMode('swipe')} />
         </View>
 
-        {mode === 'swipe' ? (
-          <SwipeDiscoveryCard existingCountries={countries} currentLang={currentLang} onAddToWishlist={onAddToWishlist} t={t} />
-        ) : mode === 'countries' && onSelectCountry ? (
+        {mode === 'countries' && onSelectCountry ? (
           <CountryBrowser countries={countries} currentLang={currentLang} onSelectCountry={onSelectCountry} />
         ) : (
           <>
@@ -501,7 +497,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     letterSpacing: 1.2,
   },
   title: {
-    fontSize: 25,
+    fontSize: 31,
     color: colors.text.primary,
     letterSpacing: -0.5,
     marginBottom: 6,
@@ -641,7 +637,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     fontSize: 26,
   },
   cardCountryName: {
-    fontSize: 22,
+    fontSize: 28,
     color: colors.white,
     letterSpacing: -0.5,
     fontFamily: fonts.display,

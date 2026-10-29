@@ -86,13 +86,13 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'baseline',
   },
   logoText: {
-    fontSize: 27,
+    fontSize: 34,
     color: colors.text.primary,
     letterSpacing: -0.8,
     fontFamily: fonts.displayHeavy,
   },
   logoDot: {
-    fontSize: 29,
+    fontSize: 36,
     color: colors.text.primary,
     fontFamily: fonts.displayHeavy,
   },
