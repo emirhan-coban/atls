@@ -215,7 +215,7 @@ export const checklistProgress = (items: PlanItem[]) => ({
 export interface Reminder {
   /** When to fire, local time. */
   at: Date;
-  kind: 'week' | 'day' | 'checklist';
+  kind: 'week' | 'day' | 'checklist' | 'memory';
   title: string;
   body: string;
 }

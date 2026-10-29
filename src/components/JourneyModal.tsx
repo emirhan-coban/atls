@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Calendar, ChevronRight, Minus, Plus, Share2, Star, Target, X } from 'lucide-react-native';
@@ -23,6 +23,7 @@ import { jt, tripTypeLabel } from '../localization/journey';
 import { computeStats, getGoalProgress, sortTripsNewestFirst } from '../utils/stats';
 import { Country, Profile, Trip } from '../stores/types';
 import { useProgressStore } from '../stores/useProgressStore';
+import { useAppStore } from '../stores/useAppStore';
 
 type Tab = 'timeline' | 'stamps' | 'stats' | 'badges';
 
@@ -57,6 +58,8 @@ export default function JourneyModal({
   const setYearlyGoal = useProgressStore((s) => s.setYearlyGoal);
   const unlocked = useProgressStore((s) => s.unlocked);
 
+  const memoryReminders = useAppStore((state) => state.memoryReminders);
+  const setMemoryReminders = useAppStore((state) => state.setMemoryReminders);
   const stats = useMemo(() => computeStats(countries, trips), [countries, trips]);
   const level = useMemo(() => getLevelProgress(stats.visitedCount), [stats.visitedCount]);
   const goal = useMemo(() => getGoalProgress(yearlyGoal, stats), [yearlyGoal, stats]);
@@ -345,6 +348,21 @@ export default function JourneyModal({
               )}
 
               <ContinentalProgress countries={countries} currentLang={currentLang} />
+
+              <View style={styles.memoryRow}>
+                <View style={styles.memoryText}>
+                  <Text style={styles.memoryTitle}>{jt('memoryReminders', currentLang)}</Text>
+                  <Text style={styles.memoryDesc}>{jt('memoryRemindersDesc', currentLang)}</Text>
+                </View>
+                <Switch
+                  value={memoryReminders}
+                  onValueChange={async (value) => {
+                    const ok = await setMemoryReminders(value);
+                    if (value && !ok) Alert.alert(jt('memoryReminders', currentLang), jt('memoryDenied', currentLang));
+                  }}
+                  trackColor={{ true: colors.gold.base, false: colors.glass.hairline }}
+                />
+              </View>
             </>
           )}
 
@@ -487,6 +505,13 @@ const useStyles = makeStyles((colors) =>
     topFlag: { fontSize: 22 },
     topName: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.text.primary },
     topCount: { fontSize: 12, fontWeight: '700', color: colors.text.secondary },
+    memoryRow: {
+      flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, padding: 14, borderRadius: 18,
+      backgroundColor: colors.glass.fill, borderWidth: 1, borderColor: colors.glass.hairline,
+    },
+    memoryText: { flex: 1, gap: 2 },
+    memoryTitle: { fontSize: 14, fontWeight: '800', color: colors.text.primary },
+    memoryDesc: { fontSize: 12, lineHeight: 17, color: colors.text.secondary },
     factRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     factText: { fontSize: 14, fontWeight: '600', color: colors.text.primary },
     badgeSummary: { fontSize: 14, fontWeight: '700', color: colors.text.secondary },

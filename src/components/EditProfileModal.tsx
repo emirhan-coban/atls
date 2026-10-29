@@ -25,8 +25,19 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react-native';
-import { availableCatalog } from '../data/travelData';
+import { availableCatalog, CatalogCountry } from '../data/travelData';
+import { Profile } from '../stores/types';
 import { generateHandle } from '../services/storageService';
+
+interface EditProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: Profile;
+  onSaveProfile: (profile: any) => void;
+  onDeleteAccount?: () => void;
+  t: Record<string, any>;
+  currentLang: 'tr' | 'en';
+}
 
 export default function EditProfileModal({
   isOpen,
@@ -36,11 +47,11 @@ export default function EditProfileModal({
   onDeleteAccount,
   t,
   currentLang,
-}) {
+}: EditProfileModalProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const [name, setName] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState<CatalogCountry | null>(null);
   const [homeCity, setHomeCity] = useState('');
   const [isPickingCountry, setIsPickingCountry] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
@@ -84,7 +95,7 @@ export default function EditProfileModal({
     return nameMatch || nameTrMatch || codeMatch;
   });
 
-  const handleSelectCountry = (country) => {
+  const handleSelectCountry = (country: CatalogCountry) => {
     Haptics.selectionAsync();
     setSelectedCountry(country);
     setIsPickingCountry(false);
@@ -115,7 +126,7 @@ export default function EditProfileModal({
     const initials =
       cleanName
         .split(' ')
-        .map((w) => w[0])
+        .map((w: string) => w[0])
         .filter(Boolean)
         .slice(0, 2)
         .join('')

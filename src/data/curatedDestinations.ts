@@ -19,7 +19,8 @@ export interface CuratedDestination {
   flag: string;
   continent: string;
   continentTr: string;
-  heroImage: string;
+  /** Remote photo, or null to draw a gradient with the flag instead. */
+  heroImage: string | null;
   tag: { tr: string; en: string };
   headline: { tr: string; en: string };
   seePlaces: MapPoint[];
