@@ -1,13 +1,14 @@
+import Chip from './ui/Chip';
+import Sheet from './ui/Sheet';
+import Button from './ui/Button';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Alert,
 } from 'react-native';
@@ -22,7 +23,6 @@ import {
   Plane,
   Home,
   Target,
-  ArrowRight,
   Plus,
   Minus,
 } from 'lucide-react-native';
@@ -37,6 +37,8 @@ export default function CountryStatusModal({
   t,
   currentLang,
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [selectedStatus, setSelectedStatus] = useState('visited');
   const [year, setYear] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
@@ -122,24 +124,7 @@ export default function CountryStatusModal({
   };
 
   return (
-    <Modal
-      visible={isOpen}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.overlay}
-      >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-
-        <View style={styles.sheetContainer}>
-          <View style={styles.handleBar} />
+    <Sheet visible={isOpen} onClose={onClose} maxHeight="88%">
 
           {/* Header */}
           <View style={styles.header}>
@@ -190,7 +175,7 @@ export default function CountryStatusModal({
               activeOpacity={0.7}
               style={styles.closeBtn}
             >
-              <X size={18} color="#64748B" />
+              <X size={18} color={colors.text.muted} />
             </TouchableOpacity>
           </View>
 
@@ -203,7 +188,7 @@ export default function CountryStatusModal({
             {wasWishlist && (
               <View style={styles.convertBanner}>
                 <View style={styles.convertBannerHeader}>
-                  <Sparkles size={16} color="#2563EB" />
+                  <Sparkles size={16} color={colors.gold.base} />
                   <Text style={styles.convertBannerTitle}>
                     {currentLang === 'tr'
                       ? 'Hedefini Gerçeğe Dönüştür'
@@ -235,7 +220,7 @@ export default function CountryStatusModal({
                 >
                   <Plane
                     size={14}
-                    color={selectedStatus === 'visited' ? '#2563EB' : '#64748B'}
+                    color={selectedStatus === 'visited' ? colors.status.visited.color : colors.text.muted}
                   />
                   <Text
                     style={[
@@ -261,7 +246,7 @@ export default function CountryStatusModal({
                 >
                   <Home
                     size={14}
-                    color={selectedStatus === 'lived' ? '#1D4ED8' : '#64748B'}
+                    color={selectedStatus === 'lived' ? colors.status.lived.color : colors.text.muted}
                   />
                   <Text
                     style={[
@@ -287,7 +272,7 @@ export default function CountryStatusModal({
                 >
                   <Target
                     size={14}
-                    color={selectedStatus === 'want' ? '#0284C7' : '#64748B'}
+                    color={selectedStatus === 'want' ? colors.status.want.color : colors.text.muted}
                   />
                   <Text
                     style={[
@@ -308,7 +293,7 @@ export default function CountryStatusModal({
             {selectedStatus !== 'want' && (
               <View style={styles.inputGroup}>
                 <View style={styles.labelRow}>
-                  <Calendar size={12} color="#2563EB" />
+                  <Calendar size={12} color={colors.gold.base} />
                   <Text style={styles.sectionLabel}>
                     {currentLang === 'tr' ? 'SEYAHAT TARİHİ (AY / YIL)' : 'TRAVEL DATE (MONTH / YEAR)'}
                   </Text>
@@ -325,7 +310,7 @@ export default function CountryStatusModal({
                     style={styles.yearStepperBtn}
                     activeOpacity={0.7}
                   >
-                    <Minus size={13} color="#475569" strokeWidth={2.5} />
+                    <Minus size={13} color={colors.text.faint} strokeWidth={2.5} />
                   </TouchableOpacity>
 
                   <View style={styles.yearInputBox}>
@@ -335,7 +320,7 @@ export default function CountryStatusModal({
                       keyboardType="numeric"
                       maxLength={4}
                       placeholder={t.selectYear || 'Yıl'}
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.text.secondary}
                       style={styles.yearInputText}
                     />
                   </View>
@@ -349,7 +334,7 @@ export default function CountryStatusModal({
                     style={styles.yearStepperBtn}
                     activeOpacity={0.7}
                   >
-                    <Plus size={13} color="#475569" strokeWidth={2.5} />
+                    <Plus size={13} color={colors.text.faint} strokeWidth={2.5} />
                   </TouchableOpacity>
                 </View>
 
@@ -363,27 +348,12 @@ export default function CountryStatusModal({
                     const isMonthSelected = selectedMonth === m.id;
                     const monthLabel = currentLang === 'tr' ? m.shortTr : m.shortEn;
                     return (
-                      <TouchableOpacity
+                      <Chip
                         key={m.id}
-                        onPress={() => {
-                          Haptics.selectionAsync();
-                          setSelectedMonth(m.id);
-                        }}
-                        activeOpacity={0.7}
-                        style={[
-                          styles.monthPill,
-                          isMonthSelected && styles.monthPillActive,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.monthPillText,
-                            isMonthSelected && styles.monthPillTextActive,
-                          ]}
-                        >
-                          {monthLabel}
-                        </Text>
-                      </TouchableOpacity>
+                        label={monthLabel}
+                        selected={isMonthSelected}
+                        onPress={() => setSelectedMonth(m.id)}
+                      />
                     );
                   })}
                 </ScrollView>
@@ -393,7 +363,7 @@ export default function CountryStatusModal({
             {/* Notes Input */}
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
-                <FileText size={12} color="#2563EB" />
+                <FileText size={12} color={colors.gold.base} />
                 <Text style={styles.sectionLabel}>
                   {currentLang === 'tr' ? 'SEYAHAT ANISI / NOTUN' : 'TRAVEL MEMORY / NOTES'}
                 </Text>
@@ -406,7 +376,7 @@ export default function CountryStatusModal({
                     ? (currentLang === 'tr' ? 'Örn: Kuzey ışıklarını izlemek istiyorum...' : 'e.g. Want to see the Northern Lights...')
                     : (currentLang === 'tr' ? 'Örn: İlk kez Tokyo sokaklarında yürüdüm...' : 'e.g. First time walking Tokyo streets...')
                 }
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.text.secondary}
                 multiline={true}
                 numberOfLines={3}
                 style={[styles.textInput, styles.textArea]}
@@ -415,77 +385,33 @@ export default function CountryStatusModal({
 
             {/* Action Buttons */}
             <View style={styles.actionsContainer}>
-              <TouchableOpacity
+              <Button
                 onPress={handleSave}
-                activeOpacity={0.85}
-                style={[
-                  styles.saveBtn,
-                  isConverting && styles.convertSaveBtn,
-                ]}
-              >
-                {isConverting ? (
-                  <>
-                    <Sparkles size={16} color="#FFFFFF" />
-                    <Text style={styles.saveBtnText}>
-                      {currentLang === 'tr' ? 'Mührü Pasaporta İşle ✈️' : 'Stamp into Passport ✈️'}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Check size={16} color="#FFFFFF" strokeWidth={2.5} />
-                    <Text style={styles.saveBtnText}>
-                      {t.saveChanges || (currentLang === 'tr' ? 'Değişiklikleri Kaydet' : 'Save Changes')}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
+                label={
+                  isConverting
+                    ? (currentLang === 'tr' ? 'Mührü Pasaporta İşle ✈️' : 'Stamp into Passport ✈️')
+                    : (t.saveChanges || (currentLang === 'tr' ? 'Değişiklikleri Kaydet' : 'Save Changes'))
+                }
+                icon={(color) =>
+                  isConverting ? <Sparkles size={16} color={color} /> : <Check size={16} color={color} strokeWidth={2.5} />
+                }
+              />
 
-              <TouchableOpacity
+              <Button
                 onPress={handleDelete}
-                activeOpacity={0.7}
-                style={styles.deleteBtn}
-              >
-                <Trash2 size={14} color="#EF4444" />
-                <Text style={styles.deleteBtnText}>
-                  {currentLang === 'tr' ? 'Pasaporttan Kaldır' : 'Remove from Passport'}
-                </Text>
-              </TouchableOpacity>
+                variant="danger"
+                size="md"
+                label={currentLang === 'tr' ? 'Pasaporttan Kaldır' : 'Remove from Passport'}
+                icon={(color) => <Trash2 size={14} color={color} />}
+                style={styles.removeBtn}
+              />
             </View>
           </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        </Sheet>
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheetContainer: {
-    backgroundColor: '#0D111A',
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
-    maxHeight: '88%',
-  },
-  handleBar: {
-    width: 44,
-    height: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 2.5,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
+const useStyles = makeStyles((colors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -506,7 +432,7 @@ const styles = StyleSheet.create({
   countryTitle: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.5,
     flexShrink: 1,
   },
@@ -521,17 +447,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: colors.status.visited.light,
     flexShrink: 0,
   },
   badgeVisited: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: colors.status.visited.light,
   },
   badgeLived: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: colors.status.lived.light,
   },
   badgeWant: {
-    backgroundColor: 'rgba(255, 107, 53, 0.15)',
+    backgroundColor: colors.gold.tint,
   },
   currentStatusBadgeText: {
     fontSize: 9.5,
@@ -539,17 +465,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   badgeTextVisited: {
-    color: '#60A5FA',
+    color: colors.status.visited.bright,
   },
   badgeTextLived: {
-    color: '#34D399',
+    color: colors.status.lived.bright,
   },
   badgeTextWant: {
-    color: '#FF8A5B',
+    color: colors.gold.light,
   },
   countryContinent: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '600',
     flexShrink: 1,
   },
@@ -557,7 +483,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
@@ -567,9 +493,9 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   convertBanner: {
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    backgroundColor: colors.status.visited.light,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: colors.status.visited.border,
     borderRadius: 18,
     padding: 14,
     gap: 6,
@@ -582,11 +508,11 @@ const styles = StyleSheet.create({
   convertBannerTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#60A5FA',
+    color: colors.gold.light,
   },
   convertBannerDesc: {
     fontSize: 12,
-    color: '#93C5FD',
+    color: colors.gold.light,
     lineHeight: 17,
     fontWeight: '500',
   },
@@ -601,12 +527,12 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 0.8,
   },
   statusSegment: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderRadius: 16,
     padding: 4,
     gap: 4,
@@ -621,47 +547,47 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusOptionActiveVisited: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    backgroundColor: colors.status.visited.border,
     borderWidth: 1,
-    borderColor: '#3B82F6',
+    borderColor: colors.status.visited.color,
   },
   statusOptionActiveLived: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    backgroundColor: colors.status.lived.border,
     borderWidth: 1,
-    borderColor: '#10B981',
+    borderColor: colors.status.lived.color,
   },
   statusOptionActiveWant: {
-    backgroundColor: 'rgba(255, 107, 53, 0.2)',
+    backgroundColor: colors.gold.glow,
     borderWidth: 1,
-    borderColor: '#FF6B35',
+    borderColor: colors.gold.base,
   },
   statusOptionText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   statusOptionTextActiveVisited: {
-    color: '#60A5FA',
+    color: colors.status.visited.bright,
     fontWeight: '800',
   },
   statusOptionTextActiveLived: {
-    color: '#34D399',
+    color: colors.status.lived.bright,
     fontWeight: '800',
   },
   statusOptionTextActiveWant: {
-    color: '#FF8A5B',
+    color: colors.gold.light,
     fontWeight: '800',
   },
   textInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   textArea: {
     minHeight: 70,
@@ -672,41 +598,10 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 8,
   },
-  saveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#FF6B35',
-    borderRadius: 18,
-    paddingVertical: 14,
-    shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 3,
-  },
   convertSaveBtn: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.gold.base,
     borderWidth: 1,
-    borderColor: '#FF8A5B',
-  },
-  saveBtnText: {
-    color: '#090B0E',
-    fontSize: 14,
-    fontWeight: '900',
-  },
-  deleteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-  },
-  deleteBtnText: {
-    color: '#EF4444',
-    fontSize: 12,
-    fontWeight: '700',
+    borderColor: colors.gold.light,
   },
   yearRow: {
     flexDirection: 'row',
@@ -719,50 +614,33 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
   },
   yearInputBox: {
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     minWidth: 90,
     alignItems: 'center',
   },
   yearInputText: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     textAlign: 'center',
   },
   monthsScrollRow: {
     gap: 6,
     paddingVertical: 6,
   },
-  monthPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+  removeBtn: {
+    marginTop: 12,
   },
-  monthPillActive: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
-  },
-  monthPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  monthPillTextActive: {
-    color: '#FFFFFF',
-  },
-});
+}));

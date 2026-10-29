@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { Profile } from './types';
 import { initialProfile } from '../data/travelData';
 import { storageService } from '../services/storageService';
-import { authService } from '../services/authService';
 
 interface ProfileState {
   profile: Profile;
@@ -13,6 +12,7 @@ interface ProfileState {
   loginSuccess: (userData: any) => Promise<any>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
+  startAccountUpgrade: () => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
@@ -52,17 +52,19 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     await storageService.clearAuth();
   },
 
+  // Guest -> account: shows the sign-in screen but keeps the guest's data on the device,
+  // so it is merged into the new account on login.
+  startAccountUpgrade: async () => {
+    set({ isAuthenticated: false });
+    await storageService.saveAuth(false);
+  },
+
+  // Throws when the cloud account could not be deleted, leaving the user signed in.
   deleteAccount: async () => {
-    try {
-      await authService.deleteAccount();
-      await storageService.deleteAccount();
-    } catch (e) {
-      console.warn('[ProfileStore] deleteAccount warning:', e);
-    } finally {
-      set({
-        isAuthenticated: false,
-        profile: initialProfile,
-      });
-    }
+    await storageService.deleteAccount();
+    set({
+      isAuthenticated: false,
+      profile: initialProfile,
+    });
   },
 }));

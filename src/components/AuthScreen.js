@@ -1,3 +1,5 @@
+import { fonts } from '../theme/typography';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -22,7 +24,6 @@ import {
   EyeOff,
   Languages,
   ShieldCheck,
-  Check,
   CheckCircle2,
   Circle,
   KeyRound,
@@ -55,14 +56,17 @@ const GoogleIcon = () => (
   </Svg>
 );
 
-const AppleIcon = () => (
+const AppleIcon = () => {
+  const { colors } = useTheme();
+  return (
   <Svg width={15} height={18} viewBox="0 0 384 512">
     <Path
-      fill="#FFFFFF"
+      fill={colors.text.primary}
       d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"
     />
   </Svg>
-);
+  );
+};
 
 // Email validation regex (standard RFC 5322 compatible)
 const isValidEmailAddress = (email) => {
@@ -76,6 +80,8 @@ export default function AuthScreen({
   currentLang,
   onToggleLang,
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [tab, setTab] = useState('login'); // 'login' | 'register'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -100,19 +106,19 @@ export default function AuthScreen({
   const hasNumber = /[0-9]/.test(password);
 
   const getPasswordStrength = () => {
-    if (!password) return { score: 0, label: '', color: '#E2E8F0' };
+    if (!password) return { score: 0, label: '', color: colors.text.soft };
     let score = 0;
     if (hasMinLength) score++;
     if (hasUppercase) score++;
     if (hasNumber) score++;
 
     if (score <= 1) {
-      return { score: 1, label: t?.strengthWeak || 'Zayıf', color: '#EF4444' };
+      return { score: 1, label: t?.strengthWeak || 'Zayıf', color: colors.danger };
     }
     if (score === 2) {
-      return { score: 2, label: t?.strengthMedium || 'Orta', color: '#F59E0B' };
+      return { score: 2, label: t?.strengthMedium || 'Orta', color: colors.gold.base };
     }
-    return { score: 3, label: t?.strengthStrong || 'Güçlü', color: '#10B981' };
+    return { score: 3, label: t?.strengthStrong || 'Güçlü', color: colors.status.lived.color };
   };
 
   const strength = getPasswordStrength();
@@ -309,7 +315,7 @@ export default function AuthScreen({
         email: email.trim(),
         avatarInitials: cleanName.substring(0, 2).toUpperCase(),
       });
-    } catch (err) {
+    } catch {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         currentLang === 'tr' ? 'Doğrulama Başarısız' : 'Verification Failed',
@@ -342,6 +348,19 @@ export default function AuthScreen({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Guest mode: everything stays on this device until the user creates an account
+  const handleGuest = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const guestName = currentLang === 'tr' ? 'Gezgin' : 'Traveler';
+    onLoginSuccess({
+      name: guestName,
+      handle: generateHandle(guestName),
+      email: '',
+      avatarInitials: guestName.substring(0, 2).toUpperCase(),
+      isGuest: true,
+    });
   };
 
   // Apple Sign In
@@ -406,13 +425,13 @@ export default function AuthScreen({
       <View style={styles.outerWrapper}>
         <GlowSphere
           size={300}
-          colors={['#FF6B35', 'transparent']}
+          colors={[colors.gold.base, 'transparent']}
           opacity={0.16}
           style={{ position: 'absolute', top: -70, right: -80, pointerEvents: 'none' }}
         />
         <GlowSphere
           size={260}
-          colors={['#2E5CFF', 'transparent']}
+          colors={[colors.status.visited.color, 'transparent']}
           opacity={0.14}
           style={{ position: 'absolute', bottom: 100, left: -80, pointerEvents: 'none' }}
         />
@@ -431,7 +450,7 @@ export default function AuthScreen({
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
               <View style={styles.headerTextCol}>
                 <View style={styles.otpIconBadge}>
-                  <KeyRound size={28} color="#FF6B35" strokeWidth={2} />
+                  <KeyRound size={28} color={colors.gold.base} strokeWidth={2} />
                 </View>
 
                 <Text style={styles.mainTitle}>
@@ -446,14 +465,14 @@ export default function AuthScreen({
 
                 {/* Target Email Capsule with Edit Button */}
                 <View style={styles.emailBadge}>
-                  <Mail size={14} color="#E5A93C" />
+                  <Mail size={14} color={colors.gold.base} />
                   <Text style={styles.emailBadgeText} numberOfLines={1}>{email}</Text>
                   <TouchableOpacity
                     onPress={() => setIsOtpStep(false)}
                     style={styles.editEmailBtn}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Edit3 size={13} color="#94A3B8" />
+                    <Edit3 size={13} color={colors.text.secondary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -479,7 +498,7 @@ export default function AuthScreen({
                       keyboardType="number-pad"
                       maxLength={idx === 0 ? 6 : 1}
                       selectTextOnFocus
-                      placeholderTextColor="#64748B"
+                      placeholderTextColor={colors.text.muted}
                       style={styles.otpInput}
                     />
                   </View>
@@ -494,13 +513,13 @@ export default function AuthScreen({
                 style={[styles.primaryBtn, isLoading && { opacity: 0.7 }]}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color={colors.text.primary} size="small" />
                 ) : (
                   <>
                     <Text style={styles.primaryBtnText}>
                       {t?.otpVerifyBtn || (currentLang === 'tr' ? 'Doğrula ve Pasaporta Gir' : 'Verify & Enter Passport')}
                     </Text>
-                    <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />
+                    <ArrowRight size={17} color={colors.text.primary} strokeWidth={2.5} />
                   </>
                 )}
               </TouchableOpacity>
@@ -514,7 +533,7 @@ export default function AuthScreen({
                     activeOpacity={0.7}
                     disabled={isLoading}
                   >
-                    <RefreshCw size={14} color="#E5A93C" />
+                    <RefreshCw size={14} color={colors.gold.base} />
                     <Text style={styles.resendBtnText}>
                       {t?.otpResend || (currentLang === 'tr' ? 'Kodu Tekrar Gönder' : 'Resend Code')}
                     </Text>
@@ -548,13 +567,13 @@ export default function AuthScreen({
     <View style={styles.outerWrapper}>
       <GlowSphere
         size={320}
-        colors={['#FF6B35', 'transparent']}
+        colors={[colors.gold.base, 'transparent']}
         opacity={0.16}
         style={{ position: 'absolute', top: -70, right: -80, pointerEvents: 'none' }}
       />
       <GlowSphere
         size={280}
-        colors={['#2E5CFF', 'transparent']}
+        colors={[colors.status.visited.color, 'transparent']}
         opacity={0.14}
         style={{ position: 'absolute', top: 380, left: -90, pointerEvents: 'none' }}
       />
@@ -575,7 +594,7 @@ export default function AuthScreen({
               activeOpacity={0.7}
               style={styles.langPill}
             >
-              <Languages size={13} color="#E5A93C" />
+              <Languages size={13} color={colors.gold.base} />
               <Text style={styles.langPillText}>
                 {t?.langSwitch || (currentLang === 'tr' ? 'EN' : 'TR')}
               </Text>
@@ -651,7 +670,7 @@ export default function AuthScreen({
                   focusedField === 'name' && styles.inputBoxFocused,
                 ]}
               >
-                <User size={18} color={focusedField === 'name' ? '#FF6B35' : '#64748B'} />
+                <User size={18} color={focusedField === 'name' ? colors.gold.base : colors.text.muted} />
                 <TextInput
                   ref={nameInputRef}
                   value={name}
@@ -659,7 +678,7 @@ export default function AuthScreen({
                   onFocus={() => setFocusedField('name')}
                   onBlur={() => setFocusedField(null)}
                   placeholder={t?.fullName || 'Ad Soyad'}
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor={colors.text.muted}
                   autoCapitalize="words"
                   autoCorrect={false}
                   style={styles.input}
@@ -675,7 +694,7 @@ export default function AuthScreen({
                 focusedField === 'email' && styles.inputBoxFocused,
               ]}
             >
-              <Mail size={18} color={focusedField === 'email' ? '#FF6B35' : '#64748B'} />
+              <Mail size={18} color={focusedField === 'email' ? colors.gold.base : colors.text.muted} />
               <TextInput
                 ref={emailInputRef}
                 value={email}
@@ -683,7 +702,7 @@ export default function AuthScreen({
                 onFocus={() => setFocusedField('email')}
                 onBlur={() => setFocusedField(null)}
                 placeholder={t?.email || 'E-posta adresi'}
-                placeholderTextColor="#64748B"
+                placeholderTextColor={colors.text.muted}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -700,7 +719,7 @@ export default function AuthScreen({
                 focusedField === 'password' && styles.inputBoxFocused,
               ]}
             >
-              <Lock size={18} color={focusedField === 'password' ? '#FF6B35' : '#64748B'} />
+              <Lock size={18} color={focusedField === 'password' ? colors.gold.base : colors.text.muted} />
               <TextInput
                 ref={passwordInputRef}
                 value={password}
@@ -708,7 +727,7 @@ export default function AuthScreen({
                 onFocus={() => setFocusedField('password')}
                 onBlur={() => setFocusedField(null)}
                 placeholder={tab === 'register' ? (t?.password || 'Şifre (en az 8 karakter)') : (t?.password || 'Şifre')}
-                placeholderTextColor="#64748B"
+                placeholderTextColor={colors.text.muted}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -720,9 +739,9 @@ export default function AuthScreen({
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               >
                 {showPassword ? (
-                  <EyeOff size={18} color="#94A3B8" />
+                  <EyeOff size={18} color={colors.text.secondary} />
                 ) : (
-                  <Eye size={18} color="#94A3B8" />
+                  <Eye size={18} color={colors.text.secondary} />
                 )}
               </TouchableOpacity>
             </TouchableOpacity>
@@ -744,19 +763,19 @@ export default function AuthScreen({
                   <View
                     style={[
                       styles.strengthBarSegment,
-                      { backgroundColor: strength.score >= 1 ? strength.color : 'rgba(255, 255, 255, 0.10)' },
+                      { backgroundColor: strength.score >= 1 ? strength.color : colors.glass.hairline },
                     ]}
                   />
                   <View
                     style={[
                       styles.strengthBarSegment,
-                      { backgroundColor: strength.score >= 2 ? strength.color : 'rgba(255, 255, 255, 0.10)' },
+                      { backgroundColor: strength.score >= 2 ? strength.color : colors.glass.hairline },
                     ]}
                   />
                   <View
                     style={[
                       styles.strengthBarSegment,
-                      { backgroundColor: strength.score >= 3 ? strength.color : 'rgba(255, 255, 255, 0.10)' },
+                      { backgroundColor: strength.score >= 3 ? strength.color : colors.glass.hairline },
                     ]}
                   />
                 </View>
@@ -765,9 +784,9 @@ export default function AuthScreen({
                 <View style={styles.criteriaList}>
                   <View style={styles.criteriaRow}>
                     {hasMinLength ? (
-                      <CheckCircle2 size={13} color="#10B981" />
+                      <CheckCircle2 size={13} color={colors.status.lived.color} />
                     ) : (
-                      <Circle size={13} color="#64748B" />
+                      <Circle size={13} color={colors.text.muted} />
                     )}
                     <Text style={[styles.criteriaText, hasMinLength && styles.criteriaTextMet]}>
                       {t?.reqMinChars || 'En az 8 karakter'}
@@ -776,9 +795,9 @@ export default function AuthScreen({
 
                   <View style={styles.criteriaRow}>
                     {hasUppercase ? (
-                      <CheckCircle2 size={13} color="#10B981" />
+                      <CheckCircle2 size={13} color={colors.status.lived.color} />
                     ) : (
-                      <Circle size={13} color="#64748B" />
+                      <Circle size={13} color={colors.text.muted} />
                     )}
                     <Text style={[styles.criteriaText, hasUppercase && styles.criteriaTextMet]}>
                       {t?.reqUppercase || 'En az 1 büyük harf'}
@@ -787,9 +806,9 @@ export default function AuthScreen({
 
                   <View style={styles.criteriaRow}>
                     {hasNumber ? (
-                      <CheckCircle2 size={13} color="#10B981" />
+                      <CheckCircle2 size={13} color={colors.status.lived.color} />
                     ) : (
-                      <Circle size={13} color="#64748B" />
+                      <Circle size={13} color={colors.text.muted} />
                     )}
                     <Text style={[styles.criteriaText, hasNumber && styles.criteriaTextMet]}>
                       {t?.reqNumber || 'En az 1 rakam'}
@@ -806,13 +825,13 @@ export default function AuthScreen({
               style={[styles.primaryBtn, isLoading && { opacity: 0.7 }]}
             >
               {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
+                <ActivityIndicator color={colors.text.primary} size="small" />
               ) : (
                 <>
                   <Text style={styles.primaryBtnText}>
                     {tab === 'login' ? (t?.loginTab || 'Giriş Yap') : (t?.registerTab || 'Kayıt Ol')}
                   </Text>
-                  <ArrowRight size={17} color="#FFFFFF" strokeWidth={2.5} />
+                  <ArrowRight size={17} color={colors.text.primary} strokeWidth={2.5} />
                 </>
               )}
             </TouchableOpacity>
@@ -851,12 +870,28 @@ export default function AuthScreen({
                   {t?.continueWithGoogle || (currentLang === 'tr' ? 'Google ile Devam Et' : 'Continue with Google')}
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleGuest}
+                activeOpacity={0.7}
+                disabled={isLoading}
+                style={styles.guestBtn}
+              >
+                <Text style={styles.guestBtnText}>
+                  {currentLang === 'tr' ? 'Hesap açmadan devam et' : 'Continue without an account'}
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.guestHint}>
+                {currentLang === 'tr'
+                  ? 'Verilerin bu cihazda kalır. İstediğin zaman hesap oluşturup buluta taşıyabilirsin.'
+                  : 'Your data stays on this device. You can create an account and sync it any time.'}
+              </Text>
             </View>
           </View>
 
           {/* Security & Official Badge */}
           <View style={styles.securityBadge}>
-            <ShieldCheck size={14} color="#60A5FA" />
+            <ShieldCheck size={14} color={colors.gold.light} />
             <Text style={styles.securityText}>
               {currentLang === 'tr' 
                 ? 'Resmi Biyometrik Pasaport & Güvenli Bulut Eşitleme' 
@@ -870,10 +905,10 @@ export default function AuthScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   outerWrapper: {
     flex: 1,
-    backgroundColor: '#090B0E',
+    backgroundColor: colors.canvas.base,
   },
   container: {
     flex: 1,
@@ -893,22 +928,22 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 28,
-    fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     letterSpacing: -0.8,
+    fontFamily: fonts.displayHeavy,
   },
   logoDot: {
     fontSize: 28,
-    fontWeight: '900',
-    color: '#FF6B35',
+    color: colors.gold.base,
+    fontFamily: fonts.displayHeavy,
   },
   langPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     paddingHorizontal: 12,
     height: 36,
     borderRadius: 18,
@@ -916,7 +951,7 @@ const styles = StyleSheet.create({
   langPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#E5A93C',
+    color: colors.gold.base,
   },
   keyboardContainer: {
     flex: 1,
@@ -932,24 +967,24 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     letterSpacing: -0.6,
     marginBottom: 8,
   },
   subTitle: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     lineHeight: 21,
     fontWeight: '400',
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 16,
     padding: 4,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
   },
   tabItem: {
     flex: 1,
@@ -958,15 +993,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tabItemActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: colors.glass.hairline,
   },
   tabText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#64748B',
+    color: colors.text.muted,
   },
   tabTextActive: {
-    color: '#F8FAFC',
+    color: colors.text.primary,
     fontWeight: '800',
   },
   form: {
@@ -976,31 +1011,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 18,
     paddingHorizontal: 16,
     height: 54,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   inputBoxFocused: {
-    borderColor: '#FF6B35',
-    backgroundColor: 'rgba(20, 26, 40, 0.95)',
+    borderColor: colors.gold.base,
+    backgroundColor: colors.panel.raised,
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: 14,
-    color: '#F8FAFC',
+    color: colors.text.primary,
     fontWeight: '600',
     paddingVertical: 0,
   },
   strengthCard: {
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     gap: 8,
     marginTop: -4,
   },
@@ -1011,7 +1046,7 @@ const styles = StyleSheet.create({
   },
   strengthTitle: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '600',
   },
   strengthBarRow: {
@@ -1037,11 +1072,11 @@ const styles = StyleSheet.create({
   },
   criteriaText: {
     fontSize: 11,
-    color: '#64748B',
+    color: colors.text.muted,
     fontWeight: '600',
   },
   criteriaTextMet: {
-    color: '#F8FAFC',
+    color: colors.text.primary,
     fontWeight: '700',
   },
   primaryBtn: {
@@ -1050,17 +1085,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.gold.base,
     borderRadius: 22,
     marginTop: 8,
-    shadowColor: '#FF6B35',
+    shadowColor: colors.gold.base,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 3,
   },
   primaryBtnText: {
-    color: '#FFFFFF',
+    color: colors.canvas.base,
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: -0.2,
@@ -1070,18 +1105,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: 'rgba(46, 92, 255, 0.08)',
+    backgroundColor: colors.status.visited.light,
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 16,
     marginTop: 32,
     borderWidth: 1,
-    borderColor: 'rgba(46, 92, 255, 0.20)',
+    borderColor: colors.status.visited.border,
   },
   securityText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#60A5FA',
+    color: colors.gold.light,
   },
   dividerRow: {
     flexDirection: 'row',
@@ -1093,12 +1128,12 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+    backgroundColor: colors.glass.hairline,
   },
   dividerText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#64748B',
+    color: colors.text.muted,
     letterSpacing: 0.5,
   },
   socialCol: {
@@ -1113,23 +1148,40 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   appleBtn: {
-    backgroundColor: '#131B2E',
+    backgroundColor: colors.canvas.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.glass.fillActive,
   },
   appleBtnText: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
   googleBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
+  },
+  guestBtn: {
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestBtnText: {
+    color: colors.gold.light,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  guestHint: {
+    color: colors.text.muted,
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: 'center',
+    paddingHorizontal: 12,
   },
   googleBtnText: {
-    color: '#F8FAFC',
+    color: colors.text.primary,
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: -0.2,
@@ -1140,30 +1192,30 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255, 107, 53, 0.12)',
+    backgroundColor: colors.gold.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 107, 53, 0.3)',
+    borderColor: colors.gold.glow,
   },
   emailBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.glass.fill,
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     marginTop: 12,
     alignSelf: 'flex-start',
   },
   emailBadgeText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#F8FAFC',
+    color: colors.text.primary,
   },
   editEmailBtn: {
     padding: 2,
@@ -1180,23 +1232,23 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    borderColor: colors.glass.hairline,
+    backgroundColor: colors.panel.base,
     justifyContent: 'center',
     alignItems: 'center',
   },
   otpBoxFilled: {
-    borderColor: '#E5A93C',
-    backgroundColor: 'rgba(20, 26, 40, 0.95)',
+    borderColor: colors.gold.base,
+    backgroundColor: colors.panel.raised,
   },
   otpBoxFocused: {
-    borderColor: '#FF6B35',
-    backgroundColor: 'rgba(20, 26, 40, 0.95)',
+    borderColor: colors.gold.base,
+    backgroundColor: colors.panel.raised,
   },
   otpInput: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     textAlign: 'center',
     width: '100%',
     height: '100%',
@@ -1215,11 +1267,11 @@ const styles = StyleSheet.create({
   resendBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#E5A93C',
+    color: colors.gold.base,
   },
   timerText: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '600',
   },
   backBtn: {
@@ -1229,7 +1281,7 @@ const styles = StyleSheet.create({
   },
   backBtnText: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '600',
   },
-});
+}));
