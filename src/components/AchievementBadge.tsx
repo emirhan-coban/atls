@@ -1,16 +1,18 @@
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Lock, Check } from 'lucide-react-native';
 import { Achievement } from '../data/achievements';
-import { Country, Profile } from '../stores/types';
+import { Country, Profile, Trip } from '../stores/types';
 import { theme } from '../theme';
 
 interface AchievementBadgeProps {
   achievement: Achievement;
   countries: Country[];
   profile?: Profile;
+  trips?: Trip[];
   lang: 'tr' | 'en';
   onPress?: (achievement: Achievement, unlocked: boolean) => void;
 }
@@ -19,11 +21,14 @@ export default function AchievementBadge({
   achievement,
   countries,
   profile,
+  trips,
   lang,
   onPress,
 }: AchievementBadgeProps) {
-  const isUnlocked = achievement.isUnlocked(countries, profile);
-  const progress = achievement.getProgress(countries, profile);
+  const { colors } = useTheme();
+  const styles = useStyles();
+  const isUnlocked = achievement.isUnlocked(countries, profile, trips);
+  const progress = achievement.getProgress(countries, profile, trips);
 
   const title = lang === 'tr' ? achievement.titleTr : achievement.titleEn;
   const desc = lang === 'tr' ? achievement.descTr : achievement.descEn;
@@ -52,14 +57,14 @@ export default function AchievementBadge({
         >
           <Text style={styles.badgeEmoji}>{achievement.badgeEmoji}</Text>
           <View style={styles.checkPill}>
-            <Check size={10} color="#FFFFFF" strokeWidth={3} />
+            <Check size={10} color={colors.text.primary} strokeWidth={3} />
           </View>
         </LinearGradient>
       ) : (
         <View style={styles.iconCircleLocked}>
           <Text style={[styles.badgeEmoji, styles.emojiFaded]}>{achievement.badgeEmoji}</Text>
           <View style={styles.lockPill}>
-            <Lock size={10} color="#94A3B8" strokeWidth={2.5} />
+            <Lock size={10} color={colors.text.secondary} strokeWidth={2.5} />
           </View>
         </View>
       )}
@@ -88,7 +93,7 @@ export default function AchievementBadge({
               styles.progressBarFill,
               {
                 width: `${progress.percent}%`,
-                backgroundColor: isUnlocked ? achievement.accentColor : '#64748B',
+                backgroundColor: isUnlocked ? achievement.accentColor : colors.text.muted,
               },
             ]}
           />
@@ -98,15 +103,15 @@ export default function AchievementBadge({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     marginBottom: theme.spacing.sm,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -115,8 +120,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   containerUnlocked: {
-    borderColor: 'rgba(124, 58, 237, 0.35)',
-    backgroundColor: 'rgba(124, 58, 237, 0.12)',
+    borderColor: colors.gold.border,
+    backgroundColor: colors.gold.tint,
     shadowOpacity: 0.35,
   },
   iconCircleUnlocked: {
@@ -127,7 +132,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
     marginRight: theme.spacing.md,
-    shadowColor: '#7C3AED',
+    shadowColor: colors.gold.base,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -137,9 +142,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -155,27 +160,27 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -2,
     right: -2,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.status.lived.color,
     width: 18,
     height: 18,
     borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#07090E',
+    borderColor: colors.canvas.raised,
   },
   lockPill: {
     position: 'absolute',
     bottom: -2,
     right: -2,
-    backgroundColor: '#1E293B',
+    backgroundColor: colors.canvas.elevated,
     width: 18,
     height: 18,
     borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#07090E',
+    borderColor: colors.canvas.raised,
   },
   content: {
     flex: 1,
@@ -189,31 +194,31 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.typography.fontSize.sm,
     fontWeight: theme.typography.fontWeight.bold,
-    color: '#E2E8F0',
+    color: colors.text.soft,
     flex: 1,
     marginRight: theme.spacing.xs,
   },
   titleUnlocked: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontWeight: theme.typography.fontWeight.extrabold,
   },
   progressRatio: {
     fontSize: theme.typography.fontSize.xxs,
     fontWeight: theme.typography.fontWeight.bold,
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   progressRatioUnlocked: {
-    color: '#C084FC',
+    color: colors.gold.light,
   },
   description: {
     fontSize: theme.typography.fontSize.xs,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     lineHeight: 16,
     marginBottom: 6,
   },
   progressBarTrack: {
     height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -221,4 +226,4 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 2,
   },
-});
+}));

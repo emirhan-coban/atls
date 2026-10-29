@@ -1,3 +1,12 @@
+import Sheet from './ui/Sheet';
+import Button from './ui/Button';
+import EmptyState from './EmptyState';
+import { fonts } from '../theme/typography';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
+import { useAppStore } from '../stores/useAppStore';
+import { useTripStore } from '../stores/useTripStore';
+import { exportAndShare } from '../utils/exportFiles';
+import { jt } from '../localization/journey';
 import React, { useState } from 'react';
 import {
   View,
@@ -5,10 +14,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Share,
   Alert,
   Platform,
-  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -21,18 +28,22 @@ import {
   Trash2,
   QrCode,
   Sparkles,
-  Languages,
   Plus,
-  Compass,
   LogOut,
   ShieldAlert,
-  User,
   X,
   ChevronRight,
   Palette,
+  Cloud,
+  Download,
+  CalendarClock,
+  BookOpen,
+  Sun,
+  Moon,
+  Smartphone,
 } from 'lucide-react-native';
-import { getPassportStamps, getLocalizedCountryName, availableCatalog, formatCountryDate } from '../data/travelData';
-import { PASSPORT_THEMES, PassportThemeKey } from '../theme/passportThemes';
+import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
+import { PASSPORT_THEMES } from '../theme/passportThemes';
 import EditProfileModal from './EditProfileModal';
 import CountryStatusModal from './CountryStatusModal';
 import AnimatedCounter from './AnimatedCounter';
@@ -48,6 +59,9 @@ function PassportScreen({
   onUpdateProfile,
   onLogout,
   onDeleteAccount,
+  onCreateAccount,
+  onOpenJourney,
+  onOpenPlanner,
   onSelectCountry,
   t,
   currentLang,
@@ -55,6 +69,29 @@ function PassportScreen({
   isAccountModalOpen: isAccountModalOpenExternal,
   onCloseAccountModal: onCloseAccountModalExternal,
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  const allTrips = useTripStore((state) => state.trips);
+
+  const handleExport = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const run = async (format) => {
+      try {
+        await exportAndShare(format, { profile, countries, trips: allTrips });
+      } catch (err) {
+        console.warn('[Passport] export failed:', err);
+        Alert.alert(jt('exportFailed', currentLang));
+      }
+    };
+    Alert.alert(jt('exportData', currentLang), jt('exportChoose', currentLang), [
+      { text: 'JSON', onPress: () => run('json') },
+      { text: 'CSV', onPress: () => run('csv') },
+      { text: jt('cancel', currentLang), style: 'cancel' },
+    ]);
+  };
+
+  const themePreference = useAppStore((state) => state.themePreference);
+  const setThemePreference = useAppStore((state) => state.setThemePreference);
   const [activeTab, setActiveTab] = useState('all');
   const [isEditing, setIsEditing] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -83,8 +120,8 @@ function PassportScreen({
     country: currentLang === 'tr' ? (c.nameTr || c.name) : c.name,
     date: formatCountryDate(c, currentLang) || c.year || new Date().getFullYear().toString(),
     type: c.status === 'lived' ? (currentLang === 'tr' ? 'İKAMET' : 'RESIDENCE') : (currentLang === 'tr' ? 'GİRİŞ' : 'ENTRY'),
-    accentColor: idx % 3 === 0 ? '#3B82F6' : idx % 3 === 1 ? '#10B981' : '#FF6B35',
-    bg: idx % 3 === 0 ? 'rgba(59, 130, 246, 0.15)' : idx % 3 === 1 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 107, 53, 0.15)',
+    accentColor: idx % 3 === 0 ? colors.status.visited.color : idx % 3 === 1 ? colors.status.lived.color : colors.gold.base,
+    bg: idx % 3 === 0 ? colors.status.visited.light : idx % 3 === 1 ? colors.status.lived.light : colors.gold.tint,
   }));
 
   // Dynamic MRZ Code based on profile
@@ -140,7 +177,7 @@ function PassportScreen({
           >
         {/* Top Card Row */}
         <View style={styles.cardTopRow}>
-          <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(255, 255, 255, 0.12)', borderColor: 'rgba(255, 255, 255, 0.2)' }]}>
+          <View style={[styles.verifiedBadge, { backgroundColor: colors.glass.hairline, borderColor: colors.glass.borderStrong }]}>
             <ShieldCheck size={16} color={currentTheme.accentColor} />
             <Text style={[styles.verifiedText, { color: currentTheme.textColor }]}>{t.officialPassport}</Text>
           </View>
@@ -152,7 +189,7 @@ function PassportScreen({
                 setIsEditProfileOpen(true);
               }}
               activeOpacity={0.7}
-              style={[styles.cardEditBtn, { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]}
+              style={[styles.cardEditBtn, { backgroundColor: colors.glass.hairline }]}
             >
               <Edit3 size={11} color={currentTheme.accentColor} />
               <Text style={[styles.cardEditBtnText, { color: currentTheme.textColor }]}>{t.edit || (currentLang === 'tr' ? 'Düzenle' : 'Edit')}</Text>
@@ -171,11 +208,11 @@ function PassportScreen({
         <View style={styles.profileRow}>
           {/* Avatar Monogram */}
           <View style={styles.avatarContainer}>
-            <View style={[styles.avatarBox, { backgroundColor: 'rgba(255, 255, 255, 0.15)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
+            <View style={[styles.avatarBox, { backgroundColor: colors.glass.fillActive, borderColor: colors.glass.borderStrong }]}>
               <Text style={[styles.avatarText, { color: currentTheme.textColor }]}>{profile.avatarInitials}</Text>
             </View>
             <View style={styles.verifiedDot}>
-              <Check size={10} color="#FFFFFF" strokeWidth={3} />
+              <Check size={10} color={colors.text.primary} strokeWidth={3} />
             </View>
           </View>
 
@@ -210,7 +247,7 @@ function PassportScreen({
         </View>
 
         {/* Metadata Strip */}
-        <View style={[styles.metadataStrip, { backgroundColor: 'rgba(255, 255, 255, 0.08)', borderColor: 'rgba(255, 255, 255, 0.12)' }]}>
+        <View style={[styles.metadataStrip, { backgroundColor: colors.glass.fillStrong, borderColor: colors.glass.hairline }]}>
           <View style={styles.metaCol}>
             <Text style={[styles.metaLabel, { color: currentTheme.subtextColor }]}>{t.docNo}</Text>
             <Text
@@ -236,7 +273,7 @@ function PassportScreen({
           <View style={styles.metaColEnd}>
             <Text style={[styles.metaLabel, { color: currentTheme.subtextColor }]}>{t.status}</Text>
             <Text
-              style={[styles.metaValue, { color: '#10B981' }]}
+              style={[styles.metaValue, { color: colors.status.lived.color }]}
               numberOfLines={1}
               adjustsFontSizeToFit={true}
               minimumFontScale={0.8}
@@ -283,7 +320,7 @@ function PassportScreen({
             <View
               style={[
                 styles.statDot,
-                { backgroundColor: '#2563EB' },
+                { backgroundColor: colors.status.visited.color },
               ]}
             />
             <Text
@@ -321,7 +358,7 @@ function PassportScreen({
             <View
               style={[
                 styles.statDot,
-                { backgroundColor: '#1D4ED8' },
+                { backgroundColor: colors.status.lived.color },
               ]}
             />
             <Text
@@ -359,7 +396,7 @@ function PassportScreen({
             <View
               style={[
                 styles.statDot,
-                { backgroundColor: '#38BDF8' },
+                { backgroundColor: colors.status.want.color },
               ]}
             />
             <Text
@@ -395,7 +432,7 @@ function PassportScreen({
               style={[styles.editPillButton, isEditing && styles.editPillButtonActive]}
               activeOpacity={0.7}
             >
-              <Edit3 size={11} color={isEditing ? "#2563EB" : "#64748B"} strokeWidth={2.2} />
+              <Edit3 size={11} color={isEditing ? colors.gold.base : colors.text.muted} strokeWidth={2.2} />
               <Text style={[styles.editPillText, isEditing && styles.editPillTextActive]}>
                 {isEditing ? (t.done || 'Bitti') : (t.edit || 'Düzenle')}
               </Text>
@@ -409,28 +446,20 @@ function PassportScreen({
               style={styles.addPillButton}
               activeOpacity={0.7}
             >
-              <Plus size={11} color="#2563EB" strokeWidth={2.5} />
+              <Plus size={11} color={colors.gold.base} strokeWidth={2.5} />
               <Text style={styles.addPillText}>{t.add || '+ Ekle'}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {getFilteredList().length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconBox}>
-              <Compass size={28} color="#2563EB" strokeWidth={1.8} />
-            </View>
-            <Text style={styles.emptyTitle}>{t.emptyPassportTitle}</Text>
-            <Text style={styles.emptyDesc}>{t.emptyPassportDesc}</Text>
-            <TouchableOpacity
-              onPress={onOpenAddModal}
-              activeOpacity={0.8}
-              style={styles.emptyBtn}
-            >
-              <Plus size={15} color="#FFFFFF" strokeWidth={2.5} />
-              <Text style={styles.emptyBtnText}>{t.emptyPassportBtn}</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            type={activeTab === 'want' ? 'wishlist' : 'passport'}
+            title={t.emptyPassportTitle}
+            description={t.emptyPassportDesc}
+            actionLabel={t.emptyPassportBtn}
+            onAction={onOpenAddModal}
+          />
         ) : (
           getFilteredList().map((c) => {
             const countryName = getLocalizedCountryName(c, currentLang);
@@ -509,7 +538,7 @@ function PassportScreen({
                       activeOpacity={0.7}
                       style={styles.stampNowBtn}
                     >
-                      <Sparkles size={11} color="#2563EB" />
+                      <Sparkles size={11} color={colors.gold.base} />
                       <Text style={styles.stampNowText}>
                         {t.stampNow || (currentLang === 'tr' ? 'Gittim!' : 'Visited!')}
                       </Text>
@@ -535,7 +564,7 @@ function PassportScreen({
                       }}
                       style={styles.deleteButton}
                     >
-                      <Trash2 size={15} color="#EF4444" />
+                      <Trash2 size={15} color={colors.danger} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -589,34 +618,42 @@ function PassportScreen({
       </View>
 
       {/* PRIMARY CTA: SHARE YOUR PASSPORT (4:3 Photo Card) */}
-      <TouchableOpacity
+      {onOpenPlanner && (
+        <Button
+          onPress={onOpenPlanner}
+          variant="secondary"
+          label={currentLang === 'tr' ? 'Seyahat Planlayıcı' : 'Trip Planner'}
+          icon={(color) => <CalendarClock size={16} color={color} />}
+          style={styles.shareButton}
+        />
+      )}
+
+      {onOpenJourney && (
+        <Button
+          onPress={onOpenJourney}
+          variant="secondary"
+          label={currentLang === 'tr' ? 'Seyahat Günlüğü' : 'Travel Journal'}
+          icon={(color) => <BookOpen size={16} color={color} />}
+          style={styles.shareButton}
+        />
+      )}
+
+      <Button
         onPress={handleShare}
-        activeOpacity={0.85}
+        label={t.sharePassport}
+        icon={(color) => <Share2 size={16} color={color} />}
         style={styles.shareButton}
-      >
-        <Sparkles size={18} color="#090B0E" />
-        <Text style={styles.shareText}>{t.sharePassport}</Text>
-        <Share2 size={16} color="#090B0E" />
-      </TouchableOpacity>
+      />
 
       </ScrollView>
     </View>
 
     {/* ACCOUNT MANAGEMENT MODAL (App Store Guideline 5.1.1(v) Compliant) */}
-    <Modal
+    <Sheet
       visible={isAccountModalOpen}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={() => setIsAccountModalOpen(false)}
+      onClose={() => setIsAccountModalOpen(false)}
+      maxHeight="92%"
     >
-      <View style={styles.modalOverlay}>
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setIsAccountModalOpen(false)}
-        />
-        <View style={styles.accountSheet}>
-          <View style={styles.sheetHandle} />
 
           {/* Modal Header */}
           <View style={styles.accountSheetHeader}>
@@ -633,10 +670,11 @@ function PassportScreen({
               style={styles.sheetCloseBtn}
               activeOpacity={0.7}
             >
-              <X size={18} color="#64748B" />
+              <X size={18} color={colors.text.muted} />
             </TouchableOpacity>
           </View>
 
+          <ScrollView showsVerticalScrollIndicator={false}>
           {/* User Profile Summary Card */}
           <View style={styles.accountModalCard}>
             <View style={styles.accountAvatar}>
@@ -658,7 +696,7 @@ function PassportScreen({
           {/* PASSPORT THEME PICKER */}
           <View style={styles.themePickerSection}>
             <View style={styles.themePickerHeader}>
-              <Palette size={14} color="#6366F1" />
+              <Palette size={14} color={colors.gold.base} />
               <Text style={styles.themePickerTitle}>
                 {currentLang === 'tr' ? 'PASAPORT TEMASI' : 'PASSPORT THEME'}
               </Text>
@@ -690,6 +728,44 @@ function PassportScreen({
             </View>
           </View>
 
+          {/* APPEARANCE (system / light / dark) */}
+          <View style={styles.themePickerSection}>
+            <View style={styles.themePickerHeader}>
+              <Sun size={14} color={colors.gold.base} />
+              <Text style={styles.themePickerTitle}>
+                {currentLang === 'tr' ? 'GÖRÜNÜM' : 'APPEARANCE'}
+              </Text>
+            </View>
+            <View style={styles.appearanceRow}>
+              {[
+                { key: 'system', Icon: Smartphone, label: currentLang === 'tr' ? 'Sistem' : 'System' },
+                { key: 'light', Icon: Sun, label: currentLang === 'tr' ? 'Açık' : 'Light' },
+                { key: 'dark', Icon: Moon, label: currentLang === 'tr' ? 'Koyu' : 'Dark' },
+              ].map(({ key, Icon, label }) => {
+                const isSelected = themePreference === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setThemePreference(key);
+                    }}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={label}
+                    style={[styles.appearanceChip, isSelected && styles.appearanceChipActive]}
+                  >
+                    <Icon size={15} color={isSelected ? colors.gold.base : colors.text.secondary} />
+                    <Text style={[styles.appearanceChipText, isSelected && styles.appearanceChipTextActive]}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
           {/* Account Actions */}
           <View style={styles.accountActionsList}>
             {/* Edit Profile */}
@@ -705,14 +781,47 @@ function PassportScreen({
               style={styles.accountListItem}
             >
               <View style={styles.accountListItemLeft}>
-                <View style={[styles.accountActionIconBox, { backgroundColor: '#EEF2FF' }]}>
-                  <Edit3 size={17} color="#2563EB" />
+                <View style={[styles.accountActionIconBox, { backgroundColor: colors.glass.fillStrong }]}>
+                  <Edit3 size={17} color={colors.gold.base} />
                 </View>
                 <Text style={styles.accountListItemLabel}>
                   {t.editProfile || (currentLang === 'tr' ? 'Profili Düzenle' : 'Edit Profile')}
                 </Text>
               </View>
-              <ChevronRight size={17} color="#94A3B8" />
+              <ChevronRight size={17} color={colors.text.secondary} />
+            </TouchableOpacity>
+
+            {/* Guest: move local data into a real account */}
+            {profile?.isGuest && onCreateAccount && (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setIsAccountModalOpen(false);
+                  onCreateAccount();
+                }}
+                activeOpacity={0.7}
+                style={styles.accountListItem}
+              >
+                <View style={styles.accountListItemLeft}>
+                  <View style={[styles.accountActionIconBox, { backgroundColor: colors.gold.tint }]}>
+                    <Cloud size={17} color={colors.gold.base} />
+                  </View>
+                  <Text style={styles.accountListItemLabel}>
+                    {currentLang === 'tr' ? 'Hesap Oluştur ve Buluta Taşı' : 'Create Account & Sync'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Data portability: JSON or CSV copy of everything the user entered */}
+            <TouchableOpacity onPress={handleExport} activeOpacity={0.7} style={styles.accountListItem}>
+              <View style={styles.accountListItemLeft}>
+                <View style={[styles.accountActionIconBox, { backgroundColor: colors.glass.fillStrong }]}>
+                  <Download size={17} color={colors.gold.base} />
+                </View>
+                <Text style={styles.accountListItemLabel}>{jt('exportData', currentLang)}</Text>
+              </View>
+              <ChevronRight size={17} color={colors.text.secondary} />
             </TouchableOpacity>
 
             {/* Log Out */}
@@ -722,9 +831,13 @@ function PassportScreen({
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   Alert.alert(
                     t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out'),
-                    currentLang === 'tr'
-                      ? 'Hesabınızdan çıkış yapmak istediğinize emin misiniz?'
-                      : 'Are you sure you want to log out of your account?',
+                    profile?.isGuest
+                      ? (currentLang === 'tr'
+                          ? 'Hesabın yok, bu yüzden çıkış yaparsan bu cihazdaki tüm kayıtların silinir. Önce hesap oluşturmanı öneririz.'
+                          : 'You have no account, so logging out deletes everything stored on this device. We recommend creating an account first.')
+                      : (currentLang === 'tr'
+                          ? 'Hesabınızdan çıkış yapmak istediğinize emin misiniz?'
+                          : 'Are you sure you want to log out of your account?'),
                     [
                       { text: t.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
                       {
@@ -742,14 +855,14 @@ function PassportScreen({
                 style={styles.accountListItem}
               >
                 <View style={styles.accountListItemLeft}>
-                  <View style={[styles.accountActionIconBox, { backgroundColor: '#F1F5F9' }]}>
-                    <LogOut size={17} color="#475569" />
+                  <View style={[styles.accountActionIconBox, { backgroundColor: colors.glass.fillStrong }]}>
+                    <LogOut size={17} color={colors.text.secondary} />
                   </View>
                   <Text style={styles.accountListItemLabel}>
                     {t.logOut || (currentLang === 'tr' ? 'Çıkış Yap' : 'Log Out')}
                   </Text>
                 </View>
-                <ChevronRight size={17} color="#94A3B8" />
+                <ChevronRight size={17} color={colors.text.secondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -758,7 +871,7 @@ function PassportScreen({
           {onDeleteAccount && (
             <View style={styles.dangerZoneBox}>
               <View style={styles.dangerZoneHeader}>
-                <ShieldAlert size={14} color="#EF4444" />
+                <ShieldAlert size={14} color={colors.danger} />
                 <Text style={styles.dangerZoneTitle}>
                   {t.dangerZone || (currentLang === 'tr' ? 'Tehlikeli Bölge' : 'Danger Zone')}
                 </Text>
@@ -793,16 +906,15 @@ function PassportScreen({
                 activeOpacity={0.7}
                 style={styles.modalDeleteBtn}
               >
-                <Trash2 size={16} color="#DC2626" />
+                <Trash2 size={16} color={colors.dangerDeep} />
                 <Text style={styles.modalDeleteBtnText}>
                   {t.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account')}
                 </Text>
               </TouchableOpacity>
             </View>
           )}
-        </View>
-      </View>
-    </Modal>
+          </ScrollView>
+    </Sheet>
 
     <EditProfileModal
       isOpen={isEditProfileOpen}
@@ -831,10 +943,10 @@ function PassportScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   outerWrapper: {
     flex: 1,
-    backgroundColor: '#090B0E',
+    backgroundColor: colors.canvas.base,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -860,13 +972,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 30,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.8,
   },
   logoDot: {
     fontSize: 32,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   headerRight: {
     flexDirection: 'row',
@@ -877,9 +989,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     paddingHorizontal: 12,
     height: 38,
     borderRadius: 19,
@@ -892,15 +1004,15 @@ const styles = StyleSheet.create({
   langPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   headerAccountBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -910,13 +1022,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   passportCard: {
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 30,
     paddingVertical: 20,
     paddingHorizontal: 22,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.glass.fillActive,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.5,
@@ -943,7 +1055,7 @@ const styles = StyleSheet.create({
   verifiedText: {
     fontSize: 9,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: 1,
   },
   cardTopRight: {
@@ -959,12 +1071,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.glass.fillActive,
   },
   cardEditBtnText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   chipContainer: {
     width: 34,
@@ -972,7 +1084,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: 'rgba(245, 236, 205, 0.2)',
     borderWidth: 1,
-    borderColor: '#F59E0B',
+    borderColor: colors.gold.base,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1010,7 +1122,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 26,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   verifiedDot: {
     position: 'absolute',
@@ -1019,9 +1131,9 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.status.lived.color,
     borderWidth: 2.5,
-    borderColor: '#090B0E',
+    borderColor: colors.canvas.base,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1034,13 +1146,13 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 22,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.5,
+    fontFamily: fonts.display,
   },
   profileHandle: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -1057,7 +1169,7 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#E2E8F0',
+    color: colors.text.soft,
   },
   metadataStrip: {
     flexDirection: 'row',
@@ -1066,7 +1178,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     marginBottom: 14,
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -1086,13 +1198,13 @@ const styles = StyleSheet.create({
   metaLabel: {
     fontSize: 8.5,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 0.5,
   },
   metaValue: {
     fontSize: 10.5,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     marginTop: 2,
   },
   mrzRow: {
@@ -1100,13 +1212,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    borderTopColor: colors.glass.hairline,
     paddingTop: 12,
   },
   mrzCode: {
     fontSize: 9,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 1.5,
     flex: 1,
     marginRight: 10,
@@ -1118,12 +1230,12 @@ const styles = StyleSheet.create({
   },
   statTile: {
     flex: 1,
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 20,
     paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -1131,27 +1243,27 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   statTileActiveVisited: {
-    backgroundColor: 'rgba(59, 130, 246, 0.14)',
-    borderColor: '#3B82F6',
+    backgroundColor: colors.status.visited.light,
+    borderColor: colors.status.visited.color,
     borderWidth: 1.5,
   },
   statTileActiveLived: {
-    backgroundColor: 'rgba(16, 185, 129, 0.14)',
-    borderColor: '#10B981',
+    backgroundColor: colors.status.lived.light,
+    borderColor: colors.status.lived.color,
     borderWidth: 1.5,
   },
   statTileActiveWant: {
-    backgroundColor: 'rgba(255, 107, 53, 0.14)',
-    borderColor: '#FF6B35',
+    backgroundColor: colors.gold.tint,
+    borderColor: colors.gold.base,
     borderWidth: 1.5,
   },
   statNumber: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   statNumberActive: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   statLabelRow: {
     flexDirection: 'row',
@@ -1167,19 +1279,19 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   statLabelActive: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontWeight: '800',
   },
   countryListCard: {
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 24,
     padding: 18,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   listHeader: {
     flexDirection: 'row',
@@ -1190,7 +1302,7 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 0.8,
   },
   listActionGroup: {
@@ -1202,41 +1314,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   editPillButtonActive: {
-    backgroundColor: 'rgba(59, 130, 246, 0.16)',
-    borderColor: '#3B82F6',
+    backgroundColor: colors.status.visited.light,
+    borderColor: colors.status.visited.color,
   },
   editPillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   editPillTextActive: {
-    color: '#60A5FA',
+    color: colors.gold.light,
     fontWeight: '800',
   },
   addPillButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255, 107, 53, 0.15)',
+    backgroundColor: colors.gold.tint,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 53, 0.3)',
+    borderColor: colors.gold.glow,
   },
   addPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#FF6B35',
+    color: colors.gold.base,
   },
   countryRow: {
     flexDirection: 'row',
@@ -1244,7 +1356,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: colors.glass.borderSoft,
   },
   countryLeft: {
     flexDirection: 'row',
@@ -1267,11 +1379,11 @@ const styles = StyleSheet.create({
   countryName: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     flexShrink: 1,
   },
   yearBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 6,
@@ -1279,43 +1391,43 @@ const styles = StyleSheet.create({
   },
   countryYear: {
     fontSize: 10,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '700',
   },
   statusTagPill: {
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 6,
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: colors.status.visited.light,
     flexShrink: 0,
   },
   statusTagPillVisited: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: colors.status.visited.light,
   },
   statusTagPillLived: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: colors.status.lived.light,
   },
   statusTagPillWant: {
-    backgroundColor: 'rgba(255, 107, 53, 0.15)',
+    backgroundColor: colors.gold.tint,
   },
   statusTagText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#60A5FA',
+    color: colors.status.visited.bright,
     letterSpacing: 0.2,
   },
   statusTagTextVisited: {
-    color: '#60A5FA',
+    color: colors.status.visited.bright,
   },
   statusTagTextLived: {
-    color: '#34D399',
+    color: colors.status.lived.bright,
   },
   statusTagTextWant: {
-    color: '#FF8A5B',
+    color: colors.gold.light,
   },
   countryNotes: {
     fontSize: 11,
-    color: '#64748B',
+    color: colors.text.muted,
     marginTop: 2,
   },
   countryRightActions: {
@@ -1328,17 +1440,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(226, 249, 82, 0.12)',
+    backgroundColor: colors.gold.tint,
     paddingVertical: 5,
     paddingHorizontal: 9,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(229, 169, 60, 0.3)',
+    borderColor: colors.gold.glow,
   },
   stampNowText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#E5A93C',
+    color: colors.gold.base,
   },
   deleteButton: {
     padding: 6,
@@ -1348,7 +1460,7 @@ const styles = StyleSheet.create({
   },
   stampsCount: {
     fontSize: 10,
-    color: '#64748B',
+    color: colors.text.muted,
     fontWeight: '600',
   },
   stampsGrid: {
@@ -1359,11 +1471,11 @@ const styles = StyleSheet.create({
   },
   visaCard: {
     width: '48.5%',
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 18,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   visaTop: {
     flexDirection: 'row',
@@ -1374,7 +1486,7 @@ const styles = StyleSheet.create({
   visaCode: {
     fontSize: 13,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   visaBadge: {
     paddingHorizontal: 5,
@@ -1388,139 +1500,37 @@ const styles = StyleSheet.create({
   visaCity: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   visaCountry: {
     fontSize: 10,
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   visaDate: {
     fontSize: 9,
-    color: '#64748B',
+    color: colors.text.muted,
     marginTop: 6,
     paddingTop: 4,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    borderTopColor: colors.glass.borderSoft,
   },
   shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingVertical: 18,
     marginTop: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  shareText: {
-    color: '#090B0E',
-    fontSize: 14,
-    fontWeight: '900',
-  },
-  emptyContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 24,
-    paddingVertical: 32,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderStyle: 'dashed',
-    marginVertical: 4,
-  },
-  emptyIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(229, 169, 60, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  emptyDesc: {
-    fontSize: 13,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 18,
-    paddingHorizontal: 12,
-  },
-  emptyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E5A93C',
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 20,
-    gap: 6,
-    shadowColor: '#E5A93C',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  emptyBtnText: {
-    color: '#090B0E',
-    fontSize: 13,
-    fontWeight: '900',
   },
   emptyStampsCard: {
-    backgroundColor: 'rgba(15, 20, 32, 0.65)',
+    backgroundColor: colors.panel.base,
     borderRadius: 20,
     paddingVertical: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   emptyStampsText: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '600',
   },
   // Account Modal / Bottom Sheet
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  accountSheet: {
-    backgroundColor: '#0D111A',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 12,
-    paddingHorizontal: 22,
-    paddingBottom: Platform.OS === 'ios' ? 38 : 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
   accountSheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1530,12 +1540,12 @@ const styles = StyleSheet.create({
   accountSheetTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.4,
   },
   accountSheetSubtitle: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -1543,7 +1553,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1551,27 +1561,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     marginBottom: 16,
   },
   accountAvatar: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: colors.status.visited.light,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#3B82F6',
+    borderColor: colors.status.visited.color,
   },
   accountAvatarText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#60A5FA',
+    color: colors.gold.light,
   },
   accountInfoText: {
     flex: 1,
@@ -1579,17 +1589,17 @@ const styles = StyleSheet.create({
   accountNameText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   accountHandleText: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '500',
     marginTop: 2,
   },
   accountDocBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
@@ -1598,15 +1608,15 @@ const styles = StyleSheet.create({
   accountDocText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 0.5,
   },
   themePickerSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     marginBottom: 16,
   },
   themePickerHeader: {
@@ -1618,13 +1628,41 @@ const styles = StyleSheet.create({
   themePickerTitle: {
     fontSize: 10,
     fontWeight: '900',
-    color: '#C084FC',
+    color: colors.gold.light,
     letterSpacing: 0.8,
   },
   themePickerRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  appearanceRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  appearanceChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 11,
+    borderRadius: 14,
+    backgroundColor: colors.glass.fill,
+    borderWidth: 1,
+    borderColor: colors.glass.hairline,
+  },
+  appearanceChipActive: {
+    backgroundColor: colors.gold.tint,
+    borderColor: colors.gold.border,
+  },
+  appearanceChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.text.secondary,
+  },
+  appearanceChipTextActive: {
+    color: colors.gold.base,
   },
   themeChip: {
     paddingHorizontal: 12,
@@ -1634,17 +1672,17 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   themeChipActive: {
-    borderColor: '#E5A93C',
+    borderColor: colors.gold.base,
   },
   themeChipText: {
     fontSize: 11,
     fontWeight: '800',
   },
   accountActionsList: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     overflow: 'hidden',
     marginBottom: 16,
   },
@@ -1655,7 +1693,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: colors.glass.borderSoft,
   },
   accountListItemLeft: {
     flexDirection: 'row',
@@ -1668,19 +1706,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
   },
   accountListItemLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   dangerZoneBox: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: colors.dangerTint,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderColor: colors.dangerBorder,
     gap: 10,
   },
   dangerZoneHeader: {
@@ -1691,13 +1729,13 @@ const styles = StyleSheet.create({
   dangerZoneTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#F87171',
+    color: colors.danger,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   dangerZoneDesc: {
     fontSize: 12,
-    color: '#FCA5A5',
+    color: colors.danger,
     lineHeight: 17,
     fontWeight: '500',
   },
@@ -1706,9 +1744,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.18)',
+    backgroundColor: colors.dangerTint,
     borderWidth: 1,
-    borderColor: '#EF4444',
+    borderColor: colors.danger,
     borderRadius: 14,
     paddingVertical: 11,
     marginTop: 2,
@@ -1716,8 +1754,8 @@ const styles = StyleSheet.create({
   modalDeleteBtnText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#EF4444',
+    color: colors.danger,
   },
-});
+}));
 
 export default React.memo(PassportScreen);

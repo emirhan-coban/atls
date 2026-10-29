@@ -1,21 +1,22 @@
+import Chip from './ui/Chip';
+import { fonts } from '../theme/typography';
+import Sheet from './ui/Sheet';
+import Button from './ui/Button';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TextInput,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {
   X,
   Search,
-  Check,
   Plus,
   Minus,
   MapPin,
@@ -42,6 +43,8 @@ export default function AddCountryModal({
   t,
   currentLang,
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const now = new Date();
   const currentMonthId = String(now.getMonth() + 1).padStart(2, '0');
   const currentYearStr = now.getFullYear().toString();
@@ -161,25 +164,7 @@ export default function AddCountryModal({
   };
 
   return (
-    <Modal
-      visible={isOpen}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={handleCloseModal}
-    >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.overlay}
-      >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={handleCloseModal}
-        />
-
-        <View style={styles.sheetContainer}>
-          {/* Handlebar */}
-          <View style={styles.handleBar} />
+    <Sheet visible={isOpen} onClose={handleCloseModal} maxHeight="92%">
 
           {/* Header */}
           <View style={styles.header}>
@@ -196,7 +181,7 @@ export default function AddCountryModal({
             </View>
 
             <TouchableOpacity onPress={handleCloseModal} style={styles.closeButton}>
-              <X size={16} color="#475569" />
+              <X size={16} color={colors.text.faint} />
             </TouchableOpacity>
           </View>
 
@@ -205,12 +190,12 @@ export default function AddCountryModal({
             <>
               {/* Search Box */}
               <View style={styles.searchBox}>
-                <Search size={16} color="#94A3B8" />
+                <Search size={16} color={colors.text.secondary} />
                 <TextInput
                   value={searchTerm}
                   onChangeText={setSearchTerm}
                   placeholder={t.searchPlaceholder}
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={colors.text.secondary}
                   style={styles.searchInput}
                 />
                 {Boolean(searchTerm) && (
@@ -218,7 +203,7 @@ export default function AddCountryModal({
                     onPress={() => setSearchTerm('')}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <X size={14} color="#94A3B8" />
+                    <X size={14} color={colors.text.secondary} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -271,7 +256,7 @@ export default function AddCountryModal({
                           <Text style={styles.catalogContinent}>{displayContinent}</Text>
                         </View>
                       </View>
-                      <Plus size={16} color="#2563EB" strokeWidth={2.5} />
+                      <Plus size={16} color={colors.gold.base} strokeWidth={2.5} />
                     </TouchableOpacity>
                   );
                 })}
@@ -312,7 +297,7 @@ export default function AddCountryModal({
                   style={styles.changeCountryBtn}
                   activeOpacity={0.7}
                 >
-                  <RotateCcw size={11} color="#2563EB" />
+                  <RotateCcw size={11} color={colors.gold.base} />
                   <Text style={styles.changeCountryBtnText}>
                     {t.changeCountry || (currentLang === 'tr' ? 'Değiştir' : 'Change')}
                   </Text>
@@ -321,7 +306,7 @@ export default function AddCountryModal({
 
               {existingCountries.some((ec) => ec.id === selectedCountry.id && ec.status === 'want') && (
                 <View style={styles.convertNoticeBox}>
-                  <Sparkles size={14} color="#2563EB" />
+                  <Sparkles size={14} color={colors.gold.base} />
                   <Text style={styles.convertNoticeText}>
                     {currentLang === 'tr'
                       ? 'Bu ülke hedeflerinizde kayıtlı. Şimdi resmi giriş mührü basabilirsiniz!'
@@ -345,7 +330,7 @@ export default function AddCountryModal({
                 >
                   <MapPin
                     size={16}
-                    color={selectedStatus === 'visited' ? '#FFFFFF' : '#64748B'}
+                    color={selectedStatus === 'visited' ? colors.text.primary : colors.text.muted}
                   />
                   <Text
                     style={[
@@ -372,7 +357,7 @@ export default function AddCountryModal({
                 >
                   <Home
                     size={16}
-                    color={selectedStatus === 'lived' ? '#FFFFFF' : '#64748B'}
+                    color={selectedStatus === 'lived' ? colors.text.primary : colors.text.muted}
                   />
                   <Text
                     style={[
@@ -399,7 +384,7 @@ export default function AddCountryModal({
                 >
                   <Heart
                     size={16}
-                    color={selectedStatus === 'want' ? '#FFFFFF' : '#64748B'}
+                    color={selectedStatus === 'want' ? colors.text.primary : colors.text.muted}
                   />
                   <Text
                     style={[
@@ -419,7 +404,7 @@ export default function AddCountryModal({
               {selectedStatus !== 'want' && (
                 <View style={styles.datePickerSection}>
                   <View style={styles.dateSectionHeaderRow}>
-                    <Calendar size={13} color="#2563EB" />
+                    <Calendar size={13} color={colors.gold.base} />
                     <Text style={styles.sectionLabel}>
                       {t.travelDate || (currentLang === 'tr' ? 'SEYAHAT TARİHİ (AY / YIL)' : 'TRAVEL DATE (MONTH / YEAR)')}
                     </Text>
@@ -432,7 +417,7 @@ export default function AddCountryModal({
                       style={styles.yearStepperBtn}
                       activeOpacity={0.7}
                     >
-                      <Minus size={13} color="#475569" strokeWidth={2.5} />
+                      <Minus size={13} color={colors.text.faint} strokeWidth={2.5} />
                     </TouchableOpacity>
 
                     <View style={styles.yearInputBox}>
@@ -442,7 +427,7 @@ export default function AddCountryModal({
                         keyboardType="numeric"
                         maxLength={4}
                         placeholder={t.selectYear || 'Yıl'}
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={colors.text.secondary}
                         style={styles.yearInputText}
                       />
                     </View>
@@ -452,7 +437,7 @@ export default function AddCountryModal({
                       style={styles.yearStepperBtn}
                       activeOpacity={0.7}
                     >
-                      <Plus size={13} color="#475569" strokeWidth={2.5} />
+                      <Plus size={13} color={colors.text.faint} strokeWidth={2.5} />
                     </TouchableOpacity>
                   </View>
 
@@ -466,27 +451,12 @@ export default function AddCountryModal({
                       const isMonthSelected = selectedMonth === m.id;
                       const monthLabel = currentLang === 'tr' ? m.shortTr : m.shortEn;
                       return (
-                        <TouchableOpacity
-                          key={m.id}
-                          onPress={() => {
-                            Haptics.selectionAsync();
-                            setSelectedMonth(m.id);
-                          }}
-                          activeOpacity={0.7}
-                          style={[
-                            styles.monthPill,
-                            isMonthSelected && styles.monthPillActive,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.monthPillText,
-                              isMonthSelected && styles.monthPillTextActive,
-                            ]}
-                          >
-                            {monthLabel}
-                          </Text>
-                        </TouchableOpacity>
+                        <Chip
+                        key={m.id}
+                        label={monthLabel}
+                        selected={isMonthSelected}
+                        onPress={() => setSelectedMonth(m.id)}
+                      />
                       );
                     })}
                   </ScrollView>
@@ -498,55 +468,24 @@ export default function AddCountryModal({
                 value={notes}
                 onChangeText={setNotes}
                 placeholder={t.notesPlaceholder}
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.text.secondary}
                 style={styles.notesInput}
               />
 
               {/* Submit Button */}
-              <TouchableOpacity
+              <Button
                 onPress={handleSubmit}
-                activeOpacity={0.8}
+                label={t.confirmStamp}
+                icon={(color) => <Plus size={16} color={color} strokeWidth={2.5} />}
                 style={styles.submitButton}
-              >
-                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-                <Text style={styles.submitText}>{t.confirmStamp}</Text>
-              </TouchableOpacity>
+              />
             </ScrollView>
           )}
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        </Sheet>
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheetContainer: {
-    backgroundColor: '#0D111A',
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 36,
-    maxHeight: '92%',
-  },
-  handleBar: {
-    width: 44,
-    height: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 2.5,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
+const useStyles = makeStyles((colors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -559,18 +498,18 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.5,
+    fontFamily: fonts.display,
   },
   titleDot: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#FF6B35',
+    color: colors.gold.base,
   },
   subtitle: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     marginTop: 2,
     fontWeight: '500',
   },
@@ -578,7 +517,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -586,18 +525,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     marginBottom: 12,
   },
   searchInput: {
     flex: 1,
     fontSize: 13,
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   catalogList: {
     maxHeight: 380,
@@ -607,12 +546,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    backgroundColor: colors.status.visited.light,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: colors.status.visited.border,
     marginBottom: 14,
   },
   selectedCountryLeft: {
@@ -633,13 +572,13 @@ const styles = StyleSheet.create({
   selectedCountryName: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     flexShrink: 1,
   },
   selectedCountrySub: {
     fontSize: 10.5,
     fontWeight: '700',
-    color: '#60A5FA',
+    color: colors.gold.light,
     marginTop: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -648,7 +587,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    backgroundColor: colors.status.visited.border,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
@@ -657,7 +596,7 @@ const styles = StyleSheet.create({
   changeCountryBtnText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#60A5FA',
+    color: colors.gold.light,
   },
   catalogItem: {
     flexDirection: 'row',
@@ -669,7 +608,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   catalogItemSelected: {
-    backgroundColor: 'rgba(255, 107, 53, 0.15)',
+    backgroundColor: colors.gold.tint,
   },
   catalogItemLeft: {
     flexDirection: 'row',
@@ -690,50 +629,50 @@ const styles = StyleSheet.create({
   catalogName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     flexShrink: 1,
   },
   catalogNameSelected: {
-    color: '#FF6B35',
+    color: colors.gold.base,
     fontWeight: '800',
   },
   catalogContinent: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   wishlistTagBadge: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: colors.status.visited.light,
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: colors.status.visited.border,
     flexShrink: 0,
   },
   wishlistTagText: {
     fontSize: 8.5,
     fontWeight: '800',
-    color: '#60A5FA',
+    color: colors.status.visited.bright,
     letterSpacing: 0.3,
   },
   convertNoticeBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    backgroundColor: colors.status.visited.light,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: colors.status.visited.border,
     marginBottom: 10,
   },
   convertNoticeText: {
     fontSize: 11.5,
-    color: '#60A5FA',
+    color: colors.gold.light,
     fontWeight: '700',
     flex: 1,
   },
@@ -743,7 +682,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 0.8,
     marginBottom: 8,
   },
@@ -754,41 +693,41 @@ const styles = StyleSheet.create({
   },
   statusBtn: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderRadius: 16,
     paddingVertical: 10,
     alignItems: 'center',
     gap: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   statusBtnActiveVisited: {
-    backgroundColor: 'rgba(59, 130, 246, 0.25)',
-    borderColor: '#3B82F6',
+    backgroundColor: colors.status.visited.border,
+    borderColor: colors.status.visited.color,
   },
   statusBtnActiveLived: {
-    backgroundColor: 'rgba(16, 185, 129, 0.25)',
-    borderColor: '#10B981',
+    backgroundColor: colors.status.lived.border,
+    borderColor: colors.status.lived.color,
   },
   statusBtnActiveWant: {
-    backgroundColor: 'rgba(255, 107, 53, 0.25)',
-    borderColor: '#FF6B35',
+    backgroundColor: colors.gold.glow,
+    borderColor: colors.gold.base,
   },
   statusBtnText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   statusBtnTextActive: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontWeight: '800',
   },
   datePickerSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     marginBottom: 12,
     gap: 8,
   },
@@ -807,81 +746,44 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
   },
   yearInputBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     minWidth: 90,
     alignItems: 'center',
   },
   yearInputText: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     textAlign: 'center',
   },
   monthsScrollRow: {
     gap: 6,
     paddingVertical: 4,
   },
-  monthPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
-  },
-  monthPillActive: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
-  },
-  monthPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#94A3B8',
-  },
-  monthPillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-  },
   notesInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 12,
-    color: '#FFFFFF',
+    color: colors.text.primary,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     marginBottom: 12,
   },
   submitButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FF6B35',
-    borderRadius: 20,
-    paddingVertical: 14,
-    shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 3,
+    marginTop: 16,
   },
-  submitText: {
-    color: '#090B0E',
-    fontSize: 14,
-    fontWeight: '900',
-  },
-});
+}));

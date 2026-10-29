@@ -1,3 +1,4 @@
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import Svg, { Ellipse, Circle } from 'react-native-svg';
@@ -15,6 +16,8 @@ export default function OrbitalRings({
   size,
   style,
 }: OrbitalRingsProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const finalWidth = size ?? width ?? 300;
   const finalHeight = size ? Math.round(size * 0.6) : (height ?? 180);
 
@@ -49,7 +52,7 @@ export default function OrbitalRings({
           cx="245"
           cy="78"
           r="3"
-          fill="#E2F952"
+          fill={colors.gold.light}
         />
 
         {/* Orbit secondary node */}
@@ -57,17 +60,17 @@ export default function OrbitalRings({
           cx="60"
           cy="105"
           r="2"
-          fill="#3B82F6"
+          fill={colors.status.visited.color}
         />
       </Svg>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

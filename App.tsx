@@ -1,11 +1,13 @@
+import { makeStyles, ThemeProvider } from './src/theme/ThemeContext';
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, View, ActivityIndicator, Alert, LogBox } from 'react-native';
+import { StyleSheet, View, Alert, LogBox, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import { Fraunces_700Bold, Fraunces_900Black } from '@expo-google-fonts/fraunces';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { translations } from './src/localization/translations';
-import { useAppStore, useCountryStore, useProfileStore } from './src/stores';
-import { Country, ActiveTab } from './src/stores/types';
-import { theme } from './src/theme';
+import { useAppStore, useCountryStore, useProfileStore, usePlanStore, useTripStore } from './src/stores';
+import { Country } from './src/stores/types';
 import HomeScreen from './src/components/HomeScreen';
 import ExploreScreen from './src/components/ExploreScreen';
 import PassportScreen from './src/components/PassportScreen';
@@ -17,13 +19,24 @@ import AuthScreen from './src/components/AuthScreen';
 import PassportShareModal from './src/components/PassportShareModal';
 import CountryDetailModal from './src/components/CountryDetailModal';
 import CountryStatusModal from './src/components/CountryStatusModal';
-import ConfettiCannon from './src/components/ConfettiCannon';
+import CelebrationLayer from './src/components/CelebrationLayer';
+import { useCelebrationStore } from './src/stores/useCelebrationStore';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import JourneyModal from './src/components/JourneyModal';
+import PlannerModal from './src/components/PlannerModal';
+import { useProgressStore } from './src/stores/useProgressStore';
+import { SkeletonItem, SkeletonCountryCard } from './src/components/SkeletonLoader';
+import { storageService } from './src/services/storageService';
 
-// Silence on-screen warning popups/banners during screen recording and demos
-LogBox.ignoreAllLogs(true);
+// Silence on-screen warning popups/banners only for screen recordings and demos
+// (set EXPO_PUBLIC_DEMO_MODE=1); normal builds keep warnings visible.
+if (process.env.EXPO_PUBLIC_DEMO_MODE === '1') {
+  LogBox.ignoreAllLogs(true);
+}
 
-export default function App() {
+function AppContent() {
+  const [fontsLoaded, fontError] = useFonts({ Fraunces_700Bold, Fraunces_900Black });
+  const styles = useStyles();
   const isLoaded = useAppStore((state) => state.isLoaded);
   const currentLang = useAppStore((state) => state.currentLang);
   const hasCompletedOnboarding = useAppStore((state) => state.hasCompletedOnboarding);
@@ -49,15 +62,52 @@ export default function App() {
   const loginSuccess = useProfileStore((state) => state.loginSuccess);
   const logout = useProfileStore((state) => state.logout);
   const deleteAccount = useProfileStore((state) => state.deleteAccount);
-  const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const ensureLegacyTrips = useTripStore((state) => state.ensureLegacyTrips);
+  const tripsHydrated = useTripStore((state) => state.isHydrated);
+  const startAccountUpgrade = useProfileStore((state) => state.startAccountUpgrade);
   const [selectedCountryDetailId, setSelectedCountryDetailId] = useState<string | null>(null);
   const [countryToEdit, setCountryToEdit] = useState<Country | null>(null);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false);
+  const [isJourneyOpen, setIsJourneyOpen] = useState<boolean>(false);
+  const [isPlannerOpen, setIsPlannerOpen] = useState<boolean>(false);
+  const trips = useTripStore((state) => state.trips);
+  const checkUnlocks = useProgressStore((state) => state.checkUnlocks);
+  const badgeQueue = useProgressStore((state) => state.queue);
 
   // Load saved state on mount (offline-first & Supabase sync via Zustand AppStore)
   useEffect(() => {
     initApp();
   }, [initApp]);
+
+  // Every visited country gets a trip, so the timeline and statistics also cover older data
+  useEffect(() => {
+    if (tripsHydrated) {
+      ensureLegacyTrips(countries);
+    }
+  }, [countries, tripsHydrated, ensureLegacyTrips]);
+
+  // Unlock badges when countries or trips change; a new badge shows a banner with confetti
+  useEffect(() => {
+    if (tripsHydrated) {
+      checkUnlocks(countries, profile, trips);
+    }
+  }, [countries, trips, profile, tripsHydrated, checkUnlocks]);
+
+  useEffect(() => {
+    if (badgeQueue.length > 0) {
+      useCelebrationStore.getState().burstConfetti();
+    }
+  }, [badgeQueue.length]);
+
+  // Retry any cloud writes that failed while offline whenever the app returns to the foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        storageService.flushOutbox();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   const t = translations[currentLang];
 
@@ -79,7 +129,14 @@ export default function App() {
 
   const handleAddCountry = useCallback((newCountry: any) => {
     addCountry(newCountry);
-    setShowConfetti(true);
+    if (newCountry?.id && newCountry.status !== 'want') {
+      useCelebrationStore.getState().showStamp({
+        countryId: newCountry.id,
+        status: newCountry.status,
+        year: newCountry.visitedYear || newCountry.year,
+        month: newCountry.visitedMonth || newCountry.month,
+      });
+    }
   }, [addCountry]);
 
   const handleUpdateCountry = useCallback((updatedCountry: any) => {
@@ -110,8 +167,9 @@ export default function App() {
     const sessionData = await loginSuccess(userData);
     if (sessionData?.countries) {
       useCountryStore.getState().setCountries(sessionData.countries);
-    } else {
-      clearCountries();
+    }
+    if (sessionData?.trips) {
+      useTripStore.getState().setTrips(sessionData.trips);
     }
   };
 
@@ -121,6 +179,8 @@ export default function App() {
 
   const handleLogout = async () => {
     clearCountries();
+    useTripStore.getState().clearTrips();
+    usePlanStore.getState().clearPlans();
     await logout();
   };
 
@@ -128,23 +188,34 @@ export default function App() {
     try {
       await deleteAccount();
       clearCountries();
-    } catch (e) {
-      console.warn('[App] deleteAccount notice:', e);
-    } finally {
+      useTripStore.getState().clearTrips();
+      usePlanStore.getState().clearPlans();
       setTimeout(() => {
         Alert.alert(
           t?.deleteAccount || 'Hesap Silindi',
           t?.accountDeletedMsg || 'Hesabınız ve tüm verileriniz başarıyla silindi.'
         );
       }, 300);
+    } catch (e) {
+      console.warn('[App] deleteAccount failed:', e);
+      Alert.alert(
+        currentLang === 'tr' ? 'Hesap silinemedi' : 'Could not delete account',
+        currentLang === 'tr'
+          ? 'Hesabınız silinemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.'
+          : 'Your account could not be deleted. Check your connection and try again.'
+      );
     }
   };
 
   // Loading screen before persistent storage is ready
-  if (!isLoaded) {
+  // Wait for storage and the display font so headings never flash in the fallback face
+  if (!isLoaded || (!fontsLoaded && !fontError)) {
     return (
-      <View style={[styles.container, styles.centerLoader]}>
-        <ActivityIndicator size="large" color={theme.colors.primary[600]} />
+      <View style={[styles.container, styles.loadingScreen]}>
+        <SkeletonItem width={96} height={32} borderRadius={10} />
+        <SkeletonItem width="64%" height={26} borderRadius={10} />
+        <SkeletonCountryCard />
+        <SkeletonCountryCard />
       </View>
     );
   }
@@ -153,7 +224,7 @@ export default function App() {
   if (!hasCompletedOnboarding) {
     return (
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        <StatusBar style="auto" />
         <OnboardingScreen
           onComplete={handleCompleteOnboarding}
           t={t}
@@ -168,7 +239,7 @@ export default function App() {
   if (!isAuthenticated) {
     return (
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        <StatusBar style="auto" />
         <AuthScreen
           onLoginSuccess={handleLoginSuccess}
           t={t}
@@ -184,7 +255,7 @@ export default function App() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-          <StatusBar style="light" />
+          <StatusBar style="auto" />
 
           {/* Universal Sticky Top Header Bar (100% Fixed & Consistent Across All Tabs) */}
           <AppHeader
@@ -207,6 +278,9 @@ export default function App() {
               currentLang={currentLang}
               onToggleLang={handleToggleLang}
               onOpenAuth={handleNavigateToPassport}
+              tripCount={trips.length}
+              onOpenJourney={() => setIsJourneyOpen(true)}
+              onOpenPlanner={() => setIsPlannerOpen(true)}
             />
           </View>
 
@@ -218,6 +292,7 @@ export default function App() {
               onMarkVisited={handleAddCountry}
               t={t}
               currentLang={currentLang}
+              onSelectCountry={handleSelectCountryDetail}
               onToggleLang={handleToggleLang}
             />
           </View>
@@ -233,6 +308,9 @@ export default function App() {
               onUpdateProfile={handleUpdateProfile}
               onLogout={handleLogout}
               onDeleteAccount={handleDeleteAccount}
+              onCreateAccount={startAccountUpgrade}
+              onOpenJourney={() => setIsJourneyOpen(true)}
+              onOpenPlanner={() => setIsPlannerOpen(true)}
               onSelectCountry={handleSelectCountryDetail}
               t={t}
               currentLang={currentLang}
@@ -293,18 +371,38 @@ export default function App() {
           t={t}
         />
 
-        {/* Celebration Confetti */}
-        <ConfettiCannon active={showConfetti} onFinish={() => setShowConfetti(false)} />
+        {/* Travel journal: timeline, statistics, badges */}
+        <PlannerModal visible={isPlannerOpen} onClose={() => setIsPlannerOpen(false)} currentLang={currentLang} />
+
+        <JourneyModal
+          visible={isJourneyOpen}
+          onClose={() => setIsJourneyOpen(false)}
+          countries={countries}
+          trips={trips}
+          profile={profile}
+          currentLang={currentLang}
+        />
+
+        {/* Stamp, badge banner and confetti (modals mount their own layer, see CelebrationLayer) */}
+        <CelebrationLayer hostId="app" currentLang={currentLang} />
       </SafeAreaView>
     </SafeAreaProvider>
   </ErrorBoundary>
   );
 }
 
-const styles = StyleSheet.create({
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090B0E',
+    backgroundColor: colors.canvas.base,
   },
   screenContainer: {
     flex: 1,
@@ -312,8 +410,9 @@ const styles = StyleSheet.create({
   screenWrapper: {
     flex: 1,
   },
-  centerLoader: {
-    justifyContent: 'center',
-    alignItems: 'center',
+  loadingScreen: {
+    paddingTop: 72,
+    paddingHorizontal: 20,
+    gap: 16,
   },
-});
+}));

@@ -1,13 +1,14 @@
+import { fonts } from '../theme/typography';
+import Sheet from './ui/Sheet';
+import Button from './ui/Button';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Alert,
 } from 'react-native';
@@ -36,6 +37,8 @@ export default function EditProfileModal({
   t,
   currentLang,
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [name, setName] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [homeCity, setHomeCity] = useState('');
@@ -159,24 +162,7 @@ export default function EditProfileModal({
   };
 
   return (
-    <Modal
-      visible={isOpen}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.overlay}
-      >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-
-        <View style={styles.sheetContainer}>
-          <View style={styles.handleBar} />
+    <Sheet visible={isOpen} onClose={onClose} maxHeight="88%">
 
           {/* Header */}
           <View style={styles.header}>
@@ -192,7 +178,7 @@ export default function EditProfileModal({
               activeOpacity={0.7}
               style={styles.closeBtn}
             >
-              <X size={18} color="#64748B" />
+              <X size={18} color={colors.text.muted} />
             </TouchableOpacity>
           </View>
 
@@ -204,7 +190,7 @@ export default function EditProfileModal({
             {/* Full Name */}
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
-                <User size={12} color="#2563EB" />
+                <User size={12} color={colors.gold.base} />
                 <Text style={styles.label}>
                   {currentLang === 'tr' ? 'AD SOYAD' : 'FULL NAME'}
                 </Text>
@@ -213,7 +199,7 @@ export default function EditProfileModal({
                 value={name}
                 onChangeText={setName}
                 placeholder={currentLang === 'tr' ? 'Adın Soyadın' : 'Your Name'}
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.text.secondary}
                 style={styles.input}
               />
             </View>
@@ -221,7 +207,7 @@ export default function EditProfileModal({
             {/* Home Country (With Flag) */}
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
-                <Globe size={12} color="#2563EB" />
+                <Globe size={12} color={colors.gold.base} />
                 <Text style={styles.label}>
                   {t.homeCountryLabel || 'YAŞADIĞIN ÜLKE'}
                 </Text>
@@ -264,7 +250,7 @@ export default function EditProfileModal({
                       activeOpacity={0.7}
                       style={styles.clearCountryBtn}
                     >
-                      <X size={14} color="#EF4444" />
+                      <X size={14} color={colors.danger} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -278,12 +264,12 @@ export default function EditProfileModal({
                   style={styles.countryPickerTrigger}
                 >
                   <View style={styles.pickerTriggerLeft}>
-                    <Globe size={16} color="#64748B" />
+                    <Globe size={16} color={colors.text.muted} />
                     <Text style={styles.pickerTriggerPlaceholder}>
                       {t.noCountrySelected || 'Ülke Seç (İsteğe Bağlı)'}
                     </Text>
                   </View>
-                  <ChevronDown size={16} color="#94A3B8" />
+                  <ChevronDown size={16} color={colors.text.secondary} />
                 </TouchableOpacity>
               )}
 
@@ -291,18 +277,18 @@ export default function EditProfileModal({
               {isPickingCountry && (
                 <View style={styles.pickerContainer}>
                   <View style={styles.searchRow}>
-                    <Search size={14} color="#94A3B8" />
+                    <Search size={14} color={colors.text.secondary} />
                     <TextInput
                       value={countrySearch}
                       onChangeText={setCountrySearch}
                       placeholder={t.searchCountry || 'Ülke ara...'}
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.text.secondary}
                       style={styles.countrySearchInput}
                       autoFocus={true}
                     />
                     {Boolean(countrySearch) && (
                       <TouchableOpacity onPress={() => setCountrySearch('')}>
-                        <X size={14} color="#94A3B8" />
+                        <X size={14} color={colors.text.secondary} />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -344,7 +330,7 @@ export default function EditProfileModal({
             {/* Home City / Region (Optional) */}
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
-                <MapPin size={12} color="#2563EB" />
+                <MapPin size={12} color={colors.gold.base} />
                 <Text style={styles.label}>
                   {t.homeCityLabel || 'ŞEHİR / BÖLGE (İSTEĞE BAĞLI)'}
                 </Text>
@@ -353,7 +339,7 @@ export default function EditProfileModal({
                 value={homeCity}
                 onChangeText={setHomeCity}
                 placeholder={t.homeCityPlaceholder || 'Örn: Kadıköy, İstanbul'}
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.text.secondary}
                 style={styles.input}
               />
             </View>
@@ -361,7 +347,7 @@ export default function EditProfileModal({
             {/* Live Passport Preview */}
             <View style={styles.previewBox}>
               <View style={styles.previewHeader}>
-                <Sparkles size={12} color="#2563EB" />
+                <Sparkles size={12} color={colors.gold.base} />
                 <Text style={styles.previewLabel}>{t.previewLabel || 'PASAPORT GÖRÜNÜMÜ'}</Text>
               </View>
               <View style={styles.previewPill}>
@@ -378,7 +364,7 @@ export default function EditProfileModal({
                 activeOpacity={0.7}
                 style={styles.resetBtn}
               >
-                <RotateCcw size={12} color="#2563EB" />
+                <RotateCcw size={12} color={colors.gold.base} />
                 <Text style={styles.resetBtnText}>
                   {t.resetToAuto || 'Otomatik Konuma Dön'}
                 </Text>
@@ -386,16 +372,11 @@ export default function EditProfileModal({
             )}
 
             {/* Submit Button */}
-            <TouchableOpacity
+            <Button
               onPress={handleSave}
-              activeOpacity={0.85}
-              style={styles.saveBtn}
-            >
-              <Check size={17} color="#FFFFFF" strokeWidth={2.5} />
-              <Text style={styles.saveBtnText}>
-                {t.saveChanges || 'Değişiklikleri Kaydet'}
-              </Text>
-            </TouchableOpacity>
+              label={t.saveChanges || 'Değişiklikleri Kaydet'}
+              icon={(color) => <Check size={17} color={color} strokeWidth={2.5} />}
+            />
 
             {/* Account Deletion (App Store Guideline 5.1.1(v) Compliant) */}
             {onDeleteAccount && (
@@ -424,47 +405,18 @@ export default function EditProfileModal({
                 activeOpacity={0.7}
                 style={styles.modalDeleteAccountBtn}
               >
-                <Trash2 size={13} color="#DC2626" />
+                <Trash2 size={13} color={colors.dangerDeep} />
                 <Text style={styles.modalDeleteAccountText}>
                   {t?.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account')}
                 </Text>
               </TouchableOpacity>
             )}
           </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        </Sheet>
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheetContainer: {
-    backgroundColor: '#0D111A',
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
-    maxHeight: '88%',
-  },
-  handleBar: {
-    width: 44,
-    height: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 2.5,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
+const useStyles = makeStyles((colors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -473,13 +425,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.5,
+    fontFamily: fonts.display,
   },
   subtitle: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     marginTop: 2,
     fontWeight: '500',
   },
@@ -487,7 +439,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -506,27 +458,27 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 0.8,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   countryPickerTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 13,
@@ -538,16 +490,16 @@ const styles = StyleSheet.create({
   },
   pickerTriggerPlaceholder: {
     fontSize: 14,
-    color: '#64748B',
+    color: colors.text.muted,
     fontWeight: '500',
   },
   selectedCountryCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    backgroundColor: colors.status.visited.light,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: colors.status.visited.border,
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -566,13 +518,13 @@ const styles = StyleSheet.create({
   countryNameSelected: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     flexShrink: 1,
   },
   countryCodeBadge: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#60A5FA',
+    color: colors.gold.light,
     marginTop: 1,
   },
   countryActions: {
@@ -582,7 +534,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   changeCountryBtn: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    backgroundColor: colors.status.visited.border,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 10,
@@ -590,17 +542,17 @@ const styles = StyleSheet.create({
   changeCountryText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#60A5FA',
+    color: colors.gold.light,
   },
   clearCountryBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: colors.dangerTint,
     padding: 6,
     borderRadius: 10,
   },
   pickerContainer: {
-    backgroundColor: '#111726',
+    backgroundColor: colors.canvas.raised,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     borderRadius: 16,
     padding: 8,
     marginTop: 4,
@@ -614,7 +566,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -624,7 +576,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     padding: 0,
   },
   countryListScroll: {
@@ -639,7 +591,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   countryOptionActive: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: colors.status.visited.light,
   },
   countryOptionFlag: {
     fontSize: 18,
@@ -649,20 +601,20 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   countryOptionCode: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '700',
     flexShrink: 0,
   },
   previewBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     gap: 6,
   },
   previewHeader: {
@@ -673,21 +625,21 @@ const styles = StyleSheet.create({
   previewLabel: {
     fontSize: 9.5,
     fontWeight: '800',
-    color: '#E5A93C',
+    color: colors.gold.base,
     letterSpacing: 0.5,
   },
   previewPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   previewText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   resetBtn: {
     flexDirection: 'row',
@@ -699,27 +651,7 @@ const styles = StyleSheet.create({
   resetBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FF6B35',
-  },
-  saveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#FF6B35',
-    borderRadius: 18,
-    paddingVertical: 14,
-    marginTop: 4,
-    shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  saveBtnText: {
-    color: '#090B0E',
-    fontSize: 14,
-    fontWeight: '900',
+    color: colors.gold.base,
   },
   modalDeleteAccountBtn: {
     flexDirection: 'row',
@@ -728,15 +660,15 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.dangerTint,
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: colors.dangerBorder,
     marginTop: 10,
     marginBottom: 6,
   },
   modalDeleteAccountText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#DC2626',
+    color: colors.danger,
   },
-});
+}));

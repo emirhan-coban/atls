@@ -1,3 +1,5 @@
+import { fonts } from '../theme/typography';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
@@ -18,7 +20,6 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
-  Layout,
 } from 'react-native-reanimated';
 import {
   Globe2,
@@ -29,10 +30,8 @@ import {
   Circle,
   Search,
   MapPin,
-  Heart,
   Sparkles,
   Award,
-  ShieldCheck,
   Lock,
   Mail,
   User,
@@ -41,12 +40,9 @@ import {
   Languages,
   ChevronLeft,
   KeyRound,
-  RefreshCw,
-  Edit3,
 } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import WorldMap from './WorldMap';
-import GlowSphere from './GlowSphere';
 import { availableCatalog } from '../data/travelData';
 import { authService } from '../services/authService';
 import { generateHandle } from '../services/storageService';
@@ -55,15 +51,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Popular countries for quick selection
 const POPULAR_HOME_IDS = ['TR', 'DE', 'GB', 'US', 'FR', 'NL', 'AZ', 'IT'];
-const POPULAR_VISITED_IDS = [
-  'TR', 'GR', 'IT', 'ES', 'FR', 'DE', 'GB', 'NL',
-  'AT', 'CH', 'PT', 'US', 'AE', 'TH', 'JP', 'GE',
-  'EG', 'HR', 'ME', 'CZ', 'HU', 'NO', 'SE', 'BE'
-];
-const POPULAR_WISHLIST_IDS = [
-  'JP', 'IS', 'NO', 'BR', 'AU', 'NZ', 'CA', 'PE',
-  'ZA', 'KR', 'AR', 'MX', 'CL', 'VN', 'MA', 'CU'
-];
 
 const GoogleIcon = () => (
   <Svg width={18} height={18} viewBox="0 0 24 24">
@@ -86,14 +73,17 @@ const GoogleIcon = () => (
   </Svg>
 );
 
-const AppleIcon = () => (
+const AppleIcon = () => {
+  const { colors } = useTheme();
+  return (
   <Svg width={15} height={18} viewBox="0 0 384 512">
     <Path
-      fill="#FFFFFF"
+      fill={colors.text.primary}
       d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"
     />
   </Svg>
-);
+  );
+};
 
 const isValidEmail = (email) => {
   const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -101,6 +91,8 @@ const isValidEmail = (email) => {
 };
 
 export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', onToggleLang }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   // Funnel Step: 1 = Hook, 2 = Home Country, 3 = Visited Countries, 4 = Payoff/Badge, 5 = Wishlist, 6 = Save/Auth
   const [step, setStep] = useState(1);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
@@ -108,7 +100,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   // User Selections
   const [homeCountry, setHomeCountry] = useState(null);
   const [visitedIds, setVisitedIds] = useState([]);
-  const [wishlistIds, setWishlistIds] = useState([]);
+  const [wishlistIds] = useState([]); // wishlist is picked in Explore after sign-up
 
   // Search & Filter States
   const [homeSearch, setHomeSearch] = useState('');
@@ -140,14 +132,14 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   const hasNumber = /[0-9]/.test(password);
 
   const getPasswordStrength = () => {
-    if (!password) return { score: 0, label: '', color: '#E2E8F0' };
+    if (!password) return { score: 0, label: '', color: colors.text.soft };
     let score = 0;
     if (hasMinLength) score++;
     if (hasUppercase) score++;
     if (hasNumber) score++;
-    if (score <= 1) return { score: 1, label: t?.strengthWeak || 'Zayıf', color: '#EF4444' };
-    if (score === 2) return { score: 2, label: t?.strengthMedium || 'Orta', color: '#F59E0B' };
-    return { score: 3, label: t?.strengthStrong || 'Güçlü', color: '#10B981' };
+    if (score <= 1) return { score: 1, label: t?.strengthWeak || 'Zayıf', color: colors.danger };
+    if (score === 2) return { score: 2, label: t?.strengthMedium || 'Orta', color: colors.gold.base };
+    return { score: 3, label: t?.strengthStrong || 'Güçlü', color: colors.status.lived.color };
   };
   const strength = getPasswordStrength();
 
@@ -231,29 +223,10 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
     return list;
   }, [visitedSearch, continentFilter]);
 
-  const filteredWishlistCatalog = useMemo(() => {
-    return availableCatalog.filter(
-      (c) =>
-        (!homeCountry || c.id !== homeCountry.id) &&
-        !visitedIds.includes(c.id)
-    );
-  }, [homeCountry, visitedIds]);
-
   // Toggle country in visited list
   const toggleVisitedCountry = (id) => {
     Haptics.selectionAsync();
     setVisitedIds((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((cId) => cId !== id);
-      }
-      return [...prev, id];
-    });
-  };
-
-  // Toggle country in wishlist
-  const toggleWishlistCountry = (id) => {
-    Haptics.selectionAsync();
-    setWishlistIds((prev) => {
       if (prev.includes(id)) {
         return prev.filter((cId) => cId !== id);
       }
@@ -427,12 +400,25 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
         email: email.trim(),
         avatarInitials: cleanName.substring(0, 2).toUpperCase(),
       });
-    } catch (err) {
+    } catch {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Hata', t?.otpInvalidCode || 'Geçersiz doğrulama kodu.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Guest mode: everything stays on this device until the user creates an account
+  const handleGuest = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const guestName = currentLang === 'tr' ? 'Gezgin' : 'Traveler';
+    finalizeOnboarding({
+      name: guestName,
+      handle: generateHandle(guestName),
+      email: '',
+      avatarInitials: guestName.substring(0, 2).toUpperCase(),
+      isGuest: true,
+    });
   };
 
   // Apple & Google Sign In
@@ -461,19 +447,19 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   };
 
   // Top Bar Progress Component
-  const renderTopBar = (currentStepIndex, totalSteps = 5) => (
+  const renderTopBar = (currentStepIndex, totalSteps = 4) => (
     <View style={styles.funnelHeader}>
       <View style={styles.topBarRow}>
         {currentStepIndex > 1 ? (
           <TouchableOpacity
             onPress={() => {
               Haptics.selectionAsync();
-              setStep((s) => s - 1);
+              setStep((s) => (s === 6 ? 4 : s - 1));
             }}
             style={styles.backBtn}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <ChevronLeft size={22} color="#F8FAFC" strokeWidth={2.5} />
+            <ChevronLeft size={22} color={colors.text.primary} strokeWidth={2.5} />
           </TouchableOpacity>
         ) : (
           <View style={styles.logoRow}>
@@ -501,7 +487,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
           style={styles.langPill}
           activeOpacity={0.7}
         >
-          <Languages size={12} color="#E5A93C" />
+          <Languages size={12} color={colors.gold.base} />
           <Text style={styles.langPillText}>{currentLang.toUpperCase()}</Text>
         </TouchableOpacity>
       </View>
@@ -528,7 +514,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             style={styles.langPill}
             activeOpacity={0.7}
           >
-            <Languages size={12} color="#E5A93C" />
+            <Languages size={12} color={colors.gold.base} />
             <Text style={styles.langPillText}>{currentLang.toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
@@ -550,7 +536,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
           {/* Headline & Value Proposition */}
           <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.hookTextCol}>
             <View style={styles.hookBadge}>
-              <Compass size={12} color="#FF6B35" strokeWidth={2.5} />
+              <Compass size={12} color={colors.gold.base} strokeWidth={2.5} />
               <Text style={styles.hookBadgeText}>
                 {currentLang === 'tr' ? 'DİJİTAL DÜNYA PASAPORTU' : 'DIGITAL WORLD PASSPORT'}
               </Text>
@@ -579,7 +565,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             <Text style={styles.primaryActionButtonText}>
               {t?.startPassportBtn || 'Pasaportumu Başlat'}
             </Text>
-            <ArrowRight size={19} color="#FFFFFF" strokeWidth={2.5} />
+            <ArrowRight size={19} color={colors.text.primary} strokeWidth={2.5} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -606,7 +592,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   if (step === 2) {
     return (
       <SafeAreaView style={styles.container}>
-        {renderTopBar(1, 5)}
+        {renderTopBar(1, 4)}
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -639,7 +625,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
               />
               {homeCountry && (
                 <View style={styles.selectedHomePill}>
-                  <MapPin size={12} color="#10B981" />
+                  <MapPin size={12} color={colors.status.lived.color} />
                   <Text style={styles.selectedHomePillText}>
                     {homeCountry.flag} {currentLang === 'tr' ? homeCountry.nameTr : homeCountry.name} (Ev)
                   </Text>
@@ -649,12 +635,12 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
 
             {/* Search Box */}
             <View style={styles.searchBox}>
-              <Search size={18} color="#94A3B8" />
+              <Search size={18} color={colors.text.secondary} />
               <TextInput
                 value={homeSearch}
                 onChangeText={setHomeSearch}
                 placeholder={t?.searchHomePlaceholder || 'Ülke ara (örn. Türkiye, Almanya)...'}
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.text.secondary}
                 style={styles.searchInput}
                 autoCorrect={false}
               />
@@ -714,9 +700,9 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                       </View>
                     </View>
                     {isSelected ? (
-                      <CheckCircle2 size={20} color="#10B981" />
+                      <CheckCircle2 size={20} color={colors.status.lived.color} />
                     ) : (
-                      <Circle size={20} color="#E2E8F0" />
+                      <Circle size={20} color={colors.text.soft} />
                     )}
                   </TouchableOpacity>
                 );
@@ -741,7 +727,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
               activeOpacity={0.88}
             >
               <Text style={styles.primaryActionButtonText}>{t?.continueBtn || 'Devam Et'}</Text>
-              <ArrowRight size={19} color="#FFFFFF" strokeWidth={2.5} />
+              <ArrowRight size={19} color={colors.text.primary} strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -755,7 +741,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   if (step === 3) {
     return (
       <SafeAreaView style={styles.container}>
-        {renderTopBar(2, 5)}
+        {renderTopBar(2, 4)}
 
         <View style={styles.flex1}>
           <ScrollView
@@ -766,7 +752,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             {/* Prominent Step 3 Title & Purpose */}
             <View style={styles.visitedTitleSection}>
               <View style={styles.visitedStepBadge}>
-                <Compass size={12} color="#60A5FA" strokeWidth={2.5} />
+                <Compass size={12} color={colors.gold.light} strokeWidth={2.5} />
                 <Text style={styles.visitedStepBadgeText}>
                   {currentLang === 'tr' ? 'SEYAHAT GEÇMİŞİN' : 'TRAVEL FOOTPRINT'}
                 </Text>
@@ -798,7 +784,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             {/* Live Stats Pill */}
             <View style={styles.visitedStatsRow}>
               <View style={styles.statPill}>
-                <Globe2 size={13} color="#E5A93C" />
+                <Globe2 size={13} color={colors.gold.base} />
                 <Text style={styles.statPillText}>
                   {totalCount} {currentLang === 'tr' ? 'Ülke İşaretlendi' : 'Countries Marked'}
                 </Text>
@@ -811,12 +797,12 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             {/* Search & Continent Filters */}
             <View style={styles.filterSection}>
               <View style={styles.searchBoxCompact}>
-                <Search size={16} color="#94A3B8" />
+                <Search size={16} color={colors.text.secondary} />
                 <TextInput
                   value={visitedSearch}
                   onChangeText={setVisitedSearch}
                   placeholder={t?.searchHomePlaceholder || 'Gittiğin ülkeleri filtrele...'}
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={colors.text.secondary}
                   style={styles.searchInputCompact}
                   autoCorrect={false}
                 />
@@ -884,9 +870,9 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                     </Text>
                     <View style={styles.flagGridCheck}>
                       {isHome ? (
-                        <MapPin size={14} color="#10B981" />
+                        <MapPin size={14} color={colors.status.lived.color} />
                       ) : isSelected ? (
-                        <Check size={14} color="#2E5CFF" strokeWidth={3} />
+                        <Check size={14} color={colors.status.visited.color} strokeWidth={3} />
                       ) : null}
                     </View>
                   </TouchableOpacity>
@@ -910,7 +896,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   ? (t?.seeResultsBtn?.replace('{count}', totalCount) || `Sonuçları Gör (${totalCount} Ülke)`)
                   : (t?.noVisitedYet || 'Sonuçları Gör')}
               </Text>
-              <ArrowRight size={19} color="#FFFFFF" strokeWidth={2.5} />
+              <ArrowRight size={19} color={colors.text.primary} strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
         </View>
@@ -926,12 +912,12 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
 
     return (
       <SafeAreaView style={styles.container}>
-        {renderTopBar(3, 5)}
+        {renderTopBar(3, 4)}
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.payoffScrollContent}>
           <Animated.View entering={FadeInDown.duration(600)} style={styles.payoffHeader}>
             <View style={styles.celebrationBadge}>
-              <Sparkles size={14} color="#E5A93C" />
+              <Sparkles size={14} color={colors.gold.base} />
               <Text style={styles.celebrationBadgeText}>PASAPORTUN HAZIRLANIYOR</Text>
             </View>
 
@@ -966,12 +952,12 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
           {/* Unlocked Badge Showcase */}
           <Animated.View entering={FadeInUp.delay(350).duration(600)} style={styles.badgeUnlockCard}>
             <View style={styles.badgeUnlockHeader}>
-              <Award size={16} color="#D97706" />
+              <Award size={16} color={colors.gold.deep} />
               <Text style={styles.badgeUnlockSub}>{t?.badgeUnlockedTitle || 'İLK ROZETİN AÇILDI'}</Text>
             </View>
 
             <View style={styles.badgeMedalIcon}>
-              <Award size={48} color="#D97706" strokeWidth={1.8} />
+              <Award size={48} color={colors.gold.deep} strokeWidth={1.8} />
             </View>
 
             <Text style={styles.badgeNameText}>{badgeName}</Text>
@@ -987,84 +973,6 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             <TouchableOpacity
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                setStep(5);
-              }}
-              style={styles.primaryActionButton}
-              activeOpacity={0.88}
-            >
-              <Text style={styles.primaryActionButtonText}>
-                {t?.nextWishlistBtn || 'Hedef Rotalarımı Seç'}
-              </Text>
-              <ArrowRight size={19} color="#FFFFFF" strokeWidth={2.5} />
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════════════════
-  // STEP 5: HEDEFLER (WISHLIST - İSTEĞE BAĞLI / ATLANABİLİR)
-  // ══════════════════════════════════════════════════════════════════════
-  if (step === 5) {
-    return (
-      <SafeAreaView style={styles.container}>
-        {renderTopBar(4, 5)}
-
-        <View style={styles.flex1}>
-          <View style={styles.stepHeaderWithAction}>
-            <View style={styles.stepHeaderLeft}>
-              <Text style={styles.stepTitle}>{t?.wishlistTitle || 'Sırada Neresi Var?'}</Text>
-              <Text style={styles.stepSub}>
-                {t?.wishlistSub || 'Gelecekte ayak basmak istediğin hayalindeki ülkeleri seç.'}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.selectionAsync();
-                setStep(6);
-              }}
-              style={styles.skipSmallBtn}
-            >
-              <Text style={styles.skipSmallText}>{t?.skipWishlist || 'Şimdilik Atla'}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Grid */}
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.visitedGridContent}>
-            <View style={styles.flagGrid}>
-              {filteredWishlistCatalog.slice(0, 32).map((item) => {
-                const isSelected = wishlistIds.includes(item.id);
-                return (
-                  <TouchableOpacity
-                    key={item.id}
-                    onPress={() => toggleWishlistCountry(item.id)}
-                    style={[styles.flagGridCard, isSelected && styles.flagGridCardWishlist]}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.flagGridEmoji}>{item.flag}</Text>
-                    <Text style={[styles.flagGridTitle, isSelected && styles.flagGridTitleWishlist]} numberOfLines={1}>
-                      {currentLang === 'tr' ? item.nameTr : item.name}
-                    </Text>
-                    <View style={styles.flagGridCheck}>
-                      <Heart
-                        size={15}
-                        color={isSelected ? '#F59E0B' : '#CBD5E1'}
-                        fill={isSelected ? '#F59E0B' : 'transparent'}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-
-          {/* Bottom Button */}
-          <View style={styles.stickyFooterBar}>
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setStep(6);
               }}
               style={styles.primaryActionButton}
@@ -1073,10 +981,10 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
               <Text style={styles.primaryActionButtonText}>
                 {t?.finishWishlistBtn || 'Pasaportumu Kaydet'}
               </Text>
-              <ArrowRight size={19} color="#FFFFFF" strokeWidth={2.5} />
+              <ArrowRight size={19} color={colors.text.primary} strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -1091,7 +999,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
         <SafeAreaView style={styles.container}>
           <View style={styles.topBarRow}>
             <TouchableOpacity onPress={() => setIsOtpStep(false)} style={styles.backBtn}>
-              <ChevronLeft size={22} color="#F8FAFC" />
+              <ChevronLeft size={22} color={colors.text.primary} />
             </TouchableOpacity>
             <Text style={styles.logoText}>atls<Text style={styles.logoDot}>.</Text></Text>
             <View style={{ width: 40 }} />
@@ -1101,7 +1009,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.stepScrollContent}>
               <View style={styles.otpHeader}>
                 <View style={styles.otpIconBadge}>
-                  <KeyRound size={28} color="#FF6B35" />
+                  <KeyRound size={28} color={colors.gold.base} />
                 </View>
                 <Text style={styles.stepTitle}>{t?.otpTitle || 'E-postanızı Doğrulayın'}</Text>
                 <Text style={styles.stepSub}>
@@ -1149,11 +1057,11 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color={colors.text.primary} size="small" />
                 ) : (
                   <>
                     <Text style={styles.primaryActionButtonText}>Doğrula ve Pasaporta Gir</Text>
-                    <ArrowRight size={19} color="#FFFFFF" strokeWidth={2.5} />
+                    <ArrowRight size={19} color={colors.text.primary} strokeWidth={2.5} />
                   </>
                 )}
               </TouchableOpacity>
@@ -1165,7 +1073,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
 
     return (
       <SafeAreaView style={styles.container}>
-        {renderTopBar(5, 5)}
+        {renderTopBar(4, 4)}
 
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex1}>
           <ScrollView
@@ -1177,7 +1085,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             {/* Value Preview Pill */}
             <View style={styles.savePassportHeaderCard}>
               <View style={styles.passportChip}>
-                <Globe2 size={13} color="#FF6B35" />
+                <Globe2 size={13} color={colors.gold.base} />
                 <Text style={styles.passportChipText}>
                   {totalCount} Ülke • %{exploredPercent} Dünya Keşfi
                 </Text>
@@ -1225,7 +1133,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   onPress={() => nameInputRef.current?.focus()}
                   style={[styles.inputBox, focusedField === 'name' && styles.inputBoxFocused]}
                 >
-                  <User size={18} color={focusedField === 'name' ? '#FF6B35' : '#64748B'} />
+                  <User size={18} color={focusedField === 'name' ? colors.gold.base : colors.text.muted} />
                   <TextInput
                     ref={nameInputRef}
                     value={name}
@@ -1233,7 +1141,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                     onFocus={() => setFocusedField('name')}
                     onBlur={() => setFocusedField(null)}
                     placeholder={t?.fullName || 'Ad Soyad'}
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor={colors.text.muted}
                     autoCapitalize="words"
                     autoCorrect={false}
                     style={styles.input}
@@ -1246,7 +1154,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                 onPress={() => emailInputRef.current?.focus()}
                 style={[styles.inputBox, focusedField === 'email' && styles.inputBoxFocused]}
               >
-                <Mail size={18} color={focusedField === 'email' ? '#FF6B35' : '#64748B'} />
+                <Mail size={18} color={focusedField === 'email' ? colors.gold.base : colors.text.muted} />
                 <TextInput
                   ref={emailInputRef}
                   value={email}
@@ -1254,7 +1162,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
                   placeholder={t?.email || 'E-posta adresi'}
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor={colors.text.muted}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -1268,7 +1176,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                 onPress={() => passwordInputRef.current?.focus()}
                 style={[styles.inputBox, focusedField === 'password' && styles.inputBoxFocused]}
               >
-                <Lock size={18} color={focusedField === 'password' ? '#FF6B35' : '#64748B'} />
+                <Lock size={18} color={focusedField === 'password' ? colors.gold.base : colors.text.muted} />
                 <TextInput
                   ref={passwordInputRef}
                   value={password}
@@ -1276,7 +1184,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   onFocus={() => setFocusedField('password')}
                   onBlur={() => setFocusedField(null)}
                   placeholder={authTab === 'register' ? 'Şifre (en az 8 karakter)' : 'Şifre'}
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor={colors.text.muted}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -1284,7 +1192,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   style={styles.input}
                 />
                 <TouchableOpacity onPress={() => setShowPassword((p) => !p)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                  {showPassword ? <EyeOff size={18} color="#94A3B8" /> : <Eye size={18} color="#94A3B8" />}
+                  {showPassword ? <EyeOff size={18} color={colors.text.secondary} /> : <Eye size={18} color={colors.text.secondary} />}
                 </TouchableOpacity>
               </TouchableOpacity>
 
@@ -1297,21 +1205,21 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                     </Text>
                   </View>
                   <View style={styles.strengthBarRow}>
-                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 1 ? strength.color : 'rgba(255, 255, 255, 0.10)' }]} />
-                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 2 ? strength.color : 'rgba(255, 255, 255, 0.10)' }]} />
-                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 3 ? strength.color : 'rgba(255, 255, 255, 0.10)' }]} />
+                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 1 ? strength.color : colors.glass.hairline }]} />
+                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 2 ? strength.color : colors.glass.hairline }]} />
+                    <View style={[styles.strengthBarSegment, { backgroundColor: strength.score >= 3 ? strength.color : colors.glass.hairline }]} />
                   </View>
                   <View style={styles.criteriaList}>
                     <View style={styles.criteriaRow}>
-                      {hasMinLength ? <CheckCircle2 size={13} color="#10B981" /> : <Circle size={13} color="#64748B" />}
+                      {hasMinLength ? <CheckCircle2 size={13} color={colors.status.lived.color} /> : <Circle size={13} color={colors.text.muted} />}
                       <Text style={[styles.criteriaText, hasMinLength && styles.criteriaTextMet]}>8+ karakter</Text>
                     </View>
                     <View style={styles.criteriaRow}>
-                      {hasUppercase ? <CheckCircle2 size={13} color="#10B981" /> : <Circle size={13} color="#64748B" />}
+                      {hasUppercase ? <CheckCircle2 size={13} color={colors.status.lived.color} /> : <Circle size={13} color={colors.text.muted} />}
                       <Text style={[styles.criteriaText, hasUppercase && styles.criteriaTextMet]}>1 büyük harf</Text>
                     </View>
                     <View style={styles.criteriaRow}>
-                      {hasNumber ? <CheckCircle2 size={13} color="#10B981" /> : <Circle size={13} color="#64748B" />}
+                      {hasNumber ? <CheckCircle2 size={13} color={colors.status.lived.color} /> : <Circle size={13} color={colors.text.muted} />}
                       <Text style={[styles.criteriaText, hasNumber && styles.criteriaTextMet]}>1 rakam</Text>
                     </View>
                   </View>
@@ -1324,13 +1232,13 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color={colors.text.primary} size="small" />
                 ) : (
                   <>
                     <Text style={styles.primaryActionButtonText}>
                       {authTab === 'register' ? 'Pasaportumu Kaydet' : 'Giriş Yap ve Senkronize Et'}
                     </Text>
-                    <ArrowRight size={19} color="#FFFFFF" strokeWidth={2.5} />
+                    <ArrowRight size={19} color={colors.text.primary} strokeWidth={2.5} />
                   </>
                 )}
               </TouchableOpacity>
@@ -1362,6 +1270,17 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   <GoogleIcon />
                   <Text style={styles.googleBtnText}>Google ile Kaydet</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity onPress={handleGuest} style={styles.guestBtn} disabled={isLoading}>
+                  <Text style={styles.guestBtnText}>
+                    {currentLang === 'tr' ? 'Hesap açmadan devam et' : 'Continue without an account'}
+                  </Text>
+                </TouchableOpacity>
+                <Text style={styles.guestHint}>
+                  {currentLang === 'tr'
+                    ? 'Verilerin bu cihazda kalır. İstediğin zaman hesap oluşturup buluta taşıyabilirsin.'
+                    : 'Your data stays on this device. You can create an account and sync it any time.'}
+                </Text>
               </View>
             </View>
           </ScrollView>
@@ -1373,10 +1292,10 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
   return null;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090B0E',
+    backgroundColor: colors.canvas.base,
   },
   flex1: {
     flex: 1,
@@ -1388,7 +1307,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomColor: colors.glass.fillStrong,
   },
   topBarRow: {
     flexDirection: 'row',
@@ -1405,35 +1324,35 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 24,
-    fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     letterSpacing: -0.8,
+    fontFamily: fonts.displayHeavy,
   },
   logoDot: {
     fontSize: 24,
-    fontWeight: '900',
-    color: '#FF6B35',
+    color: colors.gold.base,
+    fontFamily: fonts.displayHeavy,
   },
   stepProgressTrack: {
     flex: 1,
     height: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     borderRadius: 3,
     overflow: 'hidden',
     marginHorizontal: 8,
   },
   stepProgressBar: {
     height: '100%',
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.gold.base,
     borderRadius: 3,
   },
   langPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     paddingHorizontal: 10,
     height: 32,
     borderRadius: 16,
@@ -1441,7 +1360,7 @@ const styles = StyleSheet.create({
   langPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#E5A93C',
+    color: colors.gold.base,
   },
 
   // ─── Step 1: Hook ───
@@ -1468,8 +1387,8 @@ const styles = StyleSheet.create({
     aspectRatio: 16 / 9.5,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
-    backgroundColor: '#0B0F19',
+    borderColor: colors.glass.hairline,
+    backgroundColor: colors.canvas.raised,
     overflow: 'hidden',
   },
   hookTextCol: {
@@ -1480,32 +1399,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 107, 53, 0.12)',
+    backgroundColor: colors.gold.tint,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 53, 0.25)',
+    borderColor: colors.gold.glow,
   },
   hookBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#FF6B35',
+    color: colors.gold.base,
     letterSpacing: 0.8,
   },
   hookMainTitle: {
     fontSize: 32,
-    fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     textAlign: 'center',
     letterSpacing: -0.9,
     lineHeight: 38,
     marginBottom: 12,
+    fontFamily: fonts.display,
   },
   hookSubTitle: {
     fontSize: 15,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 23,
     fontWeight: '400',
@@ -1519,12 +1438,12 @@ const styles = StyleSheet.create({
   primaryActionButton: {
     height: 56,
     borderRadius: 24,
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.gold.base,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    shadowColor: '#FF6B35',
+    shadowColor: colors.gold.base,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
@@ -1533,7 +1452,7 @@ const styles = StyleSheet.create({
   primaryActionButtonText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.canvas.base,
     letterSpacing: -0.2,
   },
   signInShortcutBtn: {
@@ -1543,7 +1462,7 @@ const styles = StyleSheet.create({
   signInShortcutText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
 
   // ─── Step 2: Home ───
@@ -1557,14 +1476,14 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     fontSize: 24,
-    fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     letterSpacing: -0.5,
     marginBottom: 6,
+    fontFamily: fonts.display,
   },
   stepSub: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     lineHeight: 20,
   },
   mapCardWrapper: {
@@ -1576,9 +1495,9 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 16 / 9.5,
     borderRadius: 22,
-    backgroundColor: '#0B0F19',
+    backgroundColor: colors.canvas.raised,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     overflow: 'hidden',
   },
   selectedHomePill: {
@@ -1588,35 +1507,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(15, 20, 32, 0.90)',
+    backgroundColor: colors.panel.base,
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
   },
   selectedHomePillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: colors.text.primary,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     marginBottom: 16,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#F8FAFC',
+    color: colors.text.primary,
   },
   popularSection: {
     marginBottom: 16,
@@ -1624,7 +1543,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#64748B',
+    color: colors.text.muted,
     letterSpacing: 0.8,
     marginBottom: 8,
   },
@@ -1637,16 +1556,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.glass.fill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
   },
   countryChipActive: {
-    backgroundColor: 'rgba(255, 107, 53, 0.15)',
-    borderColor: '#FF6B35',
+    backgroundColor: colors.gold.tint,
+    borderColor: colors.gold.base,
   },
   chipFlag: {
     fontSize: 15,
@@ -1654,10 +1573,10 @@ const styles = StyleSheet.create({
   chipName: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   chipNameActive: {
-    color: '#FF6B35',
+    color: colors.gold.base,
     fontWeight: '800',
   },
   countryListCol: {
@@ -1670,13 +1589,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
   },
   countryListItemActive: {
-    borderColor: '#10B981',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: colors.status.lived.color,
+    backgroundColor: colors.status.lived.light,
   },
   countryListLeft: {
     flexDirection: 'row',
@@ -1689,26 +1608,26 @@ const styles = StyleSheet.create({
   countryListName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#F8FAFC',
+    color: colors.text.primary,
   },
   countryListNameActive: {
-    color: '#10B981',
+    color: colors.status.lived.color,
   },
   countryListContinent: {
     fontSize: 11,
-    color: '#64748B',
+    color: colors.text.muted,
   },
   stickyFooterBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(7, 9, 14, 0.95)',
+    backgroundColor: colors.panel.raised,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 24 : 20,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    borderTopColor: colors.glass.fillStrong,
   },
 
   // ─── Step 3: Visited Grid ───
@@ -1725,7 +1644,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(46, 92, 255, 0.15)',
+    backgroundColor: colors.status.visited.light,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -1735,16 +1654,16 @@ const styles = StyleSheet.create({
   visitedStepBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#60A5FA',
+    color: colors.status.visited.bright,
     letterSpacing: 0.8,
   },
   visitedMapCard: {
     width: '100%',
     aspectRatio: 16 / 9.5,
     borderRadius: 22,
-    backgroundColor: '#0B0F19',
+    backgroundColor: colors.canvas.raised,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     overflow: 'hidden',
   },
   visitedStatsRow: {
@@ -1757,7 +1676,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -1765,17 +1684,17 @@ const styles = StyleSheet.create({
   statPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: colors.text.primary,
   },
   statPillHighlight: {
-    backgroundColor: 'rgba(255, 107, 53, 0.15)',
+    backgroundColor: colors.gold.tint,
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 53, 0.3)',
+    borderColor: colors.gold.glow,
   },
   statPillHighlightText: {
     fontSize: 11,
     fontWeight: '900',
-    color: '#FF6B35',
+    color: colors.gold.base,
   },
   filterSection: {
     paddingVertical: 4,
@@ -1785,19 +1704,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     marginBottom: 8,
   },
   searchInputCompact: {
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
-    color: '#F8FAFC',
+    color: colors.text.primary,
   },
   continentChipsRow: {
     gap: 6,
@@ -1807,18 +1726,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
   },
   continentChipActive: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.gold.base,
   },
   continentChipText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   continentChipTextActive: {
-    color: '#FFFFFF',
+    color: colors.canvas.base,
   },
   visitedGridContent: {
     paddingHorizontal: 20,
@@ -1834,7 +1753,7 @@ const styles = StyleSheet.create({
   gridSelectedCountHint: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#E5A93C',
+    color: colors.gold.base,
   },
   flagGrid: {
     flexDirection: 'row',
@@ -1845,30 +1764,30 @@ const styles = StyleSheet.create({
     width: (SCREEN_WIDTH - 50) / 2,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 8,
   },
   flagGridCardActive: {
-    borderColor: '#2E5CFF',
-    backgroundColor: 'rgba(46, 92, 255, 0.18)',
-    shadowColor: '#2E5CFF',
+    borderColor: colors.status.visited.color,
+    backgroundColor: colors.status.visited.border,
+    shadowColor: colors.status.visited.color,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 2,
   },
   flagGridCardHome: {
-    borderColor: '#10B981',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: colors.status.lived.color,
+    backgroundColor: colors.status.lived.light,
   },
   flagGridCardWishlist: {
-    borderColor: '#FF6B35',
-    backgroundColor: 'rgba(255, 107, 53, 0.15)',
+    borderColor: colors.gold.base,
+    backgroundColor: colors.gold.tint,
   },
   flagGridEmoji: {
     fontSize: 22,
@@ -1877,14 +1796,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontWeight: '700',
-    color: '#F8FAFC',
+    color: colors.text.primary,
   },
   flagGridTitleActive: {
-    color: '#60A5FA',
+    color: colors.gold.light,
     fontWeight: '800',
   },
   flagGridTitleWishlist: {
-    color: '#FF8A5B',
+    color: colors.gold.light,
     fontWeight: '800',
   },
   flagGridCheck: {
@@ -1907,37 +1826,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(226, 249, 82, 0.12)',
+    backgroundColor: colors.gold.tint,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(226, 249, 82, 0.25)',
+    borderColor: colors.gold.glow,
   },
   celebrationBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#E5A93C',
+    color: colors.gold.base,
     letterSpacing: 0.8,
   },
   payoffTitle: {
     fontSize: 26,
-    fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     textAlign: 'center',
     letterSpacing: -0.6,
+    fontFamily: fonts.display,
   },
   statHeroBox: {
     width: '100%',
-    backgroundColor: 'rgba(15, 20, 32, 0.90)',
+    backgroundColor: colors.panel.base,
     borderRadius: 30,
     paddingVertical: 28,
     paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.25,
@@ -1947,21 +1866,21 @@ const styles = StyleSheet.create({
   statHeroPercent: {
     fontSize: 64,
     fontWeight: '900',
-    color: '#E5A93C',
+    color: colors.gold.base,
     letterSpacing: -2,
     lineHeight: 68,
   },
   statHeroLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 1.2,
     marginTop: 4,
   },
   statDivider: {
     width: '100%',
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+    backgroundColor: colors.glass.hairline,
     marginVertical: 20,
   },
   statTrioRow: {
@@ -1975,21 +1894,21 @@ const styles = StyleSheet.create({
   statTrioNum: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
   },
   statTrioLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     letterSpacing: 0.8,
     marginTop: 2,
   },
   badgeUnlockCard: {
     width: '100%',
-    backgroundColor: 'rgba(124, 58, 237, 0.12)',
+    backgroundColor: colors.gold.tint,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(124, 58, 237, 0.25)',
+    borderColor: colors.gold.border,
     padding: 20,
     alignItems: 'center',
     marginBottom: 24,
@@ -2003,29 +1922,29 @@ const styles = StyleSheet.create({
   badgeUnlockSub: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#A78BFA',
+    color: colors.gold.light,
     letterSpacing: 1,
   },
   badgeMedalIcon: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(124, 58, 237, 0.20)',
+    backgroundColor: colors.gold.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(124, 58, 237, 0.35)',
+    borderColor: colors.gold.border,
   },
   badgeNameText: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     marginBottom: 6,
   },
   badgeDescText: {
     fontSize: 12,
-    color: '#C4B5FD',
+    color: colors.gold.light,
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 12,
@@ -2051,12 +1970,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
   },
   skipSmallText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
 
   // ─── Step 6: Save Passport ───
@@ -2067,7 +1986,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 107, 53, 0.12)',
+    backgroundColor: colors.gold.tint,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -2077,28 +1996,28 @@ const styles = StyleSheet.create({
   passportChipText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#FF6B35',
+    color: colors.gold.base,
   },
   savePassportTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     letterSpacing: -0.6,
     marginBottom: 6,
   },
   savePassportSub: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     lineHeight: 19,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 16,
     padding: 4,
     marginBottom: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
   },
   tabItem: {
     flex: 1,
@@ -2107,15 +2026,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tabItemActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: colors.glass.hairline,
   },
   tabText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#64748B',
+    color: colors.text.muted,
   },
   tabTextActive: {
-    color: '#F8FAFC',
+    color: colors.text.primary,
     fontWeight: '800',
   },
   formCol: {
@@ -2125,31 +2044,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 18,
     paddingHorizontal: 16,
     height: 54,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   inputBoxFocused: {
-    borderColor: '#FF6B35',
-    backgroundColor: 'rgba(20, 26, 40, 0.95)',
+    borderColor: colors.gold.base,
+    backgroundColor: colors.panel.raised,
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: 14,
-    color: '#F8FAFC',
+    color: colors.text.primary,
     fontWeight: '600',
     paddingVertical: 0,
   },
   strengthCard: {
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    backgroundColor: colors.panel.base,
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     gap: 8,
   },
   strengthHeaderRow: {
@@ -2159,7 +2078,7 @@ const styles = StyleSheet.create({
   },
   strengthTitle: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '600',
   },
   strengthBarRow: {
@@ -2185,11 +2104,11 @@ const styles = StyleSheet.create({
   },
   criteriaText: {
     fontSize: 11,
-    color: '#64748B',
+    color: colors.text.muted,
     fontWeight: '600',
   },
   criteriaTextMet: {
-    color: '#F8FAFC',
+    color: colors.text.primary,
     fontWeight: '700',
   },
   dividerRow: {
@@ -2201,12 +2120,12 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+    backgroundColor: colors.glass.hairline,
   },
   dividerText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#64748B',
+    color: colors.text.muted,
     letterSpacing: 0.5,
   },
   socialCol: {
@@ -2221,22 +2140,39 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   appleBtn: {
-    backgroundColor: '#131B2E',
+    backgroundColor: colors.canvas.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.glass.fillActive,
   },
   appleBtnText: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontSize: 15,
     fontWeight: '700',
   },
   googleBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
+  },
+  guestBtn: {
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestBtnText: {
+    color: colors.gold.light,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  guestHint: {
+    color: colors.text.muted,
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: 'center',
+    paddingHorizontal: 12,
   },
   googleBtnText: {
-    color: '#F8FAFC',
+    color: colors.text.primary,
     fontSize: 15,
     fontWeight: '700',
   },
@@ -2250,12 +2186,12 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255, 107, 53, 0.12)',
+    backgroundColor: colors.gold.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 107, 53, 0.3)',
+    borderColor: colors.gold.glow,
   },
   otpBoxesRow: {
     flexDirection: 'row',
@@ -2268,21 +2204,21 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    backgroundColor: 'rgba(15, 20, 32, 0.85)',
+    borderColor: colors.glass.hairline,
+    backgroundColor: colors.panel.base,
     justifyContent: 'center',
     alignItems: 'center',
   },
   otpBoxFilled: {
-    borderColor: '#E5A93C',
-    backgroundColor: 'rgba(20, 26, 40, 0.95)',
+    borderColor: colors.gold.base,
+    backgroundColor: colors.panel.raised,
   },
   otpInput: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: colors.text.primary,
     textAlign: 'center',
     width: '100%',
     height: '100%',
   },
-});
+}));

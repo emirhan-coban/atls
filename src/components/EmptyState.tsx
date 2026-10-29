@@ -1,8 +1,10 @@
+import { fonts } from '../theme/typography';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { View, Text, StyleSheet } from 'react-native';
 import { Compass, Sparkles, Plus, Plane, MapPin } from 'lucide-react-native';
 import { theme } from '../theme';
+import Button from './ui/Button';
 
 interface EmptyStateProps {
   type?: 'passport' | 'wishlist' | 'search' | 'stamps';
@@ -19,22 +21,19 @@ export default function EmptyState({
   actionLabel,
   onAction,
 }: EmptyStateProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const getIcon = () => {
     switch (type) {
       case 'wishlist':
-        return <Sparkles size={32} color="#F59E0B" />;
+        return <Sparkles size={32} color={colors.gold.base} />;
       case 'search':
-        return <Compass size={32} color="#6366F1" />;
+        return <Compass size={32} color={colors.gold.base} />;
       case 'stamps':
-        return <MapPin size={32} color="#10B981" />;
+        return <MapPin size={32} color={colors.status.lived.color} />;
       default:
-        return <Plane size={32} color="#4F46E5" />;
+        return <Plane size={32} color={colors.gold.base} />;
     }
-  };
-
-  const handleAction = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (onAction) onAction();
   };
 
   return (
@@ -44,20 +43,18 @@ export default function EmptyState({
       <Text style={styles.description}>{description}</Text>
 
       {actionLabel && onAction && (
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={handleAction}
-          activeOpacity={0.8}
-        >
-          <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-          <Text style={styles.actionBtnText}>{actionLabel}</Text>
-        </TouchableOpacity>
+        <Button
+          label={actionLabel}
+          onPress={onAction}
+          size="md"
+          icon={(color) => <Plus size={16} color={color} strokeWidth={2.5} />}
+        />
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -68,45 +65,26 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.glass.fill,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
   },
   title: {
     fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.black,
-    color: '#F8FAFC',
+    color: colors.text.primary,
     marginBottom: 6,
     textAlign: 'center',
+    fontFamily: fonts.display,
   },
   description: {
     fontSize: theme.typography.fontSize.xs,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 18,
     maxWidth: 280,
     marginBottom: 20,
   },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FF6B35',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: theme.borderRadius.full,
-    shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  actionBtnText: {
-    color: '#FFFFFF',
-    fontWeight: theme.typography.fontWeight.bold,
-    fontSize: theme.typography.fontSize.sm,
-  },
-});
+}));

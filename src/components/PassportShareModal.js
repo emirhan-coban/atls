@@ -1,3 +1,4 @@
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useRef, useState } from 'react';
 import {
   View,
@@ -16,21 +17,17 @@ import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { 
-  X, 
-  Share2, 
+  X,
   ShieldCheck, 
   MapPin, 
   QrCode,
   Plane,
-  Sparkles,
-  Download,
   Image as ImageIcon,
 } from 'lucide-react-native';
 import Svg, { G, Path } from 'react-native-svg';
 import GlowSphere from './GlowSphere';
 import OrbitalRings from './OrbitalRings';
 import { worldViewBox, worldMapFeatures } from '../data/worldMapPaths';
-import { getLocalizedCountryName, availableCatalog } from '../data/travelData';
 import { getDynamicLocation } from '../utils/locationHelper';
 
 const { width } = Dimensions.get('window');
@@ -44,6 +41,8 @@ export default function PassportShareModal({
   t,
   currentLang,
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const cardRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [shareFormat, setShareFormat] = useState('card'); // 'card' | 'story'
@@ -62,10 +61,10 @@ export default function PassportShareModal({
 
   const getFill = (id) => {
     const s = statusMap[id];
-    if (s === 'lived') return '#10B981'; // Emerald
-    if (s === 'visited') return '#3B82F6'; // Electric Sapphire
-    if (s === 'want') return '#FF6B35'; // Solar Orange
-    return '#182235'; // Base Obsidian Landmass
+    if (s === 'lived') return colors.status.lived.color; // Emerald
+    if (s === 'visited') return colors.status.visited.color; // Electric Sapphire
+    if (s === 'want') return colors.gold.base; // Solar Orange
+    return colors.canvas.elevated; // Base Obsidian Landmass
   };
 
   // High-res 4:3 Photo Capture & Native Image Share
@@ -141,7 +140,7 @@ export default function PassportShareModal({
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-              <X size={18} color="#64748B" />
+              <X size={18} color={colors.text.muted} />
             </TouchableOpacity>
           </View>
 
@@ -188,7 +187,7 @@ export default function PassportShareModal({
               {/* Background Celestial Glowing Sphere & Orbital Lines */}
               <GlowSphere
                 size={220}
-                colors={['#FF6B35', '#2E5CFF']}
+                colors={[colors.gold.base, colors.status.visited.color]}
                 opacity={0.3}
                 style={{ position: 'absolute', top: -30, right: -30 }}
               />
@@ -205,7 +204,7 @@ export default function PassportShareModal({
                 </View>
 
                 <View style={styles.passportBadge}>
-                  <ShieldCheck size={11} color="#E5A93C" />
+                  <ShieldCheck size={11} color={colors.gold.base} />
                   <Text style={styles.passportBadgeText}>
                     {currentLang === 'tr' ? 'BİYOMETRİK PASAPORT' : 'BIOMETRIC PASSPORT'}
                   </Text>
@@ -216,7 +215,7 @@ export default function PassportShareModal({
               <View style={styles.profileSection}>
                 <View style={styles.avatarBox}>
                   <LinearGradient
-                    colors={['#3B82F6', '#1E40AF']}
+                    colors={[colors.status.visited.color, '#1E40AF']}
                     style={styles.avatarGradient}
                   >
                     <Text style={styles.avatarText}>{profile?.avatarInitials || 'TR'}</Text>
@@ -230,7 +229,7 @@ export default function PassportShareModal({
                     {locationInfo.flag ? (
                       <Text style={styles.locationFlag}>{locationInfo.flag}</Text>
                     ) : (
-                      <MapPin size={10} color="#FF6B35" />
+                      <MapPin size={10} color={colors.gold.base} />
                     )}
                     <Text style={styles.locationText}>
                       {locationInfo.text}
@@ -254,7 +253,7 @@ export default function PassportShareModal({
                 </Svg>
 
                 <View style={styles.mapPill}>
-                  <Plane size={9} color="#60A5FA" style={{ transform: [{ rotate: '45deg' }] }} />
+                  <Plane size={9} color={colors.status.visited.bright} style={{ transform: [{ rotate: '45deg' }] }} />
                   <Text style={styles.mapPillText}>
                     {currentLang === 'tr' ? `%${earthPercent} DÜNYA KEŞFİ` : `%${earthPercent} EXPLORED`}
                   </Text>
@@ -264,7 +263,7 @@ export default function PassportShareModal({
               {/* Stats Bar */}
               <View style={styles.statsGrid}>
                 <View style={styles.statItem}>
-                  <Text style={[styles.statNum, { color: '#60A5FA' }]}>
+                  <Text style={[styles.statNum, { color: colors.status.visited.bright }]}>
                     {visitedCount < 10 ? `0${visitedCount}` : visitedCount}
                   </Text>
                   <Text style={styles.statLabel}>{t?.visited || 'Gezilen'}</Text>
@@ -273,7 +272,7 @@ export default function PassportShareModal({
                 <View style={styles.statDivider} />
 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statNum, { color: '#34D399' }]}>
+                  <Text style={[styles.statNum, { color: colors.status.lived.bright }]}>
                     {livedCount < 10 ? `0${livedCount}` : livedCount}
                   </Text>
                   <Text style={styles.statLabel}>{t?.livedIn || 'Yaşanan'}</Text>
@@ -282,7 +281,7 @@ export default function PassportShareModal({
                 <View style={styles.statDivider} />
 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statNum, { color: '#FF8A5B' }]}>
+                  <Text style={[styles.statNum, { color: colors.gold.light }]}>
                     {wantCount < 10 ? `0${wantCount}` : wantCount}
                   </Text>
                   <Text style={styles.statLabel}>{t?.wishlist || 'Hedef'}</Text>
@@ -300,7 +299,7 @@ export default function PassportShareModal({
                   </Text>
                 </View>
                 <View style={styles.qrContainer}>
-                  <QrCode size={22} color="#090B0E" />
+                  <QrCode size={22} color={colors.canvas.base} />
                 </View>
               </View>
             </View>
@@ -316,14 +315,14 @@ export default function PassportShareModal({
             >
               {isCapturing ? (
                 <>
-                  <ActivityIndicator color="#090B0E" size="small" />
+                  <ActivityIndicator color={colors.canvas.base} size="small" />
                   <Text style={styles.primaryActionBtnText}>
                     {currentLang === 'tr' ? 'Fotoğraf Hazırlanıyor...' : 'Generating Photo...'}
                   </Text>
                 </>
               ) : (
                 <>
-                  <ImageIcon size={18} color="#090B0E" />
+                  <ImageIcon size={18} color={colors.canvas.base} />
                   <Text style={styles.primaryActionBtnText}>
                     {currentLang === 'tr' ? 'Fotoğraf Olarak Paylaş / Kaydet' : 'Share / Save Photo'}
                   </Text>
@@ -337,30 +336,30 @@ export default function PassportShareModal({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
   },
   modalContent: {
-    backgroundColor: '#0D111A',
+    backgroundColor: colors.canvas.raised,
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingTop: 12,
     paddingHorizontal: 20,
     paddingBottom: Platform.OS === 'ios' ? 36 : 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     maxHeight: '94%',
   },
   handleBar: {
     width: 44,
     height: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: colors.glass.borderStrong,
     borderRadius: 2.5,
     alignSelf: 'center',
     marginBottom: 14,
@@ -374,12 +373,12 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.5,
   },
   sheetSubtitle: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     marginTop: 2,
     fontWeight: '500',
   },
@@ -387,7 +386,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -400,11 +399,11 @@ const styles = StyleSheet.create({
   photoCard: {
     width: CARD_WIDTH,
     aspectRatio: 3 / 4,
-    backgroundColor: '#090B0E',
+    backgroundColor: colors.canvas.base,
     borderRadius: 24,
     padding: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.glass.fillActive,
     justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
@@ -420,14 +419,14 @@ const styles = StyleSheet.create({
   },
   formatToggleContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderRadius: 14,
     padding: 3,
     marginBottom: 14,
     width: CARD_WIDTH,
     alignSelf: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
   },
   formatToggleBtn: {
     flex: 1,
@@ -436,15 +435,15 @@ const styles = StyleSheet.create({
     borderRadius: 11,
   },
   formatToggleBtnActive: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.gold.base,
   },
   formatToggleText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
   },
   formatToggleTextActive: {
-    color: '#090B0E',
+    color: colors.canvas.base,
     fontWeight: '900',
   },
   cardHeader: {
@@ -459,21 +458,21 @@ const styles = StyleSheet.create({
   brandText: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.5,
   },
   brandDot: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#FF6B35',
+    color: colors.gold.base,
   },
   passportBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(226, 249, 82, 0.12)',
+    backgroundColor: colors.gold.tint,
     borderWidth: 1,
-    borderColor: 'rgba(226, 249, 82, 0.3)',
+    borderColor: colors.gold.glow,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -481,7 +480,7 @@ const styles = StyleSheet.create({
   passportBadgeText: {
     fontSize: 8,
     fontWeight: '800',
-    color: '#E5A93C',
+    color: colors.gold.base,
     letterSpacing: 0.5,
   },
   profileSection: {
@@ -504,7 +503,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 16,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   profileTextCol: {
     flex: 1,
@@ -512,12 +511,12 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: colors.text.primary,
     letterSpacing: -0.3,
   },
   userHandle: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: '600',
   },
   locationRow: {
@@ -532,17 +531,17 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 9.5,
-    color: '#FF6B35',
+    color: colors.gold.base,
     fontWeight: '700',
   },
   mapBox: {
     width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: '#090B0E',
+    backgroundColor: colors.canvas.base,
     borderRadius: 16,
     padding: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.glass.hairline,
     overflow: 'hidden',
     position: 'relative',
     marginVertical: 10,
@@ -558,9 +557,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(15, 20, 32, 0.9)',
+    backgroundColor: colors.panel.base,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 10,
@@ -568,16 +567,16 @@ const styles = StyleSheet.create({
   mapPillText: {
     fontSize: 8,
     fontWeight: '800',
-    color: '#60A5FA',
+    color: colors.gold.light,
     letterSpacing: 0.4,
   },
   statsGrid: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: 14,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     marginBottom: 8,
   },
   statItem: {
@@ -591,13 +590,13 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 8.5,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     marginTop: 1,
   },
   statDivider: {
     width: 1,
     height: '60%',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     alignSelf: 'center',
   },
   cardFooter: {
@@ -605,7 +604,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    borderTopColor: colors.glass.fillStrong,
     paddingTop: 8,
   },
   footerLeft: {
@@ -614,32 +613,32 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: 9.5,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   passportIdText: {
     fontSize: 8,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    color: '#94A3B8',
+    color: colors.text.secondary,
     marginTop: 2,
     letterSpacing: 0.4,
   },
   qrContainer: {
     padding: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.text.primary,
     borderRadius: 8,
   },
   actionsContainer: {
     marginTop: 14,
   },
   primaryActionBtn: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.gold.base,
     borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 16,
-    shadowColor: '#FF6B35',
+    shadowColor: colors.gold.base,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
@@ -648,6 +647,6 @@ const styles = StyleSheet.create({
   primaryActionBtnText: {
     fontSize: 14,
     fontWeight: '900',
-    color: '#090B0E',
+    color: colors.canvas.base,
   },
-});
+}));

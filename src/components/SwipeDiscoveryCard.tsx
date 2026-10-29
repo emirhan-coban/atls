@@ -1,3 +1,4 @@
+import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useState, useRef } from 'react';
 import {
   View,
@@ -34,6 +35,8 @@ export default function SwipeDiscoveryCard({
   onAddToWishlist,
   t,
 }: SwipeDiscoveryCardProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   // Filter out countries user has already marked
   const markedIds = new Set(existingCountries.map((c) => c.id.toUpperCase()));
   const unvisitedCountries = availableCatalog.filter((c) => !markedIds.has(c.id.toUpperCase()));
@@ -123,7 +126,7 @@ export default function SwipeDiscoveryCard({
     return (
       <View style={styles.allDoneCard}>
         <View style={styles.allDoneIcon}>
-          <Compass size={32} color="#6366F1" />
+          <Compass size={32} color={colors.gold.base} />
         </View>
         <Text style={styles.allDoneTitle}>
           {t?.allCaughtUp || (currentLang === 'tr' ? 'Tüm önerileri inceledin!' : 'All caught up!')}
@@ -136,7 +139,7 @@ export default function SwipeDiscoveryCard({
             setCurrentIndex(0);
           }}
         >
-          <RefreshCw size={16} color="#4F46E5" />
+          <RefreshCw size={16} color={colors.gold.base} />
           <Text style={styles.shuffleBtnText}>
             {t?.shuffleDeck || (currentLang === 'tr' ? 'Yeniden Keşfet' : 'Discover Again')}
           </Text>
@@ -168,7 +171,7 @@ export default function SwipeDiscoveryCard({
         {/* Background Celestial Aura & Orbital Lines */}
         <GlowSphere
           size={240}
-          colors={['#FF6B35', '#2E5CFF']}
+          colors={[colors.gold.base, colors.status.visited.color]}
           opacity={0.24}
           style={{ position: 'absolute', top: -40, right: -40 }}
         />
@@ -193,7 +196,7 @@ export default function SwipeDiscoveryCard({
         {/* Card Header & Flag */}
         <View style={styles.topRow}>
           <View style={styles.continentPill}>
-            <Sparkles size={12} color="#60A5FA" />
+            <Sparkles size={12} color={colors.gold.light} />
             <Text style={styles.continentPillText}>{continentName}</Text>
           </View>
           <Text style={styles.flagEmoji}>{currentCountry.flag}</Text>
@@ -232,7 +235,7 @@ export default function SwipeDiscoveryCard({
           accessibilityLabel={t?.skipCountry || 'Skip Country'}
           style={[styles.actionBtn, styles.skipBtn]}
         >
-          <ArrowRight size={20} color="#94A3B8" style={{ transform: [{ rotate: '180deg' }] }} />
+          <ArrowRight size={20} color={colors.text.secondary} style={{ transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -243,10 +246,10 @@ export default function SwipeDiscoveryCard({
           style={[styles.actionBtn, styles.heartBtn]}
         >
           <LinearGradient
-            colors={['#FF6B35', '#FF8A5B']}
+            colors={[colors.gold.base, colors.gold.light]}
             style={styles.heartGradient}
           >
-            <Heart size={24} color="#090B0E" fill="#090B0E" />
+            <Heart size={24} color={colors.canvas.base} fill={colors.canvas.base} />
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -254,18 +257,18 @@ export default function SwipeDiscoveryCard({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
     alignItems: 'center',
     marginVertical: theme.spacing.md,
   },
   card: {
     width: SCREEN_WIDTH - theme.spacing.lg * 2,
-    backgroundColor: 'rgba(15, 20, 32, 0.88)',
+    backgroundColor: colors.panel.base,
     borderRadius: theme.borderRadius['2xl'],
     padding: theme.spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.45,
@@ -285,24 +288,24 @@ const styles = StyleSheet.create({
   },
   likeStamp: {
     left: 20,
-    borderColor: '#10B981',
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: colors.status.lived.color,
+    backgroundColor: colors.status.lived.border,
     transform: [{ rotate: '-12deg' }],
   },
   likeStampText: {
-    color: '#34D399',
+    color: colors.status.lived.bright,
     fontSize: 15,
     fontWeight: '900',
     letterSpacing: 1,
   },
   skipStamp: {
     right: 20,
-    borderColor: '#FF6B35',
-    backgroundColor: 'rgba(255, 107, 53, 0.2)',
+    borderColor: colors.gold.base,
+    backgroundColor: colors.gold.glow,
     transform: [{ rotate: '12deg' }],
   },
   skipStampText: {
-    color: '#FF8A5B',
+    color: colors.gold.light,
     fontSize: 15,
     fontWeight: '900',
     letterSpacing: 1,
@@ -317,9 +320,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(59, 130, 246, 0.14)',
+    backgroundColor: colors.status.visited.light,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.35)',
+    borderColor: colors.status.visited.border,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: theme.borderRadius.full,
@@ -327,7 +330,7 @@ const styles = StyleSheet.create({
   continentPillText: {
     fontSize: theme.typography.fontSize.xs,
     fontWeight: theme.typography.fontWeight.bold,
-    color: '#60A5FA',
+    color: colors.gold.light,
     textTransform: 'uppercase',
   },
   flagEmoji: {
@@ -339,35 +342,35 @@ const styles = StyleSheet.create({
   countryName: {
     fontSize: theme.typography.fontSize['2xl'],
     fontWeight: theme.typography.fontWeight.black,
-    color: '#FFFFFF',
+    color: colors.text.primary,
     marginBottom: theme.spacing.sm,
   },
   triviaContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: colors.glass.fill,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.glass.fillStrong,
     borderLeftWidth: 3,
-    borderLeftColor: '#E5A93C',
+    borderLeftColor: colors.gold.base,
   },
   triviaLabel: {
     fontSize: theme.typography.fontSize.xxs,
     fontWeight: theme.typography.fontWeight.extrabold,
-    color: '#E5A93C',
+    color: colors.gold.base,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 4,
   },
   triviaText: {
     fontSize: theme.typography.fontSize.sm,
-    color: '#E2E8F0',
+    color: colors.text.soft,
     lineHeight: 20,
   },
   swipeHint: {
     textAlign: 'center',
     fontSize: theme.typography.fontSize.xs,
-    color: '#64748B',
+    color: colors.text.muted,
     marginTop: theme.spacing.md,
     fontWeight: theme.typography.fontWeight.medium,
   },
@@ -391,13 +394,13 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   skipBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: colors.glass.borderSoft,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
   },
   heartBtn: {
     overflow: 'hidden',
-    shadowColor: '#FF6B35',
+    shadowColor: colors.gold.base,
     shadowOpacity: 0.4,
   },
   heartGradient: {
@@ -408,29 +411,29 @@ const styles = StyleSheet.create({
   },
   allDoneCard: {
     width: SCREEN_WIDTH - theme.spacing.lg * 2,
-    backgroundColor: 'rgba(15, 20, 32, 0.88)',
+    backgroundColor: colors.panel.base,
     borderRadius: theme.borderRadius['2xl'],
     padding: theme.spacing['2xl'],
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     marginVertical: theme.spacing.md,
   },
   allDoneIcon: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: colors.status.visited.light,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: colors.status.visited.border,
   },
   allDoneTitle: {
     fontSize: theme.typography.fontSize.base,
     fontWeight: theme.typography.fontWeight.bold,
-    color: '#FFFFFF',
+    color: colors.text.primary,
     marginBottom: theme.spacing.lg,
     textAlign: 'center',
   },
@@ -438,14 +441,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FF6B35',
+    backgroundColor: colors.gold.base,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: theme.borderRadius.full,
   },
   shuffleBtnText: {
-    color: '#090B0E',
+    color: colors.canvas.base,
     fontWeight: theme.typography.fontWeight.black,
     fontSize: theme.typography.fontSize.sm,
   },
-});
+}));

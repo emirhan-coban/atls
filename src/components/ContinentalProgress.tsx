@@ -1,3 +1,4 @@
+import { makeStyles } from '../theme/ThemeContext';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { availableCatalog } from '../data/travelData';
@@ -19,6 +20,7 @@ interface ContinentSummary {
 }
 
 export default function ContinentalProgress({ countries, currentLang }: ContinentalProgressProps) {
+  const styles = useStyles();
   const visited = countries.filter((c) => c.status === 'visited' || c.status === 'lived');
 
   const continentConfigs = [
@@ -133,13 +135,13 @@ export default function ContinentalProgress({ countries, currentLang }: Continen
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(15, 20, 32, 0.88)',
+    backgroundColor: colors.panel.base,
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.glass.hairline,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
@@ -168,11 +170,11 @@ const styles = StyleSheet.create({
   nameText: {
     fontSize: theme.typography.fontSize.sm,
     fontWeight: theme.typography.fontWeight.bold,
-    color: '#FFFFFF',
+    color: colors.text.primary,
   },
   countText: {
     fontSize: theme.typography.fontSize.xs,
-    color: '#94A3B8',
+    color: colors.text.secondary,
     fontWeight: theme.typography.fontWeight.medium,
   },
   percentageText: {
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
   },
   barTrack: {
     height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.glass.fillStrong,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -188,4 +190,4 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
-});
+}));

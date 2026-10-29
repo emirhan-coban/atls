@@ -90,12 +90,7 @@ export const translations = {
     emptyPassportBtn: "Stamp Your First Country",
     emptyMapHint: "Your world map is waiting for your first stamp!",
     noStampsYet: "No border stamps recorded yet.",
-    editProfile: "Edit Profile",
-    homeCityLabel: "HOME CITY / RESIDENCE",
-    homeCityPlaceholder: "e.g. Brooklyn, New York",
     autoCityHint: "Leave empty to determine automatically from marked countries.",
-    resetToAuto: "Reset to Automatic",
-    saveChanges: "Save Changes",
 
     // Modal Add Country
     markCountry: "Mark Country",
@@ -317,12 +312,7 @@ export const translations = {
     emptyPassportBtn: "İlk Ülkeni Mühürle",
     emptyMapHint: "Dünya haritan ilk mührünü bekliyor!",
     noStampsYet: "Henüz kayıtlı sınır damgası bulunmuyor.",
-    editProfile: "Profili Düzenle",
-    homeCityLabel: "YAŞADIĞIN ŞEHİR / MEMLEKET",
-    homeCityPlaceholder: "Örn: Kadıköy, İstanbul",
     autoCityHint: "Boş bırakırsan seyahatlerine göre otomatik belirlenir.",
-    resetToAuto: "Otomatik Konuma Dön",
-    saveChanges: "Değişiklikleri Kaydet",
 
     // Modal Add Country
     markCountry: "Ülke İşaretle",
