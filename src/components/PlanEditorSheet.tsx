@@ -245,7 +245,7 @@ const useStyles = makeStyles((colors) =>
   StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
     headerText: { flex: 1 },
-    title: { fontSize: 24, color: colors.text.primary, fontFamily: fonts.display },
+    title: { fontSize: 30, color: colors.text.primary, fontFamily: fonts.display },
     subtitle: { fontSize: 13, fontWeight: '600', color: colors.text.secondary, marginTop: 2 },
     closeBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glass.fillStrong },
     section: { marginBottom: 18 },

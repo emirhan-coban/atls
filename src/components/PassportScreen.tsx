@@ -33,7 +33,6 @@ import {
   ShieldAlert,
   X,
   ChevronRight,
-  Palette,
   Cloud,
   Download,
   CalendarClock,
@@ -716,41 +715,6 @@ function PassportScreen({
             </View>
           </View>
 
-          {/* PASSPORT THEME PICKER */}
-          <View style={styles.themePickerSection}>
-            <View style={styles.themePickerHeader}>
-              <Palette size={14} color={colors.gold.base} />
-              <Text style={styles.themePickerTitle}>
-                {currentLang === 'tr' ? 'PASAPORT TEMASI' : 'PASSPORT THEME'}
-              </Text>
-            </View>
-            <View style={styles.themePickerRow}>
-              {(Object.keys(PASSPORT_THEMES)).map((themeKey) => {
-                const tObj = PASSPORT_THEMES[themeKey as PassportThemeKey];
-                const isSelected = (profile?.passportTheme || 'classic_navy') === themeKey;
-                return (
-                  <TouchableOpacity
-                    key={themeKey}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      onUpdateProfile({ passportTheme: themeKey });
-                    }}
-                    activeOpacity={0.8}
-                    style={[
-                      styles.themeChip,
-                      { backgroundColor: tObj.gradient[0] },
-                      isSelected && styles.themeChipActive,
-                    ]}
-                  >
-                    <Text style={[styles.themeChipText, { color: tObj.textColor }]}>
-                      {currentLang === 'tr' ? tObj.nameTr : tObj.nameEn}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
           {/* APPEARANCE (system / light / dark) */}
           <View style={styles.themePickerSection}>
             <View style={styles.themePickerHeader}>
@@ -1168,7 +1132,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'center',
   },
   profileName: {
-    fontSize: 22,
+    fontSize: 28,
     color: colors.text.primary,
     letterSpacing: -0.5,
     fontFamily: fonts.display,

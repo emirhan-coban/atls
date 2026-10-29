@@ -435,7 +435,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: 25,
     color: colors.text.primary,
     letterSpacing: -0.5,
     fontFamily: fonts.display,

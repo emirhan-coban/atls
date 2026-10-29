@@ -1333,13 +1333,13 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'baseline',
   },
   logoText: {
-    fontSize: 24,
+    fontSize: 30,
     color: colors.text.primary,
     letterSpacing: -0.8,
     fontFamily: fonts.displayHeavy,
   },
   logoDot: {
-    fontSize: 24,
+    fontSize: 30,
     color: colors.gold.base,
     fontFamily: fonts.displayHeavy,
   },
@@ -1424,11 +1424,11 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     letterSpacing: 0.8,
   },
   hookMainTitle: {
-    fontSize: 32,
+    fontSize: 40,
     color: colors.text.primary,
     textAlign: 'center',
     letterSpacing: -0.9,
-    lineHeight: 38,
+    lineHeight: 48,
     marginBottom: 12,
     fontFamily: fonts.display,
   },
@@ -1485,7 +1485,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 16,
   },
   stepTitle: {
-    fontSize: 24,
+    fontSize: 30,
     color: colors.text.primary,
     letterSpacing: -0.5,
     marginBottom: 6,
@@ -1851,7 +1851,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     letterSpacing: 0.8,
   },
   payoffTitle: {
-    fontSize: 26,
+    fontSize: 32,
     color: colors.text.primary,
     textAlign: 'center',
     letterSpacing: -0.6,

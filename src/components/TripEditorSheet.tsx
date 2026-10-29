@@ -359,7 +359,7 @@ const useStyles = makeStyles((colors) =>
     },
     headerText: { flex: 1 },
     title: {
-      fontSize: 24,
+      fontSize: 30,
       color: colors.text.primary,
       fontFamily: fonts.display,
     },
