@@ -399,3 +399,21 @@ Süreler tek geliştirici için kaba tahmindir (S ≈ 1–2 gün, M ≈ 3–5 g�
 - **"Geçen yıl bugün" bildirimi:** Gezilerde yalnızca yıl/ay saklanıyor, gün yok, bu yüzden doğru günde tetiklenemez.
 - **Planların buluta senkronu:** Planlar şimdilik yalnızca cihazda (fotoğraflar gibi). Telefon değişirse planlar ve hazırlık listeleri kaybolur. Bunun için `planned_trips` tablosu ve outbox işlemleri gerekir.
 
+
+### Faz 6 ve kalan işler (kapsam: Pro, sosyal ve Android hariç, kararlar §9)
+
+| Madde | Durum |
+|---|---|
+| Yılı bilinmeyen geziler | Onboarding'de eklenen ülkeler artık "bu yıl" yazılmıyor. Yılsız gezi (`year: ''`) olarak tutuluyor, zaman çizelgesinde "Yıl bilinmiyor" başlığı altında. Yıl grafiği, ilk/son gezi ve "yeni ülke" sayımı yalnızca tarihli gezilerden hesaplanıyor; yılı bilinmeyen bir gezisi olan ülke sonradan tarihli bir geziyle "yeni ülke" sayılmıyor. `enrichCountry` ve `countryToRow` artık yıl uydurmuyor. **Önceden onboarding'den eklenmiş ülkelerin yılı kayıtlı kaldı, otomatik düzelmez.** |
+| Planların buluta senkronu | `planned_trips` tablosu (`schema.sql` §11), outbox işlemleri (`plan-upsert`, `plan-remove`), `updatedAt` ile birleştirme. Bildirim kimlikleri cihaza özel olduğundan senkronlanmaz; yeni cihazda plan gelince hatırlatıcılar izin varsa yeniden kurulur (`restoreReminders`). Tablo yoksa planlar cihazda kalır. Fotoğraflar hâlâ yalnızca cihazda. |
+| Keşfet koleksiyonları | Tüm Ülkeler listesinde hazır koleksiyonlar (Vizesiz Avrupa/Asya/Amerika, Kolay giriş + gitmediklerim, Gitmediğim Schengen) ve "Gitmediklerim" filtresi. Koleksiyonlar yalnızca filtreleri ayarlar, sonradan elle değiştirilebilir. |
+| Expo Router | `expo-router` kuruldu, giriş `expo-router/entry`, `src/app/_layout.tsx` ve `src/app/index.tsx` (mevcut uygulamayı render eder). **Ülke/gezi/planlayıcı hâlâ modal; gerçek rotalara bölünmedi.** |
+| `ios/` → CNG | `ios/` git'ten çıkarıldı, `.gitignore`'a eklendi. `expo prebuild --clean` ile yeniden üretilen proje derlendi (bkz. doğrulama). |
+
+**Bilerek yapılmayanlar (nedenleriyle):**
+- **Pro abonelik, genel profil/arkadaşlar:** karar §9 (şimdilik yok).
+- **Dil ekleme (DE/ES/FR):** hedef kitle önce Türkiye, çeviri kalitesi doğrulanmadan eklenmedi.
+- **Claude API ile öneri, fotoğraflardan gezi önerisi:** sunucu tarafı anahtar yönetimi ve fotoğraf konumu için ek izin/native modül gerektirir.
+- **iOS widget'ları, belge kasası:** ayrı native hedef / yerel kimlik doğrulama modülü, kararsız veri saklama kuralları (Faz 5 notları).
+- **Sentry, analitik:** hesap/DSN senin tarafından açılmalı.
+- **Kalan `.js` dosyalarının TypeScript'e taşınması, rotalara bölme:** büyük davranış riski, ayrı iş olarak bırakıldı.

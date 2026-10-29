@@ -25,6 +25,8 @@ cd /Users/emirhan/Desktop/codebase/atls
 npx expo run:ios
 ```
 
+> `ios/` klasörü git'te tutulmaz (Continuous Native Generation). `app.json` ve config plugin'leri tek kaynaktır; klasör `npx expo run:ios` veya `npx expo prebuild --platform ios --clean` ile üretilir. Yerelde `pod install` için `LANG=en_US.UTF-8` gerekebilir.
+
 ---
 
 ### 3. Apple App Store'a Göndermek İçin (EAS Build):
