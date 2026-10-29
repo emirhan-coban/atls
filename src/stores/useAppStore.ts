@@ -7,13 +7,19 @@ import { useProfileStore } from './useProfileStore';
 import { useTripStore } from './useTripStore';
 import { useProgressStore } from './useProgressStore';
 import { usePlanStore } from './usePlanStore';
+import { notificationService } from '../services/notificationService';
+import { refreshMemoryReminders } from '../services/memoryReminders';
 
 interface AppState {
   isLoaded: boolean;
   currentLang: AppLanguage;
   themePreference: ThemePreference;
   hasCompletedOnboarding: boolean;
+  /** "This month, N years ago" notifications. Off until the user turns it on. */
+  memoryReminders: boolean;
   activeTab: ActiveTab;
+  /** Country whose detail sheet is open; also set by the atls://country/XX deep link. */
+  selectedCountryId: string | null;
   isAddModalOpen: boolean;
   isShareModalOpen: boolean;
 
@@ -21,8 +27,11 @@ interface AppState {
   initApp: () => Promise<void>;
   setLang: (lang: AppLanguage) => Promise<void>;
   setThemePreference: (theme: ThemePreference) => Promise<void>;
+  /** Turning on asks for notification permission; resolves to false when it was not granted. */
+  setMemoryReminders: (enabled: boolean) => Promise<boolean>;
   toggleLang: () => Promise<AppLanguage>;
   setActiveTab: (tab: ActiveTab) => void;
+  setSelectedCountryId: (id: string | null) => void;
   setIsAddModalOpen: (open: boolean) => void;
   setIsShareModalOpen: (open: boolean) => void;
   completeOnboarding: (payload?: any) => Promise<void>;
@@ -33,7 +42,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentLang: 'tr',
   themePreference: 'system',
   hasCompletedOnboarding: false,
+  memoryReminders: false,
   activeTab: 'home',
+  selectedCountryId: null,
   isAddModalOpen: false,
   isShareModalOpen: false,
 
@@ -58,11 +69,22 @@ export const useAppStore = create<AppState>((set, get) => ({
       useTripStore.getState().setTrips(data.trips || [], data.tripsSeeded || []);
       useProgressStore.getState().hydrate(data.progress);
       usePlanStore.getState().setPlans(data.plans || []);
+      const memoryEnabled = await storageService.getMemoryReminders();
+      set({ memoryReminders: memoryEnabled });
+      refreshMemoryReminders(memoryEnabled, (data.lang as AppLanguage) || 'tr').catch(() => {});
       usePlanStore.getState().restoreReminders((data.lang as AppLanguage) || 'tr').catch(() => {});
     } catch (error) {
       console.warn('[AppStore] initApp error:', error);
       set({ isLoaded: true });
     }
+  },
+
+  setMemoryReminders: async (enabled) => {
+    if (enabled && !(await notificationService.requestPermissions())) return false;
+    set({ memoryReminders: enabled });
+    await storageService.saveMemoryReminders(enabled);
+    await refreshMemoryReminders(enabled, get().currentLang);
+    return enabled;
   },
 
   setLang: async (lang) => {
@@ -85,6 +107,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setActiveTab: (tab) => {
     set({ activeTab: tab });
   },
+
+  setSelectedCountryId: (id) => set({ selectedCountryId: id }),
 
   setIsAddModalOpen: (open) => {
     set({ isAddModalOpen: open });
