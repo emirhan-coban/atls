@@ -22,6 +22,7 @@ import { BudgetItem, PlannedTrip } from '../stores/types';
 import { usePlanStore } from '../stores/usePlanStore';
 import { useTripStore } from '../stores/useTripStore';
 import { notificationService } from '../services/notificationService';
+import Heading from './ui/Heading';
 
 interface PlannerModalProps {
   visible: boolean;
@@ -346,7 +347,7 @@ export default function PlannerModal({ visible, onClose, currentLang }: PlannerM
               <ChevronLeft size={20} color={colors.text.primary} />
             </TouchableOpacity>
           ) : null}
-          <Text style={styles.title}>{lt('title', currentLang)}</Text>
+          <Heading style={styles.title}>{lt('title', currentLang)}</Heading>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close">
             <X size={18} color={colors.text.muted} />
           </TouchableOpacity>
@@ -373,7 +374,7 @@ const useStyles = makeStyles((colors) =>
     screen: { flex: 1, backgroundColor: colors.canvas.base },
     header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 12 },
     backBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glass.fillStrong },
-    title: { flex: 1, fontSize: 26, color: colors.text.primary, fontFamily: fonts.display },
+    title: { flex: 1, fontSize: 32, color: colors.text.primary, fontFamily: fonts.display },
     closeBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glass.fillStrong },
     content: { paddingHorizontal: 20, paddingBottom: 40, gap: 14 },
     addBtn: { alignSelf: 'flex-start' },
@@ -391,7 +392,7 @@ const useStyles = makeStyles((colors) =>
     countdown: { fontSize: 13, fontWeight: '800', color: colors.gold.base },
     detailHero: { alignItems: 'center', gap: 4, paddingVertical: 8 },
     heroFlag: { fontSize: 56 },
-    heroName: { fontSize: 30, color: colors.text.primary, fontFamily: fonts.display },
+    heroName: { fontSize: 38, color: colors.text.primary, fontFamily: fonts.display },
     heroDates: { fontSize: 14, fontWeight: '600', color: colors.text.secondary },
     heroCountdown: { fontSize: 18, fontWeight: '800', color: colors.gold.base, marginTop: 4 },
     heroCities: { fontSize: 13, fontWeight: '600', color: colors.text.soft },

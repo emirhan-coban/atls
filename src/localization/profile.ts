@@ -27,7 +27,6 @@ const strings = {
   source: { tr: 'Vikipedi', en: 'Wikipedia' },
   exploreRoutes: { tr: 'Rotalar', en: 'Routes' },
   exploreCountries: { tr: 'Tüm Ülkeler', en: 'All Countries' },
-  exploreSwipe: { tr: 'Kartlarla Keşfet', en: 'Swipe to Discover' },
   visaFilter: { tr: 'T.C. PASAPORTU İÇİN', en: 'WITH A TURKISH PASSPORT' },
   filterAll: { tr: 'Hepsi', en: 'All' },
   filterFree: { tr: 'Vizesiz', en: 'Visa-free' },

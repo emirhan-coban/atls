@@ -427,3 +427,22 @@ Bu bölüm kalan her maddeyi ya yapıldı ya da gerekçesiyle yapılmadı olarak
 - **Sentry / analitik:** DSN ve hesap sahibi tarafından açılmalı, ayrıca gizlilik politikası güncellemesi gerekir.
 - **Modalların tam rotaya bölünmesi:** büyük davranış riski; yalnızca derin bağlantı eklendi.
 - **Fotoğraf ve belge yedeği:** buluta gitmez (gizlilik kararı). Telefon değişirse kaybolur.
+
+### Tasarım turu (font ve temizlik)
+
+| Madde | Durum |
+|---|---|
+| Font | Fraunces yerine **Instrument Serif** (normal) ve **Instrument Serif İtalik**. Ailede yalnızca bu iki stil var, bu yüzden başlıklar ağırlıkla değil boyutla ayrışıyor; tüm başlık boyutları %25 büyütüldü. İtalik: alt başlıklar ve başlıkların son kelimesi (`Heading` bileşeni, `src/components/ui/Heading.tsx`: "Dünya *Pasaportun*"). Gövde metni iOS'un sistem fontunda (SF Pro) kaldı; Inter'e geçmek her `Text` stilinde ağırlık eşlemesi gerektirir ve görsel kazancı yok denecek kadar az. İtalik yalnızca büyük boyutta ve cümle başına bir vurgu için kullanılmalı. |
+| Kaldırılanlar | Kartlarla Keşfet (`SwipeDiscoveryCard` silindi), rozetteki yarım görünen tik, pasaport rengi seçici. |
+| Sırada | Açık temada okunabilirlik (cam kartlar, soluk metin), Keşfet geçiş hızı, mühür/son girişler yeniden tasarımı, Rotalar 2.0. |
+
+### Tasarım turu 2 (okunabilirlik, hız, mühürler, Rotalar 2.0)
+
+| Madde | Durum |
+|---|---|
+| Okunabilirlik | Açık temada cam kartın üstündeki örtü %38'den %80'e çıktı (`glass.scrimOpacity`), soluk ve ikincil metin renkleri koyulaştı, koyu temada da `muted/faint` düzeltildi. `src/theme/__tests__/contrast.test.ts` iki temada tüm metin rollerini WCAG AA'ya (4,5:1; dekoratif için 3:1) göre denetler. |
+| Keşfet hızı | Üç sekmeyi saran `App.tsx` içinde satır içi fonksiyonlar `React.memo`'yu boşa çıkarıyordu; sekme değişince Ana Sayfa ve Pasaport (1.700 satır) yeniden çiziliyordu. Tüm callback'ler `useCallback` oldu. Rota listesi 65 kart yerine 8 kartla açılıyor, "Daha fazla göster" ile artıyor. **Cihazda ölçülmedi**, simülatör geliştirme derlemesi güvenilir süre vermiyor. |
+| Mühürler | Ana Sayfa'daki eğik mühür kartları kalktı; yerine düz "Son geziler" listesi (bayrak, ülke adı, tarih). Günlük > Damgalar'daki mühür tek ve düz bir tasarım oldu: tek renk çerçeve, ülke adı, ülke kodu (Instrument Serif), çizgi, tarih. Eğim, çift çerçeve, aşınmış kenar ve rastgele şekiller kaldırıldı (`utils/stamp.ts` silindi). |
+| Rotalar 2.0 | **Bu ay nereye?**: iklim ve vize verisinden, henüz gitmediğin ülkeler (kolay giriş önce). Hızlı filtreler (Bu ay uygun, Vizesiz, Gitmediklerim) + kıta + arama. İki sütunlu fotoğraflı kart ızgarası. Karta dokununca tam sayfa rota: fotoğraf, giriş/en uygun aylar/saat/para şeridi, gezilecek yerler ve yemek (Apple/Google Maps), ipucu, **Gezi planla** (sayfanın içinde plan editörü), istek listesine ekle, ülke sayfası. |
+| Fotoğraflar | 42 yeni rota için Wikimedia Commons fotoğrafı (`scripts/build-route-photos.mjs` → `src/data/routePhotos.ts`), yalnızca CC0 / CC BY / CC BY-SA / kamu malı; yazar ve lisans fotoğrafın altında gösterilir. Lisansı uygun olmayan 5 rota (Çekya, Kıbrıs, Güney Kore, BAE, Azerbaycan) gradyan + bayrakla gösterilir. Fotoğraflar çalışma anında Commons'tan yüklenir (uygulama paketine girmez). |
+| Öneri listesi | "Bu ay nereye?" önerilerinden savaş/seyahat uyarısı olan ülkeler çıkarıldı (`NOT_SUGGESTED`, elle yazılmış liste, güncel tutulmalı). Tüm Ülkeler listesinde hepsi duruyor. |
