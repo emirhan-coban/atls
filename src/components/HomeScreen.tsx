@@ -455,7 +455,7 @@ function HomeScreen({
       {/* SECTION: Recent Arrivals & Stamps */}
       <View style={[styles.sectionHeader, { marginTop: 10 }]}>
         <Text style={styles.stampsTitle}>{t.recentArrivals}</Text>
-        <TouchableOpacity onPress={onNavigateToPassport}>
+        <TouchableOpacity onPress={onOpenJourney ?? onNavigateToPassport}>
           <Text style={styles.viewAllText}>{t.viewAll}</Text>
         </TouchableOpacity>
       </View>
