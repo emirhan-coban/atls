@@ -783,11 +783,11 @@ export const countryTrivia = {
  * Returns a localized trivia string for any country code.
  * Falls back to an evocative regional travel insight if specific country is not in the curated list.
  */
-export function getCountryTrivia(countryCode, countryName, lang = 'tr') {
+export function getCountryTrivia(countryCode?: string | null, countryName?: string, lang = 'tr') {
   if (!countryCode) return '';
-  const code = countryCode.toUpperCase();
+  const code = countryCode.toUpperCase() as keyof typeof countryTrivia;
   if (countryTrivia[code]) {
-    return countryTrivia[code][lang] || countryTrivia[code].en;
+    return countryTrivia[code][lang as 'tr' | 'en'] || countryTrivia[code].en;
   }
 
   // Graceful contextual fallback

@@ -29,9 +29,19 @@ import GlowSphere from './GlowSphere';
 import OrbitalRings from './OrbitalRings';
 import { worldViewBox, worldMapFeatures } from '../data/worldMapPaths';
 import { getDynamicLocation } from '../utils/locationHelper';
+import { Country, Profile } from '../stores/types';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(width - 44, 350);
+
+interface PassportShareModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: Profile;
+  countries: Country[];
+  t?: Record<string, any>;
+  currentLang: 'tr' | 'en';
+}
 
 export default function PassportShareModal({
   isOpen,
@@ -40,7 +50,7 @@ export default function PassportShareModal({
   countries,
   t,
   currentLang,
-}) {
+}: PassportShareModalProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const cardRef = useRef(null);
@@ -54,12 +64,12 @@ export default function PassportShareModal({
   const earthPercent = ((totalCount / 195) * 100).toFixed(1);
 
   // Status mapping for mini world map
-  const statusMap = {};
+  const statusMap: Record<string, string> = {};
   countries.forEach((c) => {
     statusMap[c.id.toUpperCase()] = c.status;
   });
 
-  const getFill = (id) => {
+  const getFill = (id: string) => {
     const s = statusMap[id];
     if (s === 'lived') return colors.status.lived.color; // Emerald
     if (s === 'visited') return colors.status.visited.color; // Electric Sapphire
@@ -343,7 +353,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   modalContent: {
     backgroundColor: colors.canvas.raised,
