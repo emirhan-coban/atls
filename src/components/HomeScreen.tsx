@@ -31,6 +31,7 @@ import AnimatedCounter from './AnimatedCounter';
 import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
 import { getCountryTrivia } from '../data/countryTrivia';
 import { Country, Profile } from '../stores/types';
+import Heading from './ui/Heading';
 
 type StatusFilter = Country['status'] | 'all';
 
@@ -125,9 +126,9 @@ function HomeScreen({
       >
         {/* Clean Travel Passport Greeting */}
         <View style={styles.explorerGreetingRow}>
-          <Text style={styles.explorerGreetingText}>
+          <Heading style={styles.explorerGreetingText}>
             {currentLang === 'tr' ? 'Dünya Pasaportun' : 'World Passport'}
-          </Text>
+          </Heading>
           <Text style={styles.explorerGreetingSub}>
             {currentLang === 'tr'
               ? 'Rotaların, vizelerin ve seyahat haritan.'
@@ -256,7 +257,7 @@ function HomeScreen({
 
         {/* SECTION: Planetary Reach */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.planetaryReach}</Text>
+          <Heading style={styles.sectionTitle}>{t.planetaryReach}</Heading>
           <View style={styles.reachBadge}>
             <Plane size={11} color={colors.status.visited.bright} style={{ transform: [{ rotate: '45deg' }] }} />
           <AnimatedCounter

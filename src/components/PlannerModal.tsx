@@ -22,6 +22,7 @@ import { BudgetItem, PlannedTrip } from '../stores/types';
 import { usePlanStore } from '../stores/usePlanStore';
 import { useTripStore } from '../stores/useTripStore';
 import { notificationService } from '../services/notificationService';
+import Heading from './ui/Heading';
 
 interface PlannerModalProps {
   visible: boolean;
@@ -346,7 +347,7 @@ export default function PlannerModal({ visible, onClose, currentLang }: PlannerM
               <ChevronLeft size={20} color={colors.text.primary} />
             </TouchableOpacity>
           ) : null}
-          <Text style={styles.title}>{lt('title', currentLang)}</Text>
+          <Heading style={styles.title}>{lt('title', currentLang)}</Heading>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close">
             <X size={18} color={colors.text.muted} />
           </TouchableOpacity>
