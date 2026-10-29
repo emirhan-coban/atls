@@ -58,6 +58,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       useTripStore.getState().setTrips(data.trips || [], data.tripsSeeded || []);
       useProgressStore.getState().hydrate(data.progress);
       usePlanStore.getState().setPlans(data.plans || []);
+      usePlanStore.getState().restoreReminders((data.lang as AppLanguage) || 'tr').catch(() => {});
     } catch (error) {
       console.warn('[AppStore] initApp error:', error);
       set({ isLoaded: true });

@@ -241,7 +241,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
       result.push({
         ...homeCountry,
         status: 'lived',
-        visitedYear: new Date().getFullYear().toString(),
+        visitedYear: null,
         notes: currentLang === 'tr' ? 'Memleketim / Yaşadığım Yer' : 'Home Base / Residence',
       });
     }
@@ -252,7 +252,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
           result.push({
             ...item,
             status: 'visited',
-            visitedYear: new Date().getFullYear().toString(),
+            visitedYear: null,
             notes: '',
           });
         }

@@ -171,6 +171,10 @@ function AppContent() {
     if (sessionData?.trips) {
       useTripStore.getState().setTrips(sessionData.trips);
     }
+    if (sessionData?.plans) {
+      usePlanStore.getState().setPlans(sessionData.plans);
+      usePlanStore.getState().restoreReminders(useAppStore.getState().currentLang).catch(() => {});
+    }
   };
 
   const handleUpdateProfile = useCallback((updatedProfile: any) => {

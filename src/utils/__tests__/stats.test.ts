@@ -38,9 +38,9 @@ describe('deriveLegacyTrips', () => {
     expect(created[0]).toMatchObject({ id: 'legacy-FR', countryId: 'FR', year: '2023', month: '07', notes: 'Paris' });
   });
 
-  it('skips wishlist countries, countries that already have trips and countries without a valid year', () => {
+  it('skips wishlist countries and countries that already have trips', () => {
     const created = deriveLegacyTrips(
-      [country('JP', 'want'), country('DE', 'visited', { year: '2022' }), country('IT', 'visited', { year: '' })],
+      [country('JP', 'want'), country('DE', 'visited', { year: '2022' })],
       [trip('t1', 'DE', '2022')],
       now
     );
@@ -155,5 +155,26 @@ describe('year summary', () => {
 
   it('lists years newest first without duplicates', () => {
     expect(yearsWithTrips(trips)).toEqual(['2024', '2023']);
+  });
+});
+
+describe('trips with an unknown year', () => {
+  it('derives an undated trip for a visited country without a year', () => {
+    const created = deriveLegacyTrips([country('IT', 'visited', { visitedYear: null })], [], new Date('2026-06-01'));
+    expect(created).toHaveLength(1);
+    expect(created[0]).toMatchObject({ countryId: 'IT', year: '' });
+  });
+
+  it('keeps them out of year charts, timeline ends and "new country" counts', () => {
+    const trips = [trip('a', 'IT', ''), trip('b', 'IT', '2025'), trip('c', 'FR', '2025')];
+    const stats = computeStats([country('IT', 'visited'), country('FR', 'visited')], trips);
+    expect(stats.tripCount).toBe(3);
+    expect(stats.tripsByYear).toEqual([{ year: '2025', count: 2 }]);
+    expect(stats.yearsTraveled).toBe(1);
+    expect(stats.firstTrip?.year).toBe('2025');
+    // IT was visited before 2025 at an unknown time, so only FR is new in 2025
+    expect(stats.newCountriesByYear['2025']).toEqual(['FR']);
+    expect(computeYearSummary(trips, '2025').newCountryIds).toEqual(['FR']);
+    expect(yearsWithTrips(trips)).toEqual(['2025']);
   });
 });
