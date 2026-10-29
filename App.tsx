@@ -184,16 +184,16 @@ function AppContent() {
     updateProfile(updatedProfile);
   }, [updateProfile]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     clearCountries();
     useTripStore.getState().clearTrips();
     usePlanStore.getState().clearPlans();
     await refreshMemoryReminders(false, currentLang);
     await clearVault();
     await logout();
-  };
+  }, [clearCountries, currentLang, logout]);
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = useCallback(async () => {
     try {
       await deleteAccount();
       clearCountries();
@@ -216,7 +216,12 @@ function AppContent() {
           : 'Your account could not be deleted. Check your connection and try again.'
       );
     }
-  };
+  }, [clearCountries, currentLang, deleteAccount, t]);
+
+  // Stable callbacks: the three screens are memoised, and inline arrows would re-render all of them on every tab change
+  const openJourney = useCallback(() => setIsJourneyOpen(true), []);
+  const openPlanner = useCallback(() => setIsPlannerOpen(true), []);
+  const closeAccountModal = useCallback(() => setIsAccountModalOpen(false), []);
 
   // Loading screen before persistent storage is ready
   // Wait for storage and the display font so headings never flash in the fallback face
@@ -290,8 +295,8 @@ function AppContent() {
               onToggleLang={handleToggleLang}
               onOpenAuth={handleNavigateToPassport}
               tripCount={trips.length}
-              onOpenJourney={() => setIsJourneyOpen(true)}
-              onOpenPlanner={() => setIsPlannerOpen(true)}
+              onOpenJourney={openJourney}
+              onOpenPlanner={openPlanner}
             />
           </View>
 
@@ -320,14 +325,14 @@ function AppContent() {
               onLogout={handleLogout}
               onDeleteAccount={handleDeleteAccount}
               onCreateAccount={startAccountUpgrade}
-              onOpenJourney={() => setIsJourneyOpen(true)}
-              onOpenPlanner={() => setIsPlannerOpen(true)}
+              onOpenJourney={openJourney}
+              onOpenPlanner={openPlanner}
               onSelectCountry={handleSelectCountryDetail}
               t={t}
               currentLang={currentLang}
               onToggleLang={handleToggleLang}
               isAccountModalOpen={isAccountModalOpen}
-              onCloseAccountModal={() => setIsAccountModalOpen(false)}
+              onCloseAccountModal={closeAccountModal}
             />
           </View>
         </View>
