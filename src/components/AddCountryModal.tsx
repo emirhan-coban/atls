@@ -161,10 +161,10 @@ export default function AddCountryModal({
     if (isConverting) {
       setTimeout(() => {
         Alert.alert(
-          currentLang === 'tr' ? '🎉 Pasaportuna Mühürlendi!' : '🎉 Stamped in Your Passport!',
+          currentLang === 'tr' ? '🎉 Pasaportuna Eklendi!' : '🎉 Added to Your Passport!',
           currentLang === 'tr'
-            ? `Tebrikler! ${selectedCountry.flag} ${countryNameTr} hedeflerinden pasaportuna resmi ${selectedStatus === 'lived' ? 'ikamet' : 'giriş'} mührü olarak eklendi!`
-            : `Congratulations! ${selectedCountry.flag} ${countryNameEn} is now officially stamped into your passport!`
+            ? `Tebrikler! ${selectedCountry.flag} ${countryNameTr} hedeflerinden pasaportuna ${selectedStatus === 'lived' ? 'yaşadığın' : 'gittiğin'} ülke olarak eklendi!`
+            : `Congratulations! ${selectedCountry.flag} ${countryNameEn} is now in your passport!`
         );
       }, 300);
     }
@@ -323,8 +323,8 @@ export default function AddCountryModal({
                   <Sparkles size={14} color={colors.gold.base} />
                   <Text style={styles.convertNoticeText}>
                     {currentLang === 'tr'
-                      ? 'Bu ülke hedeflerinizde kayıtlı. Şimdi resmi giriş mührü basabilirsiniz!'
-                      : 'This country is in your wishlist. You can now stamp it into your passport!'}
+                      ? 'Bu ülke hedeflerinizde kayıtlı. Şimdi gittiğin ülke olarak işaretleyebilirsin!'
+                      : 'This country is in your wishlist. You can now mark it as visited!'}
                   </Text>
                 </View>
               )}

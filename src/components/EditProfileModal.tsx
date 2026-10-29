@@ -399,8 +399,8 @@ export default function EditProfileModal({
                     t?.deleteAccountConfirmTitle || (currentLang === 'tr' ? 'Hesabı Kalıcı Olarak Sil' : 'Permanently Delete Account'),
                     t?.deleteAccountConfirmMsg ||
                       (currentLang === 'tr'
-                        ? 'Hesabınızı silmek istediğinize emin misiniz? Tüm seyahatleriniz, pasaport mühürleriniz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.'
-                        : 'Are you sure you want to delete your account? All your travels, stamps, and profile data will be permanently wiped. This action cannot be undone.'),
+                        ? 'Hesabınızı silmek istediğinize emin misiniz? Tüm seyahatleriniz, pasaportunuz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.'
+                        : 'Are you sure you want to delete your account? All your travels, passport, and profile data will be permanently wiped. This action cannot be undone.'),
                     [
                       { text: t?.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
                       {

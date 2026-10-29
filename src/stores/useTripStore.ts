@@ -23,7 +23,7 @@ interface TripState {
   /** Countries already given their first trip; a deleted trip is never recreated for them. */
   seeded: string[];
   setTrips: (trips: Trip[], seeded?: string[]) => void;
-  /** Creates a trip, and stamps the country as visited when it was not yet. */
+  /** Creates a trip, and marks the country as visited when it was not yet. */
   addTrip: (input: TripInput) => Promise<Trip>;
   updateTrip: (id: string, changes: Partial<TripInput>) => Promise<void>;
   removeTrip: (id: string) => Promise<void>;
@@ -74,12 +74,7 @@ export const useTripStore = create<TripState>((set, get) => ({
       } as Country);
     }
     await storageService.saveTrip(trip);
-    useCelebrationStore.getState().showStamp({
-      countryId: trip.countryId,
-      status: existing?.status === 'lived' ? 'lived' : 'visited',
-      year: trip.year,
-      month: trip.month,
-    });
+    useCelebrationStore.getState().burstConfetti();
     return trip;
   },
 

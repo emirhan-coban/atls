@@ -132,8 +132,8 @@ export default function CountryDetailModal({
       date: dateFormatted,
       continent: baseCountry.continent,
       continentTr: baseCountry.continentTr,
-      notes: userCountry?.notes || `Stamped in ${new Date().getFullYear()}`,
-      notesTr: userCountry?.notesTr || `${new Date().getFullYear()} yılında mühürlendi`,
+      notes: userCountry?.notes || `Added in ${new Date().getFullYear()}`,
+      notesTr: userCountry?.notesTr || `${new Date().getFullYear()} yılında eklendi`,
       visits: (userCountry?.visits || 0) + 1,
     };
     onStampVisited(payload);
@@ -236,7 +236,7 @@ export default function CountryDetailModal({
                   <View style={styles.metaItem}>
                     <MapPin size={14} color={colors.status.lived.color} />
                     <Text style={styles.metaLabel}>
-                      {currentLang === 'tr' ? 'Mühür Kodu' : 'Stamp ID'}
+                      {currentLang === 'tr' ? 'Ülke Kodu' : 'Country code'}
                     </Text>
                     <Text style={styles.metaValue}>{baseCountry.id}</Text>
                   </View>
@@ -333,7 +333,7 @@ export default function CountryDetailModal({
                   >
                     <Plane size={18} color={colors.canvas.base} strokeWidth={2.5} />
                     <Text style={styles.primaryActionText}>
-                      {currentLang === 'tr' ? 'Pasaporta Mühürle ✈️' : 'Stamp into Passport ✈️'}
+                      {currentLang === 'tr' ? 'Pasaporta Ekle ✈️' : 'Add to Passport ✈️'}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -352,7 +352,7 @@ export default function CountryDetailModal({
                   >
                     <Edit3 size={16} color={colors.text.primary} />
                     <Text style={styles.secondaryBtnText}>
-                      {currentLang === 'tr' ? 'Mühürü Düzenle' : 'Edit Stamp'}
+                      {currentLang === 'tr' ? 'Düzenle' : 'Edit'}
                     </Text>
                   </TouchableOpacity>
                 )}
