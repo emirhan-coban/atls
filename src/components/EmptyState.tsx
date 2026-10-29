@@ -5,6 +5,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Compass, Sparkles, Plus, Plane, MapPin } from 'lucide-react-native';
 import { theme } from '../theme';
 import Button from './ui/Button';
+import Heading from './ui/Heading';
 
 interface EmptyStateProps {
   type?: 'passport' | 'wishlist' | 'search' | 'stamps';
@@ -39,7 +40,7 @@ export default function EmptyState({
   return (
     <View style={styles.container}>
       <View style={styles.iconCircle}>{getIcon()}</View>
-      <Text style={styles.title}>{title}</Text>
+      <Heading style={styles.title}>{title}</Heading>
       <Text style={styles.description}>{description}</Text>
 
       {actionLabel && onAction && (

@@ -936,13 +936,13 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'baseline',
   },
   logoText: {
-    fontSize: 28,
+    fontSize: 35,
     color: colors.text.primary,
     letterSpacing: -0.8,
     fontFamily: fonts.displayHeavy,
   },
   logoDot: {
-    fontSize: 28,
+    fontSize: 35,
     color: colors.gold.base,
     fontFamily: fonts.displayHeavy,
   },

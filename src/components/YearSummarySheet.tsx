@@ -14,6 +14,7 @@ import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { jt } from '../localization/journey';
 import { computeYearSummary, yearsWithTrips } from '../utils/stats';
 import { Trip } from '../stores/types';
+import Heading from './ui/Heading';
 
 interface YearSummarySheetProps {
   visible: boolean;
@@ -59,7 +60,7 @@ export default function YearSummarySheet({ visible, onClose, trips, currentLang 
 
   return (
     <Sheet visible={visible} onClose={onClose} maxHeight="94%">
-      <Text style={styles.title}>{jt('shareYear', currentLang)}</Text>
+      <Heading style={styles.title}>{jt('shareYear', currentLang)}</Heading>
       <ScrollView showsVerticalScrollIndicator={false}>
         {years.length > 1 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.years}>
@@ -132,21 +133,21 @@ export default function YearSummarySheet({ visible, onClose, trips, currentLang 
 
 const useStyles = makeStyles((colors) =>
   StyleSheet.create({
-    title: { fontSize: 24, color: colors.text.primary, fontFamily: fonts.display, marginBottom: 14 },
+    title: { fontSize: 30, color: colors.text.primary, fontFamily: fonts.display, marginBottom: 14 },
     years: { gap: 8, paddingBottom: 14 },
     cardShadow: { borderRadius: 28, alignSelf: 'center', width: '100%' },
     card: { borderRadius: 28, padding: 22, minHeight: 420, justifyContent: 'space-between', overflow: 'hidden' },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    logo: { fontSize: 26, color: CARD.text, fontFamily: fonts.displayHeavy },
+    logo: { fontSize: 32, color: CARD.text, fontFamily: fonts.displayHeavy },
     cardEyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, color: CARD.goldLight },
     hero: { alignItems: 'center', marginTop: 10 },
-    heroNumber: { fontSize: 96, color: CARD.gold, fontFamily: fonts.displayHeavy, lineHeight: 104 },
+    heroNumber: { fontSize: 120, color: CARD.gold, fontFamily: fonts.displayHeavy, lineHeight: 130 },
     heroLabel: { fontSize: 13, fontWeight: '800', letterSpacing: 2, color: CARD.muted },
     flagRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginVertical: 12 },
     flag: { fontSize: 28 },
     trio: { flexDirection: 'row', justifyContent: 'space-around', paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.14)' },
     trioItem: { alignItems: 'center' },
-    trioValue: { fontSize: 28, color: CARD.text, fontFamily: fonts.display },
+    trioValue: { fontSize: 35, color: CARD.text, fontFamily: fonts.display },
     trioLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: CARD.muted, marginTop: 2 },
     topLine: { textAlign: 'center', fontSize: 14, fontWeight: '700', color: CARD.goldLight, marginTop: 12 },
     shareBtn: { marginTop: 18, marginBottom: 8 },

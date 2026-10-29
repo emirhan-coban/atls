@@ -28,6 +28,7 @@ import {
 import { availableCatalog, CatalogCountry } from '../data/travelData';
 import { Profile } from '../stores/types';
 import { generateHandle } from '../services/storageService';
+import Heading from './ui/Heading';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -178,7 +179,7 @@ export default function EditProfileModal({
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>{t.editProfile || 'Profili Düzenle'}</Text>
+              <Heading style={styles.title}>{t.editProfile || 'Profili Düzenle'}</Heading>
               <Text style={styles.subtitle}>
                 {t.editProfileSubtitle || 'Pasaport kimlik ve konum tercihlerini güncelle'}
               </Text>
@@ -435,7 +436,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: 25,
     color: colors.text.primary,
     letterSpacing: -0.5,
     fontFamily: fonts.display,

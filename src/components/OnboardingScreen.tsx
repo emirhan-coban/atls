@@ -47,6 +47,7 @@ import { availableCatalog, CatalogCountry } from '../data/travelData';
 import { Country } from '../stores/types';
 import { authService } from '../services/authService';
 import { generateHandle } from '../services/storageService';
+import Heading from './ui/Heading';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -550,9 +551,9 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
               </Text>
             </View>
 
-            <Text style={styles.hookMainTitle}>
+            <Heading style={styles.hookMainTitle}>
               {t?.onboardingPromise || 'Dünyanın ne kadarını gezdin?'}
-            </Text>
+            </Heading>
 
             <Text style={styles.hookSubTitle}>
               {t?.onboardingPromiseSub || 'Seyahatlerini haritalandır, dijital sınır mühürlerini topla ve kişisel dünya pasaportunu başlat.'}
@@ -613,7 +614,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
           >
             {/* Header */}
             <View style={styles.stepHeader}>
-              <Text style={styles.stepTitle}>{t?.homeTitle || 'Nerede Yaşıyorsun?'}</Text>
+              <Heading style={styles.stepTitle}>{t?.homeTitle || 'Nerede Yaşıyorsun?'}</Heading>
               <Text style={styles.stepSub}>
                 {t?.homeSub || 'Kişisel pasaportun doğduğun veya ikamet ettiğin evden başlar.'}
               </Text>
@@ -765,9 +766,9 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                   {currentLang === 'tr' ? 'SEYAHAT GEÇMİŞİN' : 'TRAVEL FOOTPRINT'}
                 </Text>
               </View>
-              <Text style={styles.stepTitle}>
+              <Heading style={styles.stepTitle}>
                 {t?.visitedTitle || (currentLang === 'tr' ? 'Gittiğin Ülkeleri Seç' : 'Select Visited Countries')}
-              </Text>
+              </Heading>
               <Text style={styles.stepSub}>
                 {t?.visitedSub || (currentLang === 'tr'
                   ? 'Bugüne kadar ayak bastığın ülkeleri işaretle; haritan canlı olarak renklensin.'
@@ -929,9 +930,9 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
               <Text style={styles.celebrationBadgeText}>PASAPORTUN HAZIRLANIYOR</Text>
             </View>
 
-            <Text style={styles.payoffTitle}>
+            <Heading style={styles.payoffTitle}>
               {t?.resultTitle || 'Pasaportun Şekillendi! 🌍'}
-            </Text>
+            </Heading>
           </Animated.View>
 
           {/* Large Stat Box */}
@@ -1019,7 +1020,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                 <View style={styles.otpIconBadge}>
                   <KeyRound size={28} color={colors.gold.base} />
                 </View>
-                <Text style={styles.stepTitle}>{t?.otpTitle || 'E-postanızı Doğrulayın'}</Text>
+                <Heading style={styles.stepTitle}>{t?.otpTitle || 'E-postanızı Doğrulayın'}</Heading>
                 <Text style={styles.stepSub}>
                   {email} adresine gönderilen 6 haneli güvenlik kodunu girin.
                 </Text>
@@ -1333,13 +1334,13 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'baseline',
   },
   logoText: {
-    fontSize: 24,
+    fontSize: 30,
     color: colors.text.primary,
     letterSpacing: -0.8,
     fontFamily: fonts.displayHeavy,
   },
   logoDot: {
-    fontSize: 24,
+    fontSize: 30,
     color: colors.gold.base,
     fontFamily: fonts.displayHeavy,
   },
@@ -1424,11 +1425,11 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     letterSpacing: 0.8,
   },
   hookMainTitle: {
-    fontSize: 32,
+    fontSize: 40,
     color: colors.text.primary,
     textAlign: 'center',
     letterSpacing: -0.9,
-    lineHeight: 38,
+    lineHeight: 48,
     marginBottom: 12,
     fontFamily: fonts.display,
   },
@@ -1485,7 +1486,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 16,
   },
   stepTitle: {
-    fontSize: 24,
+    fontSize: 30,
     color: colors.text.primary,
     letterSpacing: -0.5,
     marginBottom: 6,
@@ -1851,7 +1852,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     letterSpacing: 0.8,
   },
   payoffTitle: {
-    fontSize: 26,
+    fontSize: 32,
     color: colors.text.primary,
     textAlign: 'center',
     letterSpacing: -0.6,

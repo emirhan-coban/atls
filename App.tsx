@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, View, Alert, LogBox, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold, Fraunces_900Black } from '@expo-google-fonts/fraunces';
+import { InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { translations } from './src/localization/translations';
 import { useAppStore, useCountryStore, useProfileStore, usePlanStore, useTripStore } from './src/stores';
@@ -37,7 +37,7 @@ if (process.env.EXPO_PUBLIC_DEMO_MODE === '1') {
 }
 
 function AppContent() {
-  const [fontsLoaded, fontError] = useFonts({ Fraunces_700Bold, Fraunces_900Black });
+  const [fontsLoaded, fontError] = useFonts({ InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic });
   const styles = useStyles();
   const isLoaded = useAppStore((state) => state.isLoaded);
   const currentLang = useAppStore((state) => state.currentLang);
@@ -184,16 +184,16 @@ function AppContent() {
     updateProfile(updatedProfile);
   }, [updateProfile]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     clearCountries();
     useTripStore.getState().clearTrips();
     usePlanStore.getState().clearPlans();
     await refreshMemoryReminders(false, currentLang);
     await clearVault();
     await logout();
-  };
+  }, [clearCountries, currentLang, logout]);
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = useCallback(async () => {
     try {
       await deleteAccount();
       clearCountries();
@@ -216,7 +216,12 @@ function AppContent() {
           : 'Your account could not be deleted. Check your connection and try again.'
       );
     }
-  };
+  }, [clearCountries, currentLang, deleteAccount, t]);
+
+  // Stable callbacks: the three screens are memoised, and inline arrows would re-render all of them on every tab change
+  const openJourney = useCallback(() => setIsJourneyOpen(true), []);
+  const openPlanner = useCallback(() => setIsPlannerOpen(true), []);
+  const closeAccountModal = useCallback(() => setIsAccountModalOpen(false), []);
 
   // Loading screen before persistent storage is ready
   // Wait for storage and the display font so headings never flash in the fallback face
@@ -290,8 +295,8 @@ function AppContent() {
               onToggleLang={handleToggleLang}
               onOpenAuth={handleNavigateToPassport}
               tripCount={trips.length}
-              onOpenJourney={() => setIsJourneyOpen(true)}
-              onOpenPlanner={() => setIsPlannerOpen(true)}
+              onOpenJourney={openJourney}
+              onOpenPlanner={openPlanner}
             />
           </View>
 
@@ -320,14 +325,14 @@ function AppContent() {
               onLogout={handleLogout}
               onDeleteAccount={handleDeleteAccount}
               onCreateAccount={startAccountUpgrade}
-              onOpenJourney={() => setIsJourneyOpen(true)}
-              onOpenPlanner={() => setIsPlannerOpen(true)}
+              onOpenJourney={openJourney}
+              onOpenPlanner={openPlanner}
               onSelectCountry={handleSelectCountryDetail}
               t={t}
               currentLang={currentLang}
               onToggleLang={handleToggleLang}
               isAccountModalOpen={isAccountModalOpen}
-              onCloseAccountModal={() => setIsAccountModalOpen(false)}
+              onCloseAccountModal={closeAccountModal}
             />
           </View>
         </View>

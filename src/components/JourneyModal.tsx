@@ -24,6 +24,7 @@ import { computeStats, getGoalProgress, sortTripsNewestFirst } from '../utils/st
 import { Country, Profile, Trip } from '../stores/types';
 import { useProgressStore } from '../stores/useProgressStore';
 import { useAppStore } from '../stores/useAppStore';
+import Heading from './ui/Heading';
 
 type Tab = 'timeline' | 'stamps' | 'stats' | 'badges';
 
@@ -109,7 +110,7 @@ export default function JourneyModal({
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.screen} edges={['bottom']}>
         <View style={styles.header}>
-          <Text style={styles.title}>{jt('title', currentLang)}</Text>
+          <Heading style={styles.title}>{jt('title', currentLang)}</Heading>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close">
             <X size={18} color={colors.text.muted} />
           </TouchableOpacity>
@@ -205,7 +206,6 @@ export default function JourneyModal({
                         title={entry ? getLocalizedCountryName(entry, currentLang) : trip.countryId}
                         dateText={[monthShort(trip.month, currentLang), trip.year].filter(Boolean).join(' ')}
                         status={status === 'lived' ? 'lived' : 'visited'}
-                        salt={trip.id}
                         size={150}
                       />
                     </TouchableOpacity>
@@ -414,7 +414,7 @@ const useStyles = makeStyles((colors) =>
       paddingTop: 22,
       paddingBottom: 12,
     },
-    title: { fontSize: 28, color: colors.text.primary, fontFamily: fonts.display },
+    title: { fontSize: 35, color: colors.text.primary, fontFamily: fonts.display },
     closeBtn: {
       width: 34,
       height: 34,
@@ -427,7 +427,7 @@ const useStyles = makeStyles((colors) =>
     content: { paddingHorizontal: 20, paddingBottom: 40, gap: 14 },
     addBtn: { alignSelf: 'flex-start' },
     yearBlock: { gap: 10 },
-    yearHeading: { fontSize: 20, color: colors.text.primary, fontFamily: fonts.display, marginTop: 8 },
+    yearHeading: { fontSize: 25, color: colors.text.primary, fontFamily: fonts.display, marginTop: 8 },
     tripCard: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -469,7 +469,7 @@ const useStyles = makeStyles((colors) =>
     },
     cardLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1, color: colors.text.secondary },
     cardHint: { fontSize: 13, color: colors.text.secondary },
-    levelName: { fontSize: 26, color: colors.text.primary, fontFamily: fonts.display },
+    levelName: { fontSize: 32, color: colors.text.primary, fontFamily: fonts.display },
     track: { height: 8, borderRadius: 4, backgroundColor: colors.glass.fillStrong, overflow: 'hidden' },
     trackFill: { height: '100%', borderRadius: 4, backgroundColor: colors.gold.base },
     goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -494,7 +494,7 @@ const useStyles = makeStyles((colors) =>
       borderWidth: 1,
       borderColor: colors.glass.hairline,
     },
-    tileValue: { fontSize: 30, color: colors.text.primary, fontFamily: fonts.display },
+    tileValue: { fontSize: 38, color: colors.text.primary, fontFamily: fonts.display },
     tileLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: colors.text.secondary, marginTop: 2 },
     chart: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 120, paddingTop: 8 },
     barCol: { alignItems: 'center', gap: 4 },
