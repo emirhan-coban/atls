@@ -66,7 +66,7 @@ export default function CelebrationLayer({ hostId, active = true, currentLang }:
             title={catalogEntry ? getLocalizedCountryName(catalogEntry, currentLang) : stamp.countryId}
             dateText={dateText}
             status={stamp.status}
-            size={230}
+            size={300}
           />
           <Text style={styles.caption}>{jt('stamped', currentLang)}</Text>
         </StampSlam>
@@ -89,7 +89,7 @@ function StampSlam({ children, onDone }: { children: React.ReactNode; onDone: ()
         if (finished) runOnJS(onDone)();
       }))
     );
-    tilt.value = withSpring(-6, { damping: 9, stiffness: 140 });
+    tilt.value = withSpring(0, { damping: 9, stiffness: 140 });
     scale.value = withSpring(1, { damping: 7, stiffness: 190, mass: 0.8 });
     const t = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 170);
     return () => clearTimeout(t);
