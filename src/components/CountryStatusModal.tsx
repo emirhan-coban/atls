@@ -27,6 +27,17 @@ import {
   Minus,
 } from 'lucide-react-native';
 import { getLocalizedCountryName, MONTHS } from '../data/travelData';
+import { Country } from '../stores/types';
+
+interface CountryStatusModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  country: Country | null;
+  onUpdateCountry: (country: any) => void;
+  onRemoveCountry: (countryId: string) => void;
+  t: Record<string, any>;
+  currentLang: 'tr' | 'en';
+}
 
 export default function CountryStatusModal({
   isOpen,
@@ -36,10 +47,10 @@ export default function CountryStatusModal({
   onRemoveCountry,
   t,
   currentLang,
-}) {
+}: CountryStatusModalProps) {
   const { colors } = useTheme();
   const styles = useStyles();
-  const [selectedStatus, setSelectedStatus] = useState('visited');
+  const [selectedStatus, setSelectedStatus] = useState<string>('visited');
   const [year, setYear] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [notes, setNotes] = useState('');
@@ -60,7 +71,7 @@ export default function CountryStatusModal({
   const wasWishlist = country.status === 'want';
   const isConverting = wasWishlist && selectedStatus !== 'want';
 
-  const handleStatusChange = (status) => {
+  const handleStatusChange = (status: string) => {
     Haptics.selectionAsync();
     setSelectedStatus(status);
   };

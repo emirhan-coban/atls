@@ -402,18 +402,28 @@ Süreler tek geliştirici için kaba tahmindir (S ≈ 1–2 gün, M ≈ 3–5 g�
 
 ### Faz 6 ve kalan işler (kapsam: Pro, sosyal ve Android hariç, kararlar §9)
 
+Bu bölüm kalan her maddeyi ya yapıldı ya da gerekçesiyle yapılmadı olarak kapatır.
+
 | Madde | Durum |
 |---|---|
-| Yılı bilinmeyen geziler | Onboarding'de eklenen ülkeler artık "bu yıl" yazılmıyor. Yılsız gezi (`year: ''`) olarak tutuluyor, zaman çizelgesinde "Yıl bilinmiyor" başlığı altında. Yıl grafiği, ilk/son gezi ve "yeni ülke" sayımı yalnızca tarihli gezilerden hesaplanıyor; yılı bilinmeyen bir gezisi olan ülke sonradan tarihli bir geziyle "yeni ülke" sayılmıyor. `enrichCountry` ve `countryToRow` artık yıl uydurmuyor. **Önceden onboarding'den eklenmiş ülkelerin yılı kayıtlı kaldı, otomatik düzelmez.** |
-| Planların buluta senkronu | `planned_trips` tablosu (`schema.sql` §11), outbox işlemleri (`plan-upsert`, `plan-remove`), `updatedAt` ile birleştirme. Bildirim kimlikleri cihaza özel olduğundan senkronlanmaz; yeni cihazda plan gelince hatırlatıcılar izin varsa yeniden kurulur (`restoreReminders`). Tablo yoksa planlar cihazda kalır. Fotoğraflar hâlâ yalnızca cihazda. |
-| Keşfet koleksiyonları | Tüm Ülkeler listesinde hazır koleksiyonlar (Vizesiz Avrupa/Asya/Amerika, Kolay giriş + gitmediklerim, Gitmediğim Schengen) ve "Gitmediklerim" filtresi. Koleksiyonlar yalnızca filtreleri ayarlar, sonradan elle değiştirilebilir. |
-| Expo Router | `expo-router` kuruldu, giriş `expo-router/entry`, `src/app/_layout.tsx` ve `src/app/index.tsx` (mevcut uygulamayı render eder). **Ülke/gezi/planlayıcı hâlâ modal; gerçek rotalara bölünmedi.** |
-| `ios/` → CNG | `ios/` git'ten çıkarıldı, `.gitignore`'a eklendi. `expo prebuild --clean` ile yeniden üretilen proje derlendi (bkz. doğrulama). |
+| Yılı bilinmeyen geziler | Onboarding'de eklenen ülkeler artık "bu yıl" yazılmıyor. Yılsız gezi (`year: ''`) olarak tutuluyor, günlükte "Yıl bilinmiyor" altında. Yıl grafiği, ilk/son gezi ve "yeni ülke" sayımı yalnızca tarihli gezilerden hesaplanıyor. `enrichCountry` ve `countryToRow` artık yıl uydurmuyor. **Önceden onboarding'den eklenmiş ülkelerin yılı kayıtlı kaldı.** |
+| Planların buluta senkronu | `planned_trips` tablosu (`schema.sql` §11), outbox işlemleri, `updatedAt` ile birleştirme. Bildirim kimlikleri cihaza özeldir, senkronlanmaz; yeni cihazda hatırlatıcılar izin varsa yeniden kurulur. |
+| Katalog eksikleri | Katalogda Güney Kore, Kuzey Kore ve Fildişi Sahili yoktu (193 → 196 ülke). Eklendi, ülke bilgileri ve vize verisi yeniden üretildi. |
+| İklim ve saat dilimi | `scripts/build-country-climate.mjs` her ülkenin başkenti için aylık ortalama sıcaklık ve yağışı (NASA POWER) ve saat dilimini (Open-Meteo) üretir: `src/data/countryClimate.ts`, 196 ülke. Ülke detayında "İklim ve zaman": tahmini en uygun aylar (konforlu sıcaklık ve az yağış), 12 aylık sıcaklık/yağış grafiği, UTC ofseti, Türkiye ile saat farkı. **Yalnızca başkent**, büyük ülkelerde bölgeler farklıdır, yaz saati hesaba katılmaz; ekranda belirtiliyor. |
+| Rotalar 18 → 65 | `src/data/moreDestinations.ts`: 47 yeni ülke için 2 gezilecek yer, 1 yemek yeri, kısa ipucu (TR/EN, harita bağlantılı). Fotoğraf eklenmedi (doğrulayamadığım Unsplash bağlantıları uydurmamak için), kart bayraklı gradyanla çizilir. Yalnızca bilinen yerler yazıldı; **çalışma saatleri ve fiyatlar doğrulanmadı.** Keşfet'e Okyanusya filtresi eklendi. |
+| Keşfet | Hazır koleksiyonlar (Vizesiz Avrupa/Asya/Amerika, kolay giriş + gitmediklerim, gitmediğim Schengen), "Gitmediklerim" filtresi ve **Kartlarla Keşfet** (kaydırarak istek listesine ekleme) bağlandı. |
+| Yıl dönümü bildirimi | "N yıl önce bu ay: Japonya" bildirimi, gezinin ayının 1'inde 10:00. Günlük > İstatistik'te açma anahtarı, varsayılan **kapalı**, açınca izin istenir. Gezide gün saklanmadığı için tam gün yerine ayın 1'i. En fazla 12 bildirim. Çıkışta iptal edilir. |
+| Belge kasası | Plan detayında "Belgeler": bilet/vize fotoğrafı veya PDF (en çok 12 belge, 15 MB). Yalnızca cihazda, buluta gitmez. Açmak için Face ID veya parola ister; cihazda parola/biyometri yoksa belge eklenmez. Plan silinince belgeleri de silinir, **çıkış ve hesap silmede tüm kasa temizlenir**. |
+| Expo Router | `expo-router` kuruldu, giriş `expo-router/entry`. `atls://country/JP` derin bağlantısı ülke sheet'ini açar. Ana ekran hâlâ tek sayfa, modallar rotaya bölünmedi. |
+| `ios/` → CNG | `ios/` git'ten çıktı. Temiz `prebuild` ile derlendi ve çalıştırıldı. `.npmrc` içinde `legacy-peer-deps=true` var (expo-router'ın react-dom eş bağımlılığı çakışıyor), CI ile yerel kurulum aynı kuralı kullanıyor. |
+| TypeScript | Kalan tüm `.js` dosyaları `.ts/.tsx`'e taşındı (servisler, veri dosyaları, 9 bileşen). `tsc` temiz. Taşırken iki gerçek hata çıktı: `StyleSheet.absoluteFillObject` RN 0.86'da yok (iki kaplama stilsiz kalıyordu), `Haptics.ImpactFeedbackStyle.Selection` yok (geri bildirim çalışmıyordu). İkisi düzeltildi. Bileşen propları ve `t` (çeviri) nesnesi yer yer gevşek (`Record<string, any>`) bırakıldı. |
 
-**Bilerek yapılmayanlar (nedenleriyle):**
-- **Pro abonelik, genel profil/arkadaşlar:** karar §9 (şimdilik yok).
-- **Dil ekleme (DE/ES/FR):** hedef kitle önce Türkiye, çeviri kalitesi doğrulanmadan eklenmedi.
-- **Claude API ile öneri, fotoğraflardan gezi önerisi:** sunucu tarafı anahtar yönetimi ve fotoğraf konumu için ek izin/native modül gerektirir.
-- **iOS widget'ları, belge kasası:** ayrı native hedef / yerel kimlik doğrulama modülü, kararsız veri saklama kuralları (Faz 5 notları).
-- **Sentry, analitik:** hesap/DSN senin tarafından açılmalı.
-- **Kalan `.js` dosyalarının TypeScript'e taşınması, rotalara bölme:** büyük davranış riski, ayrı iş olarak bırakıldı.
+**Bilerek yapılmayanlar (gerekçeleriyle):**
+- **Pro abonelik, genel profil/arkadaşlar:** karar §9.
+- **Android:** karar §9.
+- **Dil ekleme (DE/ES/FR):** hedef kitle önce Türkiye; doğrulanmamış çeviri yayınlamak yerine bırakıldı.
+- **Claude API ile öneri, fotoğraftan gezi önerisi:** sunucu tarafı anahtar yönetimi ve fotoğraf konumu için ek izin gerekir, §9 #7 (konum/fotoğraf yalnızca cihazda) ile çelişmeden yapılamaz.
+- **iOS widget'ları:** ayrı WidgetKit hedefi gerekir. CNG'de config plugin ile elle Swift eklemek kırılgan; ayrı bir iş olarak bırakıldı.
+- **Sentry / analitik:** DSN ve hesap sahibi tarafından açılmalı, ayrıca gizlilik politikası güncellemesi gerekir.
+- **Modalların tam rotaya bölünmesi:** büyük davranış riski; yalnızca derin bağlantı eklendi.
+- **Fotoğraf ve belge yedeği:** buluta gitmez (gizlilik kararı). Telefon değişirse kaybolur.
