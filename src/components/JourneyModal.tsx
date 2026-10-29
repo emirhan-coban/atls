@@ -206,7 +206,7 @@ export default function JourneyModal({
                         title={entry ? getLocalizedCountryName(entry, currentLang) : trip.countryId}
                         dateText={[monthShort(trip.month, currentLang), trip.year].filter(Boolean).join(' ')}
                         status={status === 'lived' ? 'lived' : 'visited'}
-                        size={150}
+                        size={156}
                       />
                     </TouchableOpacity>
                   );
