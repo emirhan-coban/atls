@@ -446,3 +446,12 @@ Bu bölüm kalan her maddeyi ya yapıldı ya da gerekçesiyle yapılmadı olarak
 | Rotalar 2.0 | **Bu ay nereye?**: iklim ve vize verisinden, henüz gitmediğin ülkeler (kolay giriş önce). Hızlı filtreler (Bu ay uygun, Vizesiz, Gitmediklerim) + kıta + arama. İki sütunlu fotoğraflı kart ızgarası. Karta dokununca tam sayfa rota: fotoğraf, giriş/en uygun aylar/saat/para şeridi, gezilecek yerler ve yemek (Apple/Google Maps), ipucu, **Gezi planla** (sayfanın içinde plan editörü), istek listesine ekle, ülke sayfası. |
 | Fotoğraflar | 42 yeni rota için Wikimedia Commons fotoğrafı (`scripts/build-route-photos.mjs` → `src/data/routePhotos.ts`), yalnızca CC0 / CC BY / CC BY-SA / kamu malı; yazar ve lisans fotoğrafın altında gösterilir. Lisansı uygun olmayan 5 rota (Çekya, Kıbrıs, Güney Kore, BAE, Azerbaycan) gradyan + bayrakla gösterilir. Fotoğraflar çalışma anında Commons'tan yüklenir (uygulama paketine girmez). |
 | Öneri listesi | "Bu ay nereye?" önerilerinden savaş/seyahat uyarısı olan ülkeler çıkarıldı (`NOT_SUGGESTED`, elle yazılmış liste, güncel tutulmalı). Tüm Ülkeler listesinde hepsi duruyor. |
+
+### Tasarım turu 3 (kalan ekranlar)
+
+- Pasaport sekmesindeki eğik "vize kartı" mühürleri kaldırıldı; Günlük ile aynı düz mühür kullanılıyor. Mühür kutusu dikeyde kırpıldı (üst/alt boşluk fazlaydı). Yeni gezi eklenince çıkan damga animasyonu artık eğik değil, düz oturuyor.
+- Ana Sayfa "Son geziler > Tümünü gör" Pasaport yerine Günlük'e gidiyor.
+- Paylaşım kartı (başlık, "atls." logosu), giriş ve onboarding başlıkları (`Heading`) ve onboarding yüzde rakamı Instrument Serif'e geçti. Yüzde rakamı satır yüksekliği yüzünden üstten kırpılıyordu, düzeltildi.
+- Simülatörde açık ve koyu temada Ana Sayfa, Keşfet, rota sayfası, Pasaport, Günlük (4 sekme), yıl özeti, paylaşım kartı, planlayıcı, onboarding (4 adım) ve hesap ekranı gözle kontrol edildi.
+
+**Mühür yeniden tasarlandı (bilet küpürü):** Önceki çerçeve + ülke kodu tasarımı beğenilmedi. `StampView` artık delikli bir bilet kupürü: solda bayrak, giriş/ikamet etiketi, ülke adı (Instrument Serif) ve tarih, ortada kesik çizgi, sağda ülke kodu ve yıl. Renk yalnızca gezilen (mavi) / yaşanan (yeşil) için değişiyor. Pasaport, Günlük, yıl özeti ve yeni gezi animasyonu aynı bileşeni kullanıyor. Yılı bilinmeyen gezilerde tarih alanı boş kalır.

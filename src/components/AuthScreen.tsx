@@ -34,6 +34,7 @@ import Svg, { Path } from 'react-native-svg';
 import GlowSphere from './GlowSphere';
 import { authService } from '../services/authService';
 import { generateHandle } from '../services/storageService';
+import Heading from './ui/Heading';
 
 const GoogleIcon = () => (
   <Svg width={18} height={18} viewBox="0 0 24 24">
@@ -460,9 +461,9 @@ export default function AuthScreen({
                   <KeyRound size={28} color={colors.gold.base} strokeWidth={2} />
                 </View>
 
-                <Text style={styles.mainTitle}>
+                <Heading style={styles.mainTitle}>
                   {t?.otpTitle || (currentLang === 'tr' ? 'E-postanızı Doğrulayın' : 'Verify Your Email')}
-                </Text>
+                </Heading>
                 
                 <Text style={styles.subTitle}>
                   {currentLang === 'tr' 
@@ -623,11 +624,11 @@ export default function AuthScreen({
         >
           {/* Welcome Text */}
           <View style={styles.headerTextCol}>
-            <Text style={styles.mainTitle}>
+            <Heading style={styles.mainTitle}>
               {tab === 'login' 
                 ? (currentLang === 'tr' ? 'Pasaportuna Giriş Yap' : 'Welcome Back')
                 : (currentLang === 'tr' ? 'Hesabını Oluştur' : 'Create Your Passport')}
-            </Text>
+            </Heading>
             <Text style={styles.subTitle}>
               {tab === 'login'
                 ? (currentLang === 'tr' 
@@ -974,8 +975,9 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 24,
   },
   mainTitle: {
-    fontSize: 28,
-    fontWeight: '900',
+    fontSize: 40,
+    lineHeight: 44,
+    fontFamily: fonts.display,
     color: colors.text.primary,
     letterSpacing: -0.6,
     marginBottom: 8,

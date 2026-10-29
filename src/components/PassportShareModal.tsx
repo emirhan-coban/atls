@@ -30,6 +30,8 @@ import OrbitalRings from './OrbitalRings';
 import { worldViewBox, worldMapFeatures } from '../data/worldMapPaths';
 import { getDynamicLocation } from '../utils/locationHelper';
 import { Country, Profile } from '../stores/types';
+import Heading from './ui/Heading';
+import { fonts } from '../theme/typography';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(width - 44, 350);
@@ -140,9 +142,9 @@ export default function PassportShareModal({
           {/* Header Bar */}
           <View style={styles.topBar}>
             <View>
-              <Text style={styles.sheetTitle}>
+              <Heading style={styles.sheetTitle}>
                 {currentLang === 'tr' ? 'Pasaport Kartı' : 'Passport Card'}
-              </Text>
+              </Heading>
               <Text style={styles.sheetSubtitle}>
                 {currentLang === 'tr'
                   ? 'Kartını yüksek çözünürlüklü 4:3 fotoğraf olarak paylaş'
@@ -381,10 +383,10 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 14,
   },
   sheetTitle: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 34,
+    lineHeight: 38,
+    fontFamily: fonts.display,
     color: colors.text.primary,
-    letterSpacing: -0.5,
   },
   sheetSubtitle: {
     fontSize: 11,
@@ -466,14 +468,14 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'baseline',
   },
   brandText: {
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 30,
+    fontFamily: fonts.display,
     color: colors.text.primary,
     letterSpacing: -0.5,
   },
   brandDot: {
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 30,
+    fontFamily: fonts.display,
     color: colors.gold.base,
   },
   passportBadge: {
