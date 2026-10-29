@@ -2,13 +2,13 @@ import { fonts } from '../theme/typography';
 import { makeStyles, useTheme } from '../theme/ThemeContext';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Compass, Sparkles, Plus, Plane, MapPin } from 'lucide-react-native';
+import { Compass, Sparkles, Plus, Plane } from 'lucide-react-native';
 import { theme } from '../theme';
 import Button from './ui/Button';
 import Heading from './ui/Heading';
 
 interface EmptyStateProps {
-  type?: 'passport' | 'wishlist' | 'search' | 'stamps';
+  type?: 'passport' | 'wishlist' | 'search';
   title: string;
   description: string;
   actionLabel?: string;
@@ -30,8 +30,6 @@ export default function EmptyState({
         return <Sparkles size={32} color={colors.gold.base} />;
       case 'search':
         return <Compass size={32} color={colors.gold.base} />;
-      case 'stamps':
-        return <MapPin size={32} color={colors.status.lived.color} />;
       default:
         return <Plane size={32} color={colors.gold.base} />;
     }

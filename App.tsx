@@ -133,12 +133,7 @@ function AppContent() {
   const handleAddCountry = useCallback((newCountry: any) => {
     addCountry(newCountry);
     if (newCountry?.id && newCountry.status !== 'want') {
-      useCelebrationStore.getState().showStamp({
-        countryId: newCountry.id,
-        status: newCountry.status,
-        year: newCountry.visitedYear || newCountry.year,
-        month: newCountry.visitedMonth || newCountry.month,
-      });
+      useCelebrationStore.getState().burstConfetti();
     }
   }, [addCountry]);
 
@@ -399,7 +394,7 @@ function AppContent() {
           currentLang={currentLang}
         />
 
-        {/* Stamp, badge banner and confetti (modals mount their own layer, see CelebrationLayer) */}
+        {/* Badge banner and confetti (modals mount their own layer, see CelebrationLayer) */}
         <CelebrationLayer hostId="app" currentLang={currentLang} />
       </SafeAreaView>
     </SafeAreaProvider>

@@ -556,7 +556,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
             </Heading>
 
             <Text style={styles.hookSubTitle}>
-              {t?.onboardingPromiseSub || 'Seyahatlerini haritalandır, dijital sınır mühürlerini topla ve kişisel dünya pasaportunu başlat.'}
+              {t?.onboardingPromiseSub || 'Seyahatlerini haritalandır, ülkelerini işaretle ve kişisel dünya pasaportunu başlat.'}
             </Text>
           </Animated.View>
         </View>
@@ -953,7 +953,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
               </View>
               <View style={styles.statTrioItem}>
                 <Text style={styles.statTrioNum}>{totalCount}</Text>
-                <Text style={styles.statTrioLabel}>{t?.stampsLabel || 'MÜHÜR'}</Text>
+                <Text style={styles.statTrioLabel}>{currentLang === 'tr' ? 'ÜLKE İŞARETİ' : 'MARKED'}</Text>
               </View>
             </View>
           </Animated.View>
