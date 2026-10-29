@@ -1,0 +1,78 @@
+type Lang = 'tr' | 'en';
+
+const strings = {
+  title: { tr: 'Seyahat Planlayıcı', en: 'Trip Planner' },
+  addPlan: { tr: 'Gezi Planla', en: 'Plan a Trip' },
+  editPlan: { tr: 'Planı Düzenle', en: 'Edit Plan' },
+  emptyTitle: { tr: 'Henüz plan yok', en: 'No plans yet' },
+  emptyDesc: {
+    tr: 'Gitmek istediğin yeri ve tarihi ekle. Geri sayım, hazırlık listesi ve bütçe burada.',
+    en: 'Add where and when you want to go. Countdown, packing list and budget live here.',
+  },
+  upcoming: { tr: 'YAKLAŞAN', en: 'UPCOMING' },
+  past: { tr: 'TAMAMLANAN', en: 'FINISHED' },
+  ongoing: { tr: 'Şimdi yolculukta', en: 'On the road now' },
+  daysLeft: { tr: '{n} gün kaldı', en: '{n} days to go' },
+  oneDayLeft: { tr: 'Yarın!', en: 'Tomorrow!' },
+  today: { tr: 'Bugün başlıyor', en: 'Starts today' },
+  ended: { tr: 'Bitti', en: 'Finished' },
+  startDate: { tr: 'BAŞLANGIÇ', en: 'START' },
+  endDate: { tr: 'BİTİŞ (İSTEĞE BAĞLI)', en: 'END (OPTIONAL)' },
+  noEndDate: { tr: 'Bitiş tarihi yok', en: 'No end date' },
+  setEndDate: { tr: 'Bitiş tarihi ekle', en: 'Add an end date' },
+  endBeforeStart: { tr: 'Bitiş tarihi başlangıçtan önce olamaz.', en: 'The end date cannot be before the start.' },
+  year: { tr: 'Yıl', en: 'Year' },
+  day: { tr: 'Gün', en: 'Day' },
+  cities: { tr: 'ŞEHİRLER (VİRGÜLLE AYIR)', en: 'CITIES (SEPARATE WITH COMMAS)' },
+  notes: { tr: 'NOTLAR', en: 'NOTES' },
+  notesPlaceholder: { tr: 'Rezervasyon numaraları, fikirler…', en: 'Booking numbers, ideas…' },
+  chooseCountry: { tr: 'Ülke seç', en: 'Choose country' },
+  searchCountry: { tr: 'Ülke ara...', en: 'Search country...' },
+  save: { tr: 'Kaydet', en: 'Save' },
+  deletePlan: { tr: 'Planı Sil', en: 'Delete Plan' },
+  deleteTitle: { tr: 'Plan silinsin mi?', en: 'Delete this plan?' },
+  deleteMsg: { tr: 'Hazırlık listesi, bütçe ve hatırlatıcılar da silinir.', en: 'Its checklist, budget and reminders are deleted too.' },
+  cancel: { tr: 'Vazgeç', en: 'Cancel' },
+  checklist: { tr: 'HAZIRLIK LİSTESİ', en: 'CHECKLIST' },
+  addTemplate: { tr: 'Şablon ekle', en: 'Add a template' },
+  addItem: { tr: 'Madde ekle…', en: 'Add an item…' },
+  entryItems: { tr: 'Giriş koşullarına göre ekle', en: 'Add entry requirements' },
+  entryNone: { tr: 'Bu ülke için ek bir giriş maddesi gerekmiyor.', en: 'No extra entry items needed for this country.' },
+  budget: { tr: 'BÜTÇE', en: 'BUDGET' },
+  budgetLabel: { tr: 'Kalem (Uçak, otel…)', en: 'Item (flight, hotel…)' },
+  budgetAmount: { tr: 'Tutar', en: 'Amount' },
+  budgetTotal: { tr: 'Toplam', en: 'Total' },
+  budgetNote: { tr: 'Tutarlar para birimine çevrilmez, yazdığın gibi toplanır.', en: 'Amounts are not converted; they are summed as typed.' },
+  addBudget: { tr: 'Ekle', en: 'Add' },
+  reminders: { tr: 'Hatırlatıcılar', en: 'Reminders' },
+  remindersOn: { tr: 'Gezi öncesi hatırlatıcılar açık', en: 'Pre-trip reminders are on' },
+  remindersOff: { tr: 'Hatırlatıcılar kapalı. Almak için bildirimlere izin ver.', en: 'Reminders are off. Allow notifications to get them.' },
+  remindersAsk: { tr: 'Hatırlatıcıları aç', en: 'Turn on reminders' },
+  remindersDenied: {
+    tr: 'Bildirim izni verilmedi. İstersen iOS Ayarlar > atls. > Bildirimler bölümünden açabilirsin.',
+    en: 'Notification permission was not granted. You can turn it on in iOS Settings > atls. > Notifications.',
+  },
+  askTitle: { tr: 'Hatırlatıcı ister misin?', en: 'Want reminders?' },
+  askMsg: {
+    tr: 'Gezine 1 hafta ve 1 gün kala, hazırlık listen eksikse de 3 gün kala bildirim gönderelim.',
+    en: 'We can notify you a week and a day before the trip, and 3 days before if your checklist is unfinished.',
+  },
+  allow: { tr: 'İzin ver', en: 'Allow' },
+  notNow: { tr: 'Şimdi değil', en: 'Not now' },
+  logTrip: { tr: 'Gezi günlüğüne ekle', en: 'Add to travel journal' },
+  logTripHint: { tr: 'Gezin bitti. Günlüğüne ekleyip plandan kaldırabilirsin.', en: 'This trip is over. Add it to your journal and remove the plan.' },
+  planCardTitle: { tr: 'Planlayıcı', en: 'Planner' },
+  planCardCta: { tr: 'Bir gezi planla, hazırlıkları takip et', en: 'Plan a trip and track your preparation' },
+  planTrip: { tr: 'Gezi planla', en: 'Plan a trip' },
+  items: { tr: 'madde', en: 'items' },
+} as const;
+
+export type PlannerKey = keyof typeof strings;
+
+export function lt(key: PlannerKey, lang: Lang, vars?: Record<string, string | number>): string {
+  let text: string = strings[key][lang];
+  if (vars) for (const [k, v] of Object.entries(vars)) text = text.replace(`{${k}}`, String(v));
+  return text;
+}
+
+export const CURRENCIES = ['EUR', 'USD', 'GBP', 'TRY', 'JPY', 'CHF'];
