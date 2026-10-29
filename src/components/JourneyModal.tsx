@@ -9,7 +9,6 @@ import EmptyState from './EmptyState';
 import AchievementBadge from './AchievementBadge';
 import TripEditorSheet from './TripEditorSheet';
 import CelebrationLayer from './CelebrationLayer';
-import StampView from './StampView';
 import YearSummarySheet from './YearSummarySheet';
 import { photoUri } from '../utils/photos';
 import ContinentalProgress from './ContinentalProgress';
@@ -26,7 +25,7 @@ import { useProgressStore } from '../stores/useProgressStore';
 import { useAppStore } from '../stores/useAppStore';
 import Heading from './ui/Heading';
 
-type Tab = 'timeline' | 'stamps' | 'stats' | 'badges';
+type Tab = 'timeline' | 'stats' | 'badges';
 
 interface JourneyModalProps {
   visible: boolean;
@@ -118,7 +117,6 @@ export default function JourneyModal({
 
         <View style={styles.tabs}>
           <Chip label={jt('tabTimeline', currentLang)} selected={tab === 'timeline'} onPress={() => setTab('timeline')} />
-          <Chip label={jt('tabStamps', currentLang)} selected={tab === 'stamps'} onPress={() => setTab('stamps')} />
           <Chip label={jt('tabStats', currentLang)} selected={tab === 'stats'} onPress={() => setTab('stats')} />
           <Chip label={jt('tabBadges', currentLang)} selected={tab === 'badges'} onPress={() => setTab('badges')} />
         </View>
@@ -189,30 +187,6 @@ export default function JourneyModal({
                 ))
               )}
             </>
-          )}
-
-          {tab === 'stamps' && (
-            ordered.length === 0 ? (
-              <EmptyState type="stamps" title={jt('emptyTitle', currentLang)} description={jt('stampsEmpty', currentLang)} />
-            ) : (
-              <View style={styles.stampGrid}>
-                {ordered.map((trip) => {
-                  const entry = countryOf(trip.countryId);
-                  const status = countries.find((c) => c.id === trip.countryId)?.status;
-                  return (
-                    <TouchableOpacity key={trip.id} onPress={() => onEditTrip(trip)} activeOpacity={0.85} style={styles.stampCell}>
-                      <StampView
-                        countryId={trip.countryId}
-                        title={entry ? getLocalizedCountryName(entry, currentLang) : trip.countryId}
-                        dateText={[monthShort(trip.month, currentLang), trip.year].filter(Boolean).join(' ')}
-                        status={status === 'lived' ? 'lived' : 'visited'}
-                        size={156}
-                      />
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )
           )}
 
           {tab === 'stats' && (
@@ -444,16 +418,6 @@ const useStyles = makeStyles((colors) =>
     tripMeta: { fontSize: 12, fontWeight: '600', color: colors.text.secondary },
     tripCities: { fontSize: 12, fontWeight: '600', color: colors.gold.base },
     tripNotes: { fontSize: 13, color: colors.text.soft, marginTop: 2 },
-    stampGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 },
-    stampCell: {
-      width: '48%',
-      alignItems: 'center',
-      paddingVertical: 14,
-      borderRadius: 22,
-      backgroundColor: colors.panel.base,
-      borderWidth: 1,
-      borderColor: colors.glass.hairline,
-    },
     thumbRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
     thumb: { width: 46, height: 46, borderRadius: 10, backgroundColor: colors.glass.fillStrong },
     thumbMore: { fontSize: 12, fontWeight: '800', color: colors.text.secondary },

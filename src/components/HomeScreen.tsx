@@ -121,7 +121,7 @@ function HomeScreen({
           <Text style={styles.explorerGreetingSub}>
             {currentLang === 'tr'
               ? 'Rotaların, vizelerin ve seyahat haritan.'
-              : 'Your journeys, stamps & personal travel map.'}
+              : 'Your journeys, visas & personal travel map.'}
           </Text>
         </View>
 
@@ -143,12 +143,12 @@ function HomeScreen({
 
             <View style={styles.emptyTextContent}>
               <Text style={styles.emptyHeroTitle}>
-                {currentLang === 'tr' ? 'İlk Ülkeni Damgala' : 'Stamp Your First Country'}
+                {currentLang === 'tr' ? 'İlk Ülkeni Ekle' : 'Add Your First Country'}
               </Text>
               <Text style={styles.emptyHeroDesc}>
                 {currentLang === 'tr'
                   ? 'Gittiğin veya yaşamak istediğin ülkeleri seç, sana özel seyahat haritan ve vizelerin canlansın.'
-                  : 'Select countries you have visited or dream of visiting to bring your personal world map and stamps to life.'}
+                  : 'Select countries you have visited or dream of visiting to bring your personal world map to life.'}
               </Text>
             </View>
 
@@ -159,7 +159,7 @@ function HomeScreen({
             />
           </View>
         ) : (
-          /* POPULATED STATE: User's stamped countries with curated trivia */
+          /* POPULATED STATE: the user's countries with curated trivia */
           <View style={styles.countryHeroCard}>
             {/* Top Row: Tag, Flag & Year */}
             <View style={styles.countryHeroTopRow}>
@@ -452,7 +452,7 @@ function HomeScreen({
         <ChevronRight size={18} color={colors.text.secondary} />
       </TouchableOpacity>
 
-      {/* SECTION: Recent Arrivals & Stamps */}
+      {/* SECTION: Recent trips */}
       <View style={[styles.sectionHeader, { marginTop: 10 }]}>
         <Text style={styles.stampsTitle}>{t.recentArrivals}</Text>
         <TouchableOpacity onPress={onOpenJourney ?? onNavigateToPassport}>

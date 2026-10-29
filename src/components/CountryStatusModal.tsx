@@ -106,10 +106,10 @@ export default function CountryStatusModal({
     if (isConverting) {
       setTimeout(() => {
         Alert.alert(
-          currentLang === 'tr' ? '🎉 Pasaportuna Mühürlendi!' : '🎉 Stamped in Your Passport!',
+          currentLang === 'tr' ? '🎉 Pasaportuna Eklendi!' : '🎉 Added to Your Passport!',
           currentLang === 'tr'
-            ? `Tebrikler! ${country.flag} ${countryName} hedeflerinden pasaportuna resmi ${selectedStatus === 'lived' ? 'ikamet' : 'giriş'} mührü olarak işlendi!`
-            : `Congratulations! ${country.flag} ${countryName} is now officially stamped in your passport!`
+            ? `Tebrikler! ${country.flag} ${countryName} hedeflerinden pasaportuna ${selectedStatus === 'lived' ? 'yaşadığın' : 'gittiğin'} ülke olarak işlendi!`
+            : `Congratulations! ${country.flag} ${countryName} is now in your passport!`
         );
       }, 300);
     }
@@ -208,8 +208,8 @@ export default function CountryStatusModal({
                 </View>
                 <Text style={styles.convertBannerDesc}>
                   {currentLang === 'tr'
-                    ? `Bu ülkeyi ziyaret ettin mi veya oraya mı taşındın? Durumunu güncelleyerek pasaportuna resmi mührünü basabilirsin.`
-                    : `Have you visited or moved here? Update its status to stamp it into your official passport.`}
+                    ? `Bu ülkeyi ziyaret ettin mi veya oraya mı taşındın? Durumunu güncelleyerek pasaportuna ekleyebilirsin.`
+                    : `Have you visited or moved here? Update its status to add it to your passport.`}
                 </Text>
               </View>
             )}
@@ -400,7 +400,7 @@ export default function CountryStatusModal({
                 onPress={handleSave}
                 label={
                   isConverting
-                    ? (currentLang === 'tr' ? 'Mührü Pasaporta İşle ✈️' : 'Stamp into Passport ✈️')
+                    ? (currentLang === 'tr' ? 'Pasaporta İşle ✈️' : 'Add to Passport ✈️')
                     : (t.saveChanges || (currentLang === 'tr' ? 'Değişiklikleri Kaydet' : 'Save Changes'))
                 }
                 icon={(color) =>
