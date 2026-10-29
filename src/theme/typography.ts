@@ -1,7 +1,12 @@
-/** Display (headline) faces, loaded in App.tsx via @expo-google-fonts/fraunces. */
+/**
+ * Display faces, loaded in App.tsx via @expo-google-fonts/instrument-serif. The family has only a regular and an
+ * italic style, so headlines get their weight from size, and the italic is kept for one emphasised word or a subtitle.
+ * `displayHeavy` is the same face; it stays as a name so headline styles do not need to change.
+ */
 export const fonts = {
-  display: 'Fraunces_700Bold',
-  displayHeavy: 'Fraunces_900Black',
+  display: 'InstrumentSerif_400Regular',
+  displayHeavy: 'InstrumentSerif_400Regular',
+  displayItalic: 'InstrumentSerif_400Regular_Italic',
 };
 
 export const typography = {

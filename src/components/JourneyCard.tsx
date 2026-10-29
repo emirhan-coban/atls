@@ -80,7 +80,7 @@ const useStyles = makeStyles((colors) =>
     },
     body: { flex: 1, gap: 4 },
     eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: colors.gold.base },
-    title: { fontSize: 20, color: colors.text.primary, fontFamily: fonts.display },
+    title: { fontSize: 25, color: colors.text.primary, fontFamily: fonts.display },
     track: { height: 6, borderRadius: 3, backgroundColor: colors.glass.fillStrong, overflow: 'hidden' },
     fill: { height: '100%', borderRadius: 3, backgroundColor: colors.gold.base },
     hint: { fontSize: 12, fontWeight: '600', color: colors.text.secondary },

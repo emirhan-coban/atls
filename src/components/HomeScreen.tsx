@@ -594,16 +594,17 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 12,
   },
   explorerGreetingText: {
-    fontSize: 22,
+    fontSize: 36,
+    lineHeight: 40,
     color: colors.text.primary,
-    letterSpacing: -0.5,
     fontFamily: fonts.display,
   },
   explorerGreetingSub: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 19,
+    lineHeight: 24,
     color: colors.text.secondary,
     marginTop: 2,
+    fontFamily: fonts.displayItalic,
   },
   subtitleText: {
     fontSize: 10,
@@ -713,7 +714,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 18,
   },
   emptyHeroTitle: {
-    fontSize: 22,
+    fontSize: 28,
     color: colors.text.primary,
     letterSpacing: -0.5,
     marginBottom: 6,
@@ -797,7 +798,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     marginBottom: 16,
   },
   countryHeroTitle: {
-    fontSize: 24,
+    fontSize: 30,
     color: colors.text.primary,
     letterSpacing: -0.6,
     marginBottom: 6,
@@ -862,7 +863,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     paddingHorizontal: 2,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 21,
     color: colors.text.primary,
     letterSpacing: -0.3,
     fontFamily: fonts.display,

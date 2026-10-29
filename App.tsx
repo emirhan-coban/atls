@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, View, Alert, LogBox, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold, Fraunces_900Black } from '@expo-google-fonts/fraunces';
+import { InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { translations } from './src/localization/translations';
 import { useAppStore, useCountryStore, useProfileStore, usePlanStore, useTripStore } from './src/stores';
@@ -37,7 +37,7 @@ if (process.env.EXPO_PUBLIC_DEMO_MODE === '1') {
 }
 
 function AppContent() {
-  const [fontsLoaded, fontError] = useFonts({ Fraunces_700Bold, Fraunces_900Black });
+  const [fontsLoaded, fontError] = useFonts({ InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic });
   const styles = useStyles();
   const isLoaded = useAppStore((state) => state.isLoaded);
   const currentLang = useAppStore((state) => state.currentLang);

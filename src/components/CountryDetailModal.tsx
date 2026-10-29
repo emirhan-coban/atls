@@ -484,7 +484,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'center',
   },
   countryTitle: {
-    fontSize: 26,
+    fontSize: 32,
     color: colors.text.primary,
     textAlign: 'center',
     letterSpacing: -0.5,

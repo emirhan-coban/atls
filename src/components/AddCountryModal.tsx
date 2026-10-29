@@ -510,7 +510,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     alignItems: 'baseline',
   },
   title: {
-    fontSize: 22,
+    fontSize: 28,
     color: colors.text.primary,
     letterSpacing: -0.5,
     fontFamily: fonts.display,
