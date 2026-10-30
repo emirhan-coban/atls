@@ -31,7 +31,7 @@ export default function CountryProfileSection({ countryId, currentLang, isHomeCo
 
   const group = visaGroup(facts.visa.status);
   const visaColor =
-    group === 'free' ? colors.status.lived.color : group === 'easy' ? colors.gold.base : group === 'required' ? colors.danger : colors.text.muted;
+    group === 'free' ? colors.status.visited.color : group === 'easy' ? colors.gold.base : group === 'required' ? colors.danger : colors.text.muted;
   const stay = formatStay(facts.visa.stay, currentLang);
   const showEntry = !isHomeCountry && facts.visa.status !== 'unknown';
 
