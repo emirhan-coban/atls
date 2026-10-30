@@ -1,31 +1,25 @@
-import { makeStyles, useTheme } from '../theme/ThemeContext';
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  PanResponder,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
-import { Country } from '../stores/types';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { GestureResponderEvent, LayoutChangeEvent, PanResponder, StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { Plus, Minus, RotateCcw } from 'lucide-react-native';
+import { Minus, Plus, RotateCcw } from 'lucide-react-native';
+import { makeStyles, useTheme } from '../theme/ThemeContext';
+import { spacing } from '../theme/spacing';
+import { Country } from '../stores/types';
 import { worldMapFeatures } from '../data/worldMapPaths';
-import { getLocalizedCountryName, availableCatalog } from '../data/travelData';
+import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { translations } from '../localization/translations';
-
-// Base world coordinates
-const BASE_VIEWBOX = {
-  minX: 30.767,
-  minY: 241.591,
-  width: 784.077,
-  height: 458.627,
-};
-const CENTER_X = BASE_VIEWBOX.minX + BASE_VIEWBOX.width / 2;
-const CENTER_Y = BASE_VIEWBOX.minY + BASE_VIEWBOX.height / 2;
+import {
+  clampView,
+  INITIAL_VIEW,
+  MapView,
+  MAX_ZOOM,
+  panBy,
+  Point,
+  Size,
+  viewBoxOf,
+  zoomAround,
+} from '../utils/mapView';
 
 interface WorldMapProps {
   countries?: Country[];
@@ -41,7 +35,56 @@ interface WorldMapProps {
   fullScreen?: boolean;
 }
 
-export default function WorldMap({
+interface CountryPathsProps {
+  fills: Record<string, string>;
+  selectedId: string | null;
+  landColor: string;
+  borderColor: string;
+  selectedFill: string;
+  selectedStroke: string;
+  interactive: boolean;
+  onPressCountry: (id: string) => void;
+}
+
+/** The ~200 country shapes. Memoised on purpose: panning and zooming only change the SVG viewBox, never these elements. */
+const CountryPaths = memo(function CountryPaths({
+  fills,
+  selectedId,
+  landColor,
+  borderColor,
+  selectedFill,
+  selectedStroke,
+  interactive,
+  onPressCountry,
+}: CountryPathsProps) {
+  return (
+    <G strokeLinejoin="round" strokeLinecap="round">
+      {worldMapFeatures.map((feature, index) => {
+        const selected = selectedId === feature.id;
+        return (
+          <Path
+            key={`${feature.id}-${index}`}
+            d={feature.d}
+            fill={fills[feature.id] ?? (selected ? selectedFill : landColor)}
+            stroke={selected ? selectedStroke : borderColor}
+            strokeWidth={selected ? 2.2 : 0.5}
+            vectorEffect="non-scaling-stroke"
+            onPress={interactive ? () => onPressCountry(feature.id) : undefined}
+          />
+        );
+      })}
+    </G>
+  );
+});
+
+const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
+const midpoint = (a: Point, b: Point): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+
+/**
+ * World map with one- and two-finger gestures: drag to pan, pinch to zoom around the fingers, double tap to zoom in.
+ * Zoom is done by changing the SVG viewBox, so the shapes stay sharp at any level.
+ */
+function WorldMap({
   countries = [],
   activeFilter = 'all',
   onSelectCountry,
@@ -56,455 +99,278 @@ export default function WorldMap({
 }: WorldMapProps) {
   const { colors } = useTheme();
   const styles = useStyles();
-  const [selectedCountryInfo, setSelectedCountryInfo] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [containerSize, setContainerSize] = useState({ width: 340, height: 200 });
-
   const activeT = t || (translations as Record<string, any>)[currentLang] || translations.tr;
 
-  // Refs for gesture tracking without stale closures
-  const zoomRef = useRef(1);
-  const panRef = useRef({ x: 0, y: 0 });
-  const initialPinchDist = useRef<number | null>(null);
-  const baseZoomOnPinch = useRef(1);
-  const basePanOnDrag = useRef({ x: 0, y: 0 });
-  const dragStartTouch = useRef({ x: 0, y: 0 });
-  const lastTapTime = useRef(0);
-  const rafId = useRef<number | null>(null);
+  const [size, setSize] = useState<Size>({ width: 340, height: 200 });
+  const [view, setView] = useState<MapView>(INITIAL_VIEW);
+  const [selectedInfo, setSelectedInfo] = useState<string | null>(null);
 
-  // Sync refs with state
-  useEffect(() => {
-    zoomRef.current = zoom;
-  }, [zoom]);
+  const sizeRef = useRef(size);
+  const viewRef = useRef(view);
+  const originRef = useRef<Point>({ x: 0, y: 0 });
+  const containerRef = useRef<View>(null);
+  const gesture = useRef<{ view: MapView; fingers: Point[]; startDist: number; startMid: Point } | null>(null);
+  const frame = useRef<number | null>(null);
+  const lastTap = useRef(0);
+  const dragged = useRef(false);
 
-  useEffect(() => {
-    panRef.current = panOffset;
-  }, [panOffset]);
+  const commit = useCallback((next: MapView) => {
+    viewRef.current = next;
+    if (frame.current === null) {
+      frame.current = requestAnimationFrame(() => {
+        frame.current = null;
+        setView(viewRef.current);
+      });
+    }
+  }, []);
 
-  // Compute crisp vector viewBox
-  const computedViewBox = useMemo(() => {
-    const z = Math.max(1, zoom);
-    const w = BASE_VIEWBOX.width / z;
-    const h = BASE_VIEWBOX.height / z;
+  useEffect(() => () => {
+    if (frame.current !== null) cancelAnimationFrame(frame.current);
+  }, []);
 
-    const maxPanX = (BASE_VIEWBOX.width - w) / 2;
-    const maxPanY = (BASE_VIEWBOX.height - h) / 2;
-
-    const clampedX = Math.max(-maxPanX, Math.min(maxPanX, panOffset.x));
-    const clampedY = Math.max(-maxPanY, Math.min(maxPanY, panOffset.y));
-
-    const minX = CENTER_X + clampedX - w / 2;
-    const minY = CENTER_Y + clampedY - h / 2;
-
-    return `${minX.toFixed(3)} ${minY.toFixed(3)} ${w.toFixed(3)} ${h.toFixed(3)}`;
-  }, [zoom, panOffset]);
-
-  const updateViewBoxThrottled = (newZoom: number, newPan: { x: number; y: number }) => {
-    if (rafId.current) cancelAnimationFrame(rafId.current);
-    rafId.current = requestAnimationFrame(() => {
-      setZoom(newZoom);
-      setPanOffset(newPan);
+  const onLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    if (width === 0 || height === 0) return;
+    sizeRef.current = { width, height };
+    setSize({ width, height });
+    commit(clampView(viewRef.current, { width, height }));
+    containerRef.current?.measureInWindow((x, y) => {
+      originRef.current = { x, y };
     });
   };
 
-  const resetZoom = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    zoomRef.current = 1;
-    panRef.current = { x: 0, y: 0 };
-    setZoom(1);
-    setPanOffset({ x: 0, y: 0 });
-    if (onInteractionChange) onInteractionChange(false);
-  };
+  const fingersOf = (e: GestureResponderEvent): Point[] =>
+    e.nativeEvent.touches.map((touch) => ({ x: touch.pageX - originRef.current.x, y: touch.pageY - originRef.current.y }));
 
-  const zoomIn = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const target = Math.min(8.0, zoomRef.current * 1.5);
-    zoomRef.current = target;
-    setZoom(target);
-  };
-
-  const zoomOut = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const target = Math.max(1, zoomRef.current / 1.5);
-    if (target <= 1.05) {
-      resetZoom();
-    } else {
-      zoomRef.current = target;
-      setZoom(target);
-    }
+  const beginGesture = (e: GestureResponderEvent) => {
+    const fingers = fingersOf(e);
+    gesture.current = {
+      view: viewRef.current,
+      fingers,
+      startDist: fingers.length > 1 ? distance(fingers[0], fingers[1]) : 0,
+      startMid: fingers.length > 1 ? midpoint(fingers[0], fingers[1]) : fingers[0],
+    };
   };
 
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponder: (_, gesture) => {
-          if (!interactive) return false;
-          return (
-            gesture.numberActiveTouches === 2 ||
-            (zoomRef.current > 1.05 &&
-              (Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4)) ||
-            (Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5)
-          );
-        },
-        onPanResponderGrant: (evt, gesture) => {
-          if (onInteractionChange) onInteractionChange(true);
-          if (evt.nativeEvent.touches.length === 2) {
-            const [t1, t2] = evt.nativeEvent.touches;
-            initialPinchDist.current = Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY);
-            baseZoomOnPinch.current = zoomRef.current;
-          } else if (evt.nativeEvent.touches.length === 1) {
-            dragStartTouch.current = { x: gesture.x0, y: gesture.y0 };
-            basePanOnDrag.current = { ...panRef.current };
-          }
-        },
+        // Two fingers, or a real drag, are taken before a country shape can claim the touch. A plain tap still reaches the shape.
+        onStartShouldSetPanResponderCapture: (e) => interactive && e.nativeEvent.touches.length > 1,
+        onMoveShouldSetPanResponderCapture: (_, g) =>
+          interactive && (g.numberActiveTouches > 1 || Math.abs(g.dx) > 6 || Math.abs(g.dy) > 6),
         onPanResponderTerminationRequest: () => false,
-        onPanResponderMove: (evt, gesture) => {
-          if (evt.nativeEvent.touches.length === 2 && initialPinchDist.current) {
-            const [t1, t2] = evt.nativeEvent.touches;
-            const dist = Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY);
-            const factor = dist / initialPinchDist.current;
-            const nextZoom = Math.max(1, Math.min(8.0, baseZoomOnPinch.current * factor));
-            zoomRef.current = nextZoom;
-            updateViewBoxThrottled(nextZoom, panRef.current);
-          } else if (evt.nativeEvent.touches.length === 1 && (zoomRef.current > 1.05 || Math.abs(gesture.dx) > 6)) {
-            // Screen pixel to SVG unit ratio
-            const currentW = BASE_VIEWBOX.width / zoomRef.current;
-            const currentH = BASE_VIEWBOX.height / zoomRef.current;
-            const ratioX = currentW / Math.max(100, containerSize.width);
-            const ratioY = currentH / Math.max(100, containerSize.height);
-
-            const nextPanX = basePanOnDrag.current.x - gesture.dx * ratioX;
-            const nextPanY = basePanOnDrag.current.y - gesture.dy * ratioY;
-
-            const maxPanX = (BASE_VIEWBOX.width - currentW) / 2;
-            const maxPanY = (BASE_VIEWBOX.height - currentH) / 2;
-
-            const clampedPan = {
-              x: Math.max(-maxPanX, Math.min(maxPanX, nextPanX)),
-              y: Math.max(-maxPanY, Math.min(maxPanY, nextPanY)),
-            };
-
-            panRef.current = clampedPan;
-            updateViewBoxThrottled(zoomRef.current, clampedPan);
+        onPanResponderGrant: (e) => {
+          dragged.current = true;
+          onInteractionChange?.(true);
+          containerRef.current?.measureInWindow((x, y) => {
+            originRef.current = { x, y };
+          });
+          beginGesture(e);
+        },
+        onPanResponderMove: (e, g) => {
+          const fingers = fingersOf(e);
+          const start = gesture.current;
+          if (!start) return;
+          if (fingers.length > 1) {
+            // a second finger arrived after the drag began: restart from the current state
+            if (start.startDist === 0) {
+              gesture.current = { view: viewRef.current, fingers, startDist: distance(fingers[0], fingers[1]), startMid: midpoint(fingers[0], fingers[1]) };
+              return;
+            }
+            const dist = distance(fingers[0], fingers[1]);
+            commit(zoomAround(start.view, sizeRef.current, start.view.zoom * (dist / start.startDist), start.startMid, midpoint(fingers[0], fingers[1])));
+          } else if (start.startDist === 0) {
+            commit(panBy(start.view, sizeRef.current, g.dx, g.dy));
           }
         },
         onPanResponderRelease: () => {
-          initialPinchDist.current = null;
-          if (onInteractionChange) onInteractionChange(false);
-          if (zoomRef.current < 1) {
-            resetZoom();
-          }
+          gesture.current = null;
+          onInteractionChange?.(false);
+          setTimeout(() => {
+            dragged.current = false;
+          }, 80);
         },
         onPanResponderTerminate: () => {
-          initialPinchDist.current = null;
-          if (onInteractionChange) onInteractionChange(false);
+          gesture.current = null;
+          onInteractionChange?.(false);
+          dragged.current = false;
         },
       }),
-    [containerSize, interactive, onInteractionChange]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [interactive, onInteractionChange, commit]
   );
 
-  // Fast country lookup map by ISO-2 code
-  const countryStatusMap = useMemo(() => {
-    const map: Record<string, Country> = {};
+  const zoomBy = useCallback(
+    (factor: number) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const current = viewRef.current;
+      const centre = { x: sizeRef.current.width / 2, y: sizeRef.current.height / 2 };
+      commit(zoomAround(current, sizeRef.current, current.zoom * factor, centre, centre));
+    },
+    [commit]
+  );
+
+  const reset = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    commit(clampView(INITIAL_VIEW, sizeRef.current));
+  }, [commit]);
+
+  // Fill colour per country id; recomputed only when the countries or filter change
+  const fills = useMemo(() => {
+    const map: Record<string, string> = {};
     countries.forEach((c) => {
-      map[c.id.toUpperCase()] = c;
+      const filtered = activeFilter !== 'all' && c.status !== activeFilter;
+      map[c.id.toUpperCase()] = filtered
+        ? colors.map.landDim
+        : c.status === 'lived'
+          ? colors.status.lived.color
+          : c.status === 'visited'
+            ? colors.status.visited.color
+            : c.status === 'want'
+              ? colors.gold.base
+              : colors.map.land;
     });
     return map;
-  }, [countries]);
+  }, [countries, activeFilter, colors]);
 
-  const getCountryColor = (id: string) => {
-    const country = countryStatusMap[id];
-    if (!country) return colors.map.land;
-
-    if (activeFilter && activeFilter !== 'all' && country.status !== activeFilter) {
-      return colors.map.landDim; // Dimmed if not in active filter
-    }
-
-    switch (country.status) {
-      case 'lived':
-        return colors.status.lived.color; // Emerald beacon
-      case 'visited':
-        return colors.status.visited.color; // Electric sapphire
-      case 'want':
-        return colors.gold.base; // Solar flare orange
-      default:
-        return colors.map.land;
-    }
-  };
-
-  const handleCountryPress = (id: string) => {
-    if (!interactive) return;
-
-    // Double-tap zoom into country
-    const now = Date.now();
-    if (now - lastTapTime.current < 300) {
-      if (zoomRef.current > 1.4) {
-        resetZoom();
-      } else {
-        zoomIn();
+  const handleCountryPress = useCallback(
+    (id: string) => {
+      if (dragged.current) return;
+      const now = Date.now();
+      if (now - lastTap.current < 300) {
+        lastTap.current = 0;
+        zoomBy(viewRef.current.zoom > 1.4 ? 1 / MAX_ZOOM : 2);
+        return;
       }
-      lastTapTime.current = 0;
-      return;
-    }
-    lastTapTime.current = now;
+      lastTap.current = now;
 
-    const country = countryStatusMap[id] || availableCatalog.find((c) => c.id.toUpperCase() === id.toUpperCase());
-    if (country) {
+      const marked = countries.find((c) => c.id.toUpperCase() === id.toUpperCase());
+      const country = marked || availableCatalog.find((c) => c.id.toUpperCase() === id.toUpperCase());
+      if (!country) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const countryName = getLocalizedCountryName(country, currentLang);
-      const isMarked = Boolean(countryStatusMap[id]);
-      const statusLabel = isMarked
-        ? (country.status === 'lived' 
-            ? (activeT?.livedIn || (currentLang === 'tr' ? 'YAŞANAN' : 'LIVED'))
-            : country.status === 'want' 
-              ? (activeT?.wishlist || (currentLang === 'tr' ? 'HEDEF' : 'WISHLIST'))
-              : (activeT?.visited || (currentLang === 'tr' ? 'GEZİLEN' : 'VISITED')))
-        : (currentLang === 'tr' ? 'KEŞFEDİLMEDİ' : 'UNEXPLORED');
-      setSelectedCountryInfo(`${country.flag || '🌍'} ${countryName} (${statusLabel})`);
-      if (onSelectCountry) onSelectCountry(country.id);
-    }
-  };
+      const label = marked
+        ? marked.status === 'lived'
+          ? activeT?.livedIn || (currentLang === 'tr' ? 'YAŞANAN' : 'LIVED')
+          : marked.status === 'want'
+            ? activeT?.wishlist || (currentLang === 'tr' ? 'HEDEF' : 'WISHLIST')
+            : activeT?.visited || (currentLang === 'tr' ? 'GEZİLEN' : 'VISITED')
+        : currentLang === 'tr'
+          ? 'KEŞFEDİLMEDİ'
+          : 'UNEXPLORED';
+      setSelectedInfo(`${country.flag || '🌍'} ${getLocalizedCountryName(country, currentLang)} (${label})`);
+      onSelectCountry?.(country.id);
+    },
+    [countries, activeT, currentLang, onSelectCountry, zoomBy]
+  );
 
-  const isZoomed = zoom > 1.05;
-  const zoomDisplay = (Math.round(zoom * 10) / 10).toFixed(1);
-  const shouldShowControls = showControls !== null ? showControls : interactive;
-
-  const containerStyle = fullScreen
-    ? [styles.fullScreenContainer, style]
-    : [styles.container, style];
+  const zoomed = view.zoom > 1.05;
+  const showUi = showControls !== null ? showControls : interactive;
 
   return (
     <View
-      style={containerStyle}
-      onLayout={(e) => {
-        const { width, height } = e.nativeEvent.layout;
-        setContainerSize({ width, height });
-      }}
+      ref={containerRef}
+      style={[fullScreen ? styles.fullScreen : styles.container, style]}
+      onLayout={onLayout}
       {...(interactive ? panResponder.panHandlers : {})}
     >
-      {/* Background coordinate grid watermark */}
-      <View style={styles.watermarkGrid} pointerEvents="none" />
-
-      {/* 
-        Native Vector SVG Canvas
-        ViewBox manipulation guarantees 100% vector sharpness at retina resolution without bitmap pixelation!
-      */}
-      <Svg
-        viewBox={computedViewBox}
-        preserveAspectRatio="xMidYMid meet"
-        style={styles.svg}
-      >
-        <G
-          stroke={colors.map.border}
-          strokeWidth={0.5}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        >
-          {worldMapFeatures.map((feature, idx) => {
-            const fill = getCountryColor(feature.id);
-            const isInteractive = interactive;
-            const isSelected = selectedCountryId && selectedCountryId.toUpperCase() === feature.id;
-
-            return (
-              <Path
-                key={`${feature.id}-${idx}`}
-                d={feature.d}
-                fill={isSelected ? colors.gold.light : fill}
-                stroke={isSelected ? colors.text.primary : colors.map.border}
-                strokeWidth={isSelected ? 1.0 : 0.5}
-                vectorEffect="non-scaling-stroke"
-                onPress={() => isInteractive && handleCountryPress(feature.id)}
-              />
-            );
-          })}
-        </G>
+      <Svg width="100%" height="100%" viewBox={viewBoxOf(view, size)} preserveAspectRatio="none">
+        <CountryPaths
+          fills={fills}
+          selectedId={selectedCountryId ? selectedCountryId.toUpperCase() : null}
+          landColor={colors.map.land}
+          borderColor={colors.map.border}
+          selectedFill={colors.map.landDim}
+          selectedStroke={colors.text.primary}
+          interactive={interactive}
+          onPressCountry={handleCountryPress}
+        />
       </Svg>
 
-      {/* Floating Status Badge (Shown only if controls are enabled) */}
-      {shouldShowControls && (
-        <View style={styles.badgeContainer}>
-          <View style={styles.blueDot} />
-          <Text style={styles.badgeText} numberOfLines={1}>
-            {selectedCountryInfo || (
-              countries.length === 0
-                ? (currentLang === 'tr' ? 'DÜNYA HARİTASI' : 'WORLD MAP')
-                : (activeT?.markedBorders
-                    ? activeT.markedBorders.replace('{count}', countries.length)
-                    : (currentLang === 'tr' ? `${countries.length} İŞARETLİ ÜLKE` : `${countries.length} MARKED COUNTRIES`))
-            )}
-          </Text>
-        </View>
-      )}
-
-      {/* Mini Zoom & Scale Controls top right */}
-      {shouldShowControls && (
-        <View style={styles.topRightControls}>
-          {isZoomed && (
-            <TouchableOpacity
-              onPress={resetZoom}
-              activeOpacity={0.75}
-              style={styles.resetButton}
-            >
-              <RotateCcw size={10} color={colors.gold.base} strokeWidth={2.5} />
-              <Text style={styles.resetText}>{`${zoomDisplay}x`}</Text>
-            </TouchableOpacity>
+      {showUi && (
+        <>
+          {!fullScreen && (
+          <View style={styles.badge} pointerEvents="none">
+            <View style={styles.badgeDot} />
+            <Text style={styles.badgeText} numberOfLines={1}>
+              {selectedInfo ||
+                (countries.length === 0
+                  ? currentLang === 'tr'
+                    ? 'DÜNYA HARİTASI'
+                    : 'WORLD MAP'
+                  : currentLang === 'tr'
+                    ? `${countries.length} İŞARETLİ ÜLKE`
+                    : `${countries.length} MARKED COUNTRIES`)}
+            </Text>
+          </View>
           )}
 
-          <View style={styles.zoomButtonsGroup}>
-            <TouchableOpacity
-              onPress={zoomIn}
-              activeOpacity={0.75}
-              style={styles.zoomBtn}
-            >
-              <Plus size={11} color={colors.text.primary} strokeWidth={2.5} />
-            </TouchableOpacity>
-
-            {isZoomed && (
-              <TouchableOpacity
-                onPress={zoomOut}
-                activeOpacity={0.75}
-                style={styles.zoomBtn}
-              >
-                <Minus size={11} color={colors.text.primary} strokeWidth={2.5} />
+          <View style={styles.controls}>
+            {zoomed && (
+              <TouchableOpacity onPress={reset} style={styles.controlBtn} accessibilityRole="button" accessibilityLabel="Reset zoom">
+                <RotateCcw size={16} color={colors.text.primary} />
               </TouchableOpacity>
             )}
+            <TouchableOpacity onPress={() => zoomBy(1.6)} style={styles.controlBtn} accessibilityRole="button" accessibilityLabel="Zoom in">
+              <Plus size={18} color={colors.text.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => zoomBy(1 / 1.6)} disabled={!zoomed} style={[styles.controlBtn, !zoomed && styles.controlOff]} accessibilityRole="button" accessibilityLabel="Zoom out">
+              <Minus size={18} color={colors.text.primary} />
+            </TouchableOpacity>
           </View>
-
-          {!isZoomed && (
-            <View style={styles.coordBadge}>
-              <Text style={styles.coordText}>WGS-84 • 195</Text>
-            </View>
-          )}
-        </View>
+        </>
       )}
     </View>
   );
 }
 
-const useStyles = makeStyles((colors) => StyleSheet.create({
-  container: {
-    width: '100%',
-    aspectRatio: 16 / 9.5,
-    backgroundColor: colors.canvas.base,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-    overflow: 'hidden',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullScreenContainer: {
-    width: '100%',
-    height: '100%',
-    flex: 1,
-    backgroundColor: colors.canvas.base,
-    overflow: 'hidden',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  watermarkGrid: {
-    ...StyleSheet.absoluteFill,
-    opacity: 0.06,
-  },
-  svg: {
-    width: '100%',
-    height: '100%',
-  },
-  badgeContainer: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    backgroundColor: colors.panel.raised,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    maxWidth: '75%',
-  },
-  blueDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.status.visited.color,
-  },
-  badgeText: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: colors.text.primary,
-    letterSpacing: 0.4,
-  },
-  topRightControls: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  resetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.status.visited.light,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.status.visited.border,
-  },
-  resetText: {
-    fontSize: 8.5,
-    fontWeight: '800',
-    color: colors.gold.light,
-    fontVariant: ['tabular-nums'],
-  },
-  zoomButtonsGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.panel.base,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  zoomBtn: {
-    width: 22,
-    height: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  coordBadge: {
-    backgroundColor: colors.glass.borderSoft,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-  },
-  coordText: {
-    fontSize: 8.5,
-    fontWeight: '700',
-    color: colors.text.secondary,
-    fontVariant: ['tabular-nums'],
-  },
-}));
+const useStyles = makeStyles((colors) =>
+  StyleSheet.create({
+    container: {
+      width: '100%',
+      aspectRatio: 16 / 9.5,
+      backgroundColor: colors.map.ocean,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.glass.hairline,
+      overflow: 'hidden',
+    },
+    fullScreen: {
+      flex: 1,
+      width: '100%',
+      backgroundColor: colors.map.ocean,
+      overflow: 'hidden',
+    },
+    badge: {
+      position: 'absolute',
+      left: spacing.md,
+      bottom: spacing.md,
+      maxWidth: '70%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 7,
+      borderRadius: 20,
+      backgroundColor: colors.panel.raised,
+      borderWidth: 1,
+      borderColor: colors.glass.hairline,
+    },
+    badgeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.status.visited.color },
+    badgeText: { flexShrink: 1, fontSize: 11, fontWeight: '800', letterSpacing: 0.4, color: colors.text.primary },
+    controls: { position: 'absolute', right: spacing.md, top: spacing.md, gap: spacing.sm },
+    controlBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.panel.raised,
+      borderWidth: 1,
+      borderColor: colors.glass.hairline,
+    },
+    controlOff: { opacity: 0.4 },
+  })
+);
+
+export default memo(WorldMap);

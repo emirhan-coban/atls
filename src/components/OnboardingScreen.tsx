@@ -45,6 +45,7 @@ import Svg, { Path } from 'react-native-svg';
 import WorldMap from './WorldMap';
 import { availableCatalog, CatalogCountry } from '../data/travelData';
 import { Country } from '../stores/types';
+import { CONTINENT_FILTERS, ContinentFilter, inContinent } from '../data/continents';
 import { authService } from '../services/authService';
 import { generateHandle } from '../services/storageService';
 import Heading from './ui/Heading';
@@ -210,17 +211,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
 
   const filteredVisitedCatalog = useMemo(() => {
     let list = availableCatalog;
-    if (continentFilter !== 'all') {
-      const filterLower = continentFilter.toLowerCase();
-      if (filterLower === 'americas' || filterLower === 'america') {
-        list = list.filter((c) =>
-          (c.continent && c.continent.toLowerCase().includes('america')) ||
-          (c.continentTr && c.continentTr.toLowerCase().includes('amerika'))
-        );
-      } else {
-        list = list.filter((c) => c.continent?.toLowerCase() === filterLower);
-      }
-    }
+    list = list.filter((c) => inContinent(c.continent, continentFilter as ContinentFilter));
     if (visitedSearch.trim()) {
       const q = visitedSearch.toLowerCase();
       list = list.filter(
@@ -818,14 +809,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
               </View>
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.continentChipsRow}>
-                {[
-                  { id: 'all', label: currentLang === 'tr' ? 'Tümü' : 'All' },
-                  { id: 'Europe', label: currentLang === 'tr' ? 'Avrupa' : 'Europe' },
-                  { id: 'Asia', label: currentLang === 'tr' ? 'Asya' : 'Asia' },
-                  { id: 'Americas', label: currentLang === 'tr' ? 'Amerika' : 'Americas' },
-                  { id: 'Africa', label: currentLang === 'tr' ? 'Afrika' : 'Africa' },
-                  { id: 'Oceania', label: currentLang === 'tr' ? 'Okyanusya' : 'Oceania' },
-                ].map((c) => (
+                {CONTINENT_FILTERS.map((c) => (
                   <TouchableOpacity
                     key={c.id}
                     onPress={() => {
@@ -835,7 +819,7 @@ export default function OnboardingScreen({ onComplete, t, currentLang = 'tr', on
                     style={[styles.continentChip, continentFilter === c.id && styles.continentChipActive]}
                   >
                     <Text style={[styles.continentChipText, continentFilter === c.id && styles.continentChipTextActive]}>
-                      {c.label}
+                      {c[currentLang]}
                     </Text>
                   </TouchableOpacity>
                 ))}
