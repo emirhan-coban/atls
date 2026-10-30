@@ -457,3 +457,20 @@ Bu bölüm kalan her maddeyi ya yapıldı ya da gerekçesiyle yapılmadı olarak
 **Mühür yeniden tasarlandı (bilet küpürü):** Önceki çerçeve + ülke kodu tasarımı beğenilmedi. `StampView` artık delikli bir bilet kupürü: solda bayrak, giriş/ikamet etiketi, ülke adı (Instrument Serif) ve tarih, ortada kesik çizgi, sağda ülke kodu ve yıl. Renk yalnızca gezilen (mavi) / yaşanan (yeşil) için değişiyor. Pasaport, Günlük, yıl özeti ve yeni gezi animasyonu aynı bileşeni kullanıyor. Yılı bilinmeyen gezilerde tarih alanı boş kalır.
 
 **Mühür özelliği tamamen kaldırıldı:** `StampView`, Günlük > Damgalar sekmesi, Pasaport'taki "Resmi sınır mühürleri" bölümü, yeni gezi eklenince çıkan büyük damga animasyonu (yerine yalnızca konfeti kaldı), ilgili çeviri anahtarları ve "mühürle/damgala" gibi metinler ("Pasaporta Ekle", "İlk Ülkeni Ekle" vb.) silindi veya değiştirildi. Rozet bildirimi ve konfeti duruyor. `utils/stamp.ts` daha önce silinmişti.
+
+### Tasarım turu 4 (tarih, harita, Ana Sayfa, boşluklar, Amerika filtresi)
+
+| Madde | Durum |
+|---|---|
+| Amerika filtresi | Katalog Amerika'yı "North America" ve "South America" diye ikiye böler, filtreler ise "Americas" arıyordu; Keşfet > Rotalar (ve onboarding'in gittiğin ülkeler adımı) hiçbir şey bulamıyordu. `src/data/continents.ts` ortak eşlemeyi (`continentGroup`, `inContinent`) tek yerde tutuyor. Rotalar, Tüm Ülkeler, onboarding ve kıta ilerleme kartı artık bunu kullanıyor. Testle korunuyor (her ülkenin bir grubu var, Amerika'da vizesiz ülke var). |
+| Tarih seçici | Yıl/gün adım düğmeleri ve kaydırmalı ay çipleri kalktı. **Ülke eklerken, durum değiştirirken, gezi eklerken:** `MonthYearPicker` (yıl okları + 4x3 ay ızgarası, gelecek aylar kapalı). **Gezi planlarken:** `DateField` tek satır ("29 Kasım 2026"), dokununca `CalendarPicker` (Pazartesi başlangıçlı aylık takvim) açılır, gün seçilince kapanır; başlığa dokununca ay/yıl atlama. Bitiş tarihi başlangıçtan önce seçilemez, başlangıç ileri alınırsa bitiş onunla gelir. |
+| Harita | `WorldMap` baştan yazıldı. İki parmakla yakınlaştırma parmakların ortasına göre çalışır, tek parmakla kaydırma, çift dokunuşla yakınlaştırma, +/- ve sıfırla düğmeleri. Zoom SVG `viewBox` ile yapılıyor (her seviyede keskin); ülke şekilleri `memo` içinde, hareket sırasında yeniden çizilmiyor. Görünüm hesabı `utils/mapView.ts` içinde ve testli (haritanın dışına çıkılamaz, tutulan nokta yerinde kalır). Tam ekran harita sayfası yeniden düzenlendi: üstte başlık ve renk açıklaması olan filtre çipleri, harita kalan alanı doldurur, seçilen ülke için alt kart; üst/alt taşma yok. |
+| Harita renkleri | Gezilen **zümrüt yeşili**, yaşanan **mavi**, hedef altın (önceden tersiydi: gezilen mavi, yaşanan yeşil). Açık ve koyu temada okyanus ayrı renk (`map.ocean`), kara ve sınır renkleri yeniden ayarlandı. Rozetler, mühür dışı tüm durum etiketleri ve filtreler aynı token'ı kullanıyor. |
+| Ana Sayfa | Sıra: karşılama, **ülke ekle** (en sık eylem, en üstte), ülke kartı, harita ve sayaçlar, seviye, planlayıcı, son geziler, **Gezgin Rehberi** (en altta). Aralar tek `gap` ile yönetiliyor, tek tek `marginTop` değerleri silindi. |
+| Boşluk ve responsive | `theme/spacing.ts` içine `layout` token'ları eklendi (`screen` 20, `section` 14, `tabBarClearance` 112, `card` 16). Ana Sayfa ve Pasaport 22, Keşfet/Günlük/Planlayıcı 20 kullanıyordu; sekme değişince içerik yana kayıyordu. Hepsi artık aynı değeri kullanıyor. |
+
+**Yapılmayanlar / bilinen sınırlar**
+- Onboarding ve giriş ekranları kendi yatay boşluklarını (20/24) kullanıyor, `layout` token'ına bağlanmadı; ayrı ve kısa bir temizlik işi.
+- Kartların iç boşlukları (16/18/20/22) hâlâ tek tek yazılı; `layout.card` yalnızca yeni bileşenlerde kullanılıyor.
+- Harita cihaz döndürmeye göre yeniden boyutlanır ama uygulama yalnızca dikey çalışıyor.
+- Tarih seçicilerin hepsi simülatörde açık temada gözle kontrol edildi, koyu temada edilmedi.

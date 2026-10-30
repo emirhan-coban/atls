@@ -59,17 +59,17 @@ export const darkColors = {
   // STATUS — real passport-stamp inks (single source of truth)
   status: {
     visited: {
-      color: '#3B82F6',              // Ink blue
-      bright: '#60A5FA',
-      deep: '#2563EB',
-      light: 'rgba(59, 130, 246, 0.12)',
-      border: 'rgba(59, 130, 246, 0.30)',
-    },
-    lived: {
-      color: '#10B981',              // Residence green
+      color: '#10B981',              // Visited: emerald, "done"
       bright: '#34D399',
+      deep: '#059669',
       light: 'rgba(16, 185, 129, 0.12)',
       border: 'rgba(16, 185, 129, 0.30)',
+    },
+    lived: {
+      color: '#3B82F6',              // Lived: blue, "home"
+      bright: '#60A5FA',
+      light: 'rgba(59, 130, 246, 0.12)',
+      border: 'rgba(59, 130, 246, 0.30)',
     },
     want: {
       color: '#E5A93C',              // Wishlist gold
@@ -88,9 +88,10 @@ export const darkColors = {
 
   // World map land, dimmed land and borders
   map: {
-    land: '#18202C',
-    landDim: '#101624',
-    border: '#25324B',
+    ocean: '#0B111A',
+    land: '#223047',
+    landDim: '#161F2E',
+    border: '#3A4B66',
   },
 
   // Continents — kept distinct from gold/blue/green status roles where possible
@@ -210,17 +211,17 @@ export const lightColors: ColorsType = {
 
   status: {
     visited: {
-      color: '#2563EB',
-      bright: '#1D4ED8',
-      deep: '#1E40AF',
-      light: 'rgba(37, 99, 235, 0.10)',
-      border: 'rgba(37, 99, 235, 0.30)',
-    },
-    lived: {
       color: '#059669',
       bright: '#047857',
+      deep: '#065F46',
       light: 'rgba(5, 150, 105, 0.10)',
       border: 'rgba(5, 150, 105, 0.30)',
+    },
+    lived: {
+      color: '#2563EB',
+      bright: '#1D4ED8',
+      light: 'rgba(37, 99, 235, 0.10)',
+      border: 'rgba(37, 99, 235, 0.30)',
     },
     want: {
       color: '#B7791F',
@@ -237,9 +238,10 @@ export const lightColors: ColorsType = {
   overlay: 'rgba(20, 24, 31, 0.38)',
 
   map: {
-    land: '#E6DFCD',
-    landDim: '#EFEADC',
-    border: '#C8BFA6',
+    ocean: '#DCE7EB',
+    land: '#F7F3EA',
+    landDim: '#E9E5DA',
+    border: '#B5AC96',
   },
 
   continents: {
