@@ -100,7 +100,7 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
   }, [query, continent, visa, schengenOnly, notVisitedOnly, statusById, currentLang]);
 
   const visaColor = (group: VisaGroup | null) =>
-    group === 'free' ? colors.status.lived.color : group === 'easy' ? colors.gold.base : group === 'required' ? colors.danger : colors.text.muted;
+    group === 'free' ? colors.status.visited.color : group === 'easy' ? colors.gold.base : group === 'required' ? colors.danger : colors.text.muted;
 
   const statusDot = (id: string) => {
     const status = statusById.get(id);

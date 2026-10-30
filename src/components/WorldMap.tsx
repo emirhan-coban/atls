@@ -9,7 +9,7 @@ import { spacing } from '../theme/spacing';
 import { Country } from '../stores/types';
 import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { translations } from '../localization/translations';
-import { getMapShapes, loadMapShapes, MapShape, mergeAll, mergeByColor, shapeAt } from '../utils/mapShapes';
+import { getMapShapes, loadMapShapes, MapShape, mergeAll, shapeAt } from '../utils/mapShapes';
 import { clampView, INITIAL_VIEW, MAP_BOUNDS, MapView, MAX_ZOOM, panBy, Point, Size, toMapPoint, zoomAround } from '../utils/mapView';
 
 interface WorldMapProps {
@@ -278,7 +278,11 @@ function WorldMap({
     return map;
   }, [countries, activeFilter, colors]);
 
-  const fillGroups = useMemo(() => (shapes ? Array.from(mergeByColor(shapes, (id) => fills[id] ?? colors.map.land)) : []), [shapes, fills, colors.map.land]);
+  // One path per country: merged paths cancel where rings overlap with opposite winding, which left Italy unfilled.
+  const fillElements = useMemo(
+    () => (shapes ? shapes.map((shape, index) => <Path key={`${shape.id}-${index}`} path={shape.path} color={fills[shape.id] ?? colors.map.land} style="fill" />) : []),
+    [shapes, fills, colors.map.land]
+  );
   const borders = useMemo(() => (shapes ? mergeAll(shapes) : null), [shapes]);
   const selectedPath = useMemo(
     () => (shapes && selectedCountryId ? shapes.find((s) => s.id === selectedCountryId.toUpperCase())?.path ?? null : null),
@@ -311,9 +315,7 @@ function WorldMap({
       {ready && borders && (
         <Canvas style={StyleSheet.absoluteFill}>
           <Group transform={transform}>
-            {fillGroups.map(([color, path]) => (
-              <Path key={color} path={path} color={color} style="fill" />
-            ))}
+            {fillElements}
             <Path path={borders} color={colors.map.border} style="stroke" strokeWidth={borderWidth} strokeJoin="round" />
             {selectedPath && <Path path={selectedPath} color={colors.text.primary} style="stroke" strokeWidth={selectedWidth} strokeJoin="round" />}
           </Group>
