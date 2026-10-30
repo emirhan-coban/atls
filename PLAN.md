@@ -474,3 +474,14 @@ Bu bölüm kalan her maddeyi ya yapıldı ya da gerekçesiyle yapılmadı olarak
 - Kartların iç boşlukları (16/18/20/22) hâlâ tek tek yazılı; `layout.card` yalnızca yeni bileşenlerde kullanılıyor.
 - Harita cihaz döndürmeye göre yeniden boyutlanır ama uygulama yalnızca dikey çalışıyor.
 - Tarih seçicilerin hepsi simülatörde açık temada gözle kontrol edildi, koyu temada edilmedi.
+
+### Tasarım turu 5 (harita hareketi ve ayrıntısı, takvim)
+
+| Madde | Durum |
+|---|---|
+| Harita hareketi | Telefonda yavaş ve zordu: her parmak hareketinde React yeniden çiziyor, hareketi JS'te PanResponder hesaplıyordu; ayrıca iOS sayfa kartı aşağı kaydırmayı kapatma sanıyordu. Şimdi parmak hareketi yalnızca Reanimated paylaşılan değerlerini (ölçek ve kayma) günceller, çizimi UI iş parçacığı taşır; React hiç çalışmaz. Parmaklar kalkınca çizim yeni zoom'da keskin yeniden çizilir ve harita bırakma hızına göre kayarak sınırların içine oturur. Dokunuşlar kapta (okyanus dahil) okunur, iki parmak ve tek parmak aynı mantıkla çalışır. Tam ekran harita artık tam ekran sunum (sayfa kartı kapatma hareketi yok). Yeni native modül gerekmedi. |
+| Harita ayrıntısı | Eski şekiller 70 KB'lık kaba veri; zoom'da köşeli görünüyordu. `scripts/build-world-map.mjs` Natural Earth 50m verisinden (kamu malı) 237 ülkeyi yeniden üretir (`worldMapPaths.ts`, ~1 MB). Doğal Earth izdüşümü; Antarktika yok. Katalogda şekli olmayan tek ülke Tuvalu. Maksimum zoom 12'den 10'a indi. |
+| Ülke kartı | `+` ve `X` yan yanaydı. Artık `X` başlık satırında küçük, eylem düğmesi altta tam genişlikte ("Ülke sayfasını aç" / "Haritama ekle"). |
+| Takvim | Yıl okuna basınca seçici ay seçildi sanıp kapanıyordu. Yalnızca ay dokunuşu kapatır; yıl art arda atlanabilir. Seçici açıkken ay okları gizlenir. |
+
+**Sınırlar:** Yakınlaşma sırasında parmak altındaki çizim geçici olarak bitmap gibi ölçeklenir, parmaklar kalkınca keskinleşir. Gerçek cihazda ölçülmedi; simülatörde iki parmak, kaydırma, seçim ve takvim denendi.

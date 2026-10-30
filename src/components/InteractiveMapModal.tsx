@@ -5,6 +5,7 @@ import { ChevronRight, Plus, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WorldMap from './WorldMap';
 import Heading from './ui/Heading';
+import Button from './ui/Button';
 import { makeStyles, useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -113,8 +114,8 @@ export default function InteractiveMapModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
-      <View style={styles.screen}>
+    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={close}>
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Heading style={styles.title}>{tr ? 'Dünya Haritası' : 'World Map'}</Heading>
@@ -166,20 +167,24 @@ export default function InteractiveMapModal({
 
           {selected && (
             <View style={[styles.card, { marginBottom: Math.max(insets.bottom, spacing.lg) }]}>
-              <Text style={styles.cardFlag}>{selected.flag}</Text>
-              <View style={styles.cardText}>
-                <Text style={styles.cardName} numberOfLines={1}>{selected.name}</Text>
-                <View style={styles.cardStatus}>
-                  <View style={[styles.dot, { backgroundColor: statusColor }]} />
-                  <Text style={styles.cardStatusText} numberOfLines={1}>{selected.continent ? `${selected.continent} · ` : ''}{statusText}</Text>
+              <View style={styles.cardTop}>
+                <Text style={styles.cardFlag}>{selected.flag}</Text>
+                <View style={styles.cardText}>
+                  <Text style={styles.cardName} numberOfLines={1}>{selected.name}</Text>
+                  <View style={styles.cardStatus}>
+                    <View style={[styles.dot, { backgroundColor: statusColor }]} />
+                    <Text style={styles.cardStatusText} numberOfLines={1}>{selected.continent ? `${selected.continent} · ` : ''}{statusText}</Text>
+                  </View>
                 </View>
+                <TouchableOpacity onPress={() => setSelectedId(null)} style={styles.cardClose} accessibilityRole="button" accessibilityLabel="Close">
+                  <X size={16} color={colors.text.secondary} />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={openDetail} style={styles.cardAction} accessibilityRole="button" accessibilityLabel={selected.name}>
-                {selected.status ? <ChevronRight size={20} color={colors.gold.onGold} /> : <Plus size={20} color={colors.gold.onGold} />}
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setSelectedId(null)} style={styles.cardClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
-                <X size={14} color={colors.text.muted} />
-              </TouchableOpacity>
+              <Button
+                label={selected.status ? (tr ? 'Ülke sayfasını aç' : 'Open country page') : tr ? 'Haritama ekle' : 'Add to my map'}
+                onPress={openDetail}
+                icon={(color) => (selected.status ? <ChevronRight size={18} color={color} /> : <Plus size={18} color={color} />)}
+              />
             </View>
           )}
         </View>
@@ -210,22 +215,19 @@ const useStyles = makeStyles((colors) =>
       left: spacing.lg,
       right: spacing.lg,
       bottom: 0,
-      flexDirection: 'row',
-      alignItems: 'center',
       gap: spacing.md,
-      padding: spacing.md,
-      paddingRight: spacing.xl,
-      borderRadius: 22,
+      padding: spacing.lg,
+      borderRadius: 24,
       backgroundColor: colors.panel.raised,
       borderWidth: 1,
       borderColor: colors.glass.border,
     },
+    cardTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     cardFlag: { fontSize: 36 },
     cardText: { flex: 1, gap: 2 },
-    cardName: { fontSize: 24, lineHeight: 27, color: colors.text.primary, fontFamily: fonts.display },
+    cardName: { fontSize: 26, lineHeight: 29, color: colors.text.primary, fontFamily: fonts.display },
     cardStatus: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     cardStatusText: { flexShrink: 1, fontSize: 12, fontWeight: '600', color: colors.text.secondary },
-    cardAction: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.gold.base },
-    cardClose: { position: 'absolute', top: 8, right: 8 },
+    cardClose: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glass.fillStrong },
   })
 );

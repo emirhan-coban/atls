@@ -1,11 +1,13 @@
 /** Pan and zoom maths for the world map, kept apart from the component so it can be tested. */
 
+import { worldBounds } from '../data/worldMapPaths';
+
 /** Extent of the map artwork, in SVG units. */
-export const MAP_BOUNDS = { minX: 30.767, minY: 241.591, width: 784.077, height: 458.627 };
+export const MAP_BOUNDS = worldBounds;
 
 /** Zoom 1 shows the whole map by its width. On a tall container the rest is left as sea, and the map is centred in it. */
 export const MIN_ZOOM = 1;
-export const MAX_ZOOM = 12;
+export const MAX_ZOOM = 10;
 
 export interface MapView {
   zoom: number;
@@ -77,4 +79,43 @@ export function zoomAround(start: MapView, size: Size, nextZoom: number, from: P
 export function panBy(start: MapView, size: Size, dx: number, dy: number): MapView {
   const s = scaleOf(start.zoom, size);
   return clampView({ ...start, cx: start.cx - dx / s, cy: start.cy - dy / s }, size);
+}
+
+/** Top-left corner of the visible area, in SVG units. */
+const topLeftOf = (view: MapView, size: Size): Point => {
+  const s = scaleOf(view.zoom, size);
+  return { x: view.cx - size.width / (2 * s), y: view.cy - size.height / (2 * s) };
+};
+
+/**
+ * The map is drawn once for a committed view and moved on screen with a transform while a finger is down:
+ * scale about the container centre, then translate. These two functions convert between that transform
+ * and the view it stands for, so the drawing can be refreshed crisply when the gesture ends.
+ */
+export interface LiveTransform {
+  /** Scale relative to the committed view. */
+  s: number;
+  tx: number;
+  ty: number;
+}
+
+/** The view that a transform of the committed `from` view shows (clamped to the map). */
+export function viewFromTransform(from: MapView, size: Size, t: LiveTransform): MapView {
+  const centre = { x: size.width / 2, y: size.height / 2 };
+  const q = { x: centre.x - t.tx / t.s, y: centre.y - t.ty / t.s };
+  const m = toMapPoint(from, size, q);
+  return clampView({ zoom: from.zoom * t.s, cx: m.x, cy: m.y }, size);
+}
+
+/** The transform of the committed `from` view that looks exactly like `to`. Inverse of viewFromTransform. */
+export function transformForView(from: MapView, to: MapView, size: Size): LiveTransform {
+  const s = to.zoom / from.zoom;
+  const a = topLeftOf(from, size);
+  const b = topLeftOf(to, size);
+  const scaleTo = scaleOf(to.zoom, size);
+  return {
+    s,
+    tx: scaleTo * (a.x - b.x) - (size.width / 2) * (1 - s),
+    ty: scaleTo * (a.y - b.y) - (size.height / 2) * (1 - s),
+  };
 }
