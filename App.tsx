@@ -27,6 +27,7 @@ import PlannerModal from './src/components/PlannerModal';
 import { useProgressStore } from './src/stores/useProgressStore';
 import { SkeletonItem, SkeletonCountryCard } from './src/components/SkeletonLoader';
 import { storageService } from './src/services/storageService';
+import { warmMapShapes } from './src/utils/mapShapes';
 import { refreshMemoryReminders } from './src/services/memoryReminders';
 import { clearVault } from './src/utils/vault';
 
@@ -101,6 +102,14 @@ function AppContent() {
       useCelebrationStore.getState().burstConfetti();
     }
   }, [badgeQueue.length]);
+
+  // Prepare the world map shapes in the background once the app is up, so opening the map needs no waiting
+  useEffect(() => {
+    if (!isLoaded) return;
+    // idle time, so it never competes with the first screens
+    const handle = requestIdleCallback(() => warmMapShapes());
+    return () => cancelIdleCallback(handle);
+  }, [isLoaded]);
 
   // Retry any cloud writes that failed while offline whenever the app returns to the foreground
   useEffect(() => {
