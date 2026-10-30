@@ -1,28 +1,16 @@
-import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { GestureResponderEvent, LayoutChangeEvent, StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
-import Animated, { cancelAnimation, Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import Svg, { G, Path } from 'react-native-svg';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, GestureResponderEvent, LayoutChangeEvent, StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { Canvas, Group, Path } from '@shopify/react-native-skia';
+import { Easing, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Minus, Plus, RotateCcw } from 'lucide-react-native';
 import { makeStyles, useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { Country } from '../stores/types';
-import { worldMapFeatures } from '../data/worldMapPaths';
 import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { translations } from '../localization/translations';
-import {
-  clampView,
-  INITIAL_VIEW,
-  LiveTransform,
-  MapView,
-  MAX_ZOOM,
-  Point,
-  Size,
-  transformForView,
-  viewBoxOf,
-  viewFromTransform,
-  zoomAround,
-} from '../utils/mapView';
+import { getMapShapes, loadMapShapes, MapShape, mergeAll, shapeAt } from '../utils/mapShapes';
+import { clampView, INITIAL_VIEW, MAP_BOUNDS, MapView, MAX_ZOOM, panBy, Point, Size, toMapPoint, zoomAround } from '../utils/mapView';
 
 interface WorldMapProps {
   countries?: Country[];
@@ -38,51 +26,19 @@ interface WorldMapProps {
   fullScreen?: boolean;
 }
 
-interface CountryPathsProps {
-  fills: Record<string, string>;
-  selectedId: string | null;
-  landColor: string;
-  borderColor: string;
-  selectedStroke: string;
-  interactive: boolean;
-  onPressCountry: (id: string) => void;
-}
-
-/** The country shapes. Memoised: a pan or zoom never touches them, only the Svg viewBox changes when a gesture ends. */
-const CountryPaths = memo(function CountryPaths({ fills, selectedId, landColor, borderColor, selectedStroke, interactive, onPressCountry }: CountryPathsProps) {
-  return (
-    <G strokeLinejoin="round" strokeLinecap="round">
-      {worldMapFeatures.map((feature, index) => {
-        const selected = selectedId === feature.id;
-        return (
-          <Path
-            key={`${feature.id}-${index}`}
-            d={feature.d}
-            fill={fills[feature.id] ?? landColor}
-            stroke={selected ? selectedStroke : borderColor}
-            strokeWidth={selected ? 2 : 0.6}
-            vectorEffect="non-scaling-stroke"
-            onPress={interactive ? () => onPressCountry(feature.id) : undefined}
-          />
-        );
-      })}
-    </G>
-  );
-});
-
 /** A finger must travel this far before a touch counts as a drag instead of a tap. */
 const DRAG_SLOP = 8;
 /** How far (ms of travel at the release speed) the map keeps gliding after a drag. */
-const GLIDE_MS = 160;
-const SETTLE = { duration: 240, easing: Easing.out(Easing.cubic) };
+const GLIDE_MS = 220;
+const SETTLE = { duration: 260, easing: Easing.out(Easing.cubic) };
 
 const centroid = (pts: Point[]): Point => ({ x: pts.reduce((a, p) => a + p.x, 0) / pts.length, y: pts.reduce((a, p) => a + p.y, 0) / pts.length });
 const spread = (pts: Point[]) => (pts.length > 1 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0);
 
 /**
- * World map. While a finger is down the drawn map is only moved with a transform on the UI thread (smooth, no React work);
- * when the fingers lift, the drawing is refreshed at the new zoom so it is sharp again and the map glides to rest inside its bounds.
- * One finger pans, two fingers pan and pinch around the point between them, double tap zooms in. Touches on open sea work too.
+ * World map drawn with Skia. The country shapes are prepared once (and kept), then zooming and panning only change a transform
+ * on the GPU: nothing is redrawn by React and the shapes stay sharp at every zoom.
+ * One finger pans, two fingers pan and pinch around the point between them, double tap zooms in, open sea responds to touch too.
  */
 function WorldMap({
   countries = [],
@@ -101,62 +57,60 @@ function WorldMap({
   const styles = useStyles();
   const activeT = t || (translations as Record<string, any>)[currentLang] || translations.tr;
 
-  const [size, setSize] = useState<Size>({ width: 340, height: 200 });
-  const [view, setView] = useState<MapView>(INITIAL_VIEW);
+  const [shapes, setShapes] = useState<MapShape[] | null>(getMapShapes());
+  const [size, setSize] = useState<Size | null>(null);
+  const [zoomed, setZoomed] = useState(false);
   const [selectedInfo, setSelectedInfo] = useState<string | null>(null);
 
-  const sizeRef = useRef(size);
-  const viewRef = useRef(view);
+  const sizeRef = useRef<Size>({ width: 340, height: 200 });
+  const viewRef = useRef<MapView>(INITIAL_VIEW);
   const originRef = useRef<Point>({ x: 0, y: 0 });
   const containerRef = useRef<View>(null);
 
-  const scale = useSharedValue(1);
-  const tx = useSharedValue(0);
-  const ty = useSharedValue(0);
+  // The view, as shared values: the canvas reads these on the UI thread.
+  const zoom = useSharedValue(INITIAL_VIEW.zoom);
+  const cx = useSharedValue(INITIAL_VIEW.cx);
+  const cy = useSharedValue(INITIAL_VIEW.cy);
+  const width = useSharedValue(340);
+  const height = useSharedValue(200);
+  const moving = useSharedValue(0);
 
-  /** Transform currently shown (mirrors the shared values, so touch maths never waits on the UI thread mid-gesture). */
-  const live = useRef<LiveTransform>({ s: 1, tx: 0, ty: 0 });
-  const base = useRef<{ s: number; tx: number; ty: number; c0: Point; r0: number; n: number } | null>(null);
+  const gesture = useRef<{ view: MapView; c0: Point; r0: number; n: number } | null>(null);
   const startPoint = useRef<Point>({ x: 0, y: 0 });
   const moved = useRef(false);
-  const dragged = useRef(false);
   const lastMove = useRef<{ c: Point; time: number; vx: number; vy: number }>({ c: { x: 0, y: 0 }, time: 0, vx: 0, vy: 0 });
   const lastTap = useRef(0);
 
-  const setLive = useCallback(
-    (next: LiveTransform) => {
-      live.current = next;
-      scale.set(next.s);
-      tx.set(next.tx);
-      ty.set(next.ty);
+  useEffect(() => {
+    if (shapes) return;
+    let alive = true;
+    loadMapShapes().then((loaded) => alive && setShapes(loaded));
+    return () => {
+      alive = false;
+    };
+  }, [shapes]);
+
+  /** Show `next` right now. */
+  const apply = useCallback(
+    (next: MapView) => {
+      viewRef.current = next;
+      zoom.set(next.zoom);
+      cx.set(next.cx);
+      cy.set(next.cy);
     },
-    [scale, tx, ty]
+    [zoom, cx, cy]
   );
 
-  // A new drawing replaces the transform: reset it in the same commit so there is no visible jump.
-  useLayoutEffect(() => {
-    setLive({ s: 1, tx: 0, ty: 0 });
-  }, [view, setLive]);
-
-  const commit = useCallback((next: MapView) => {
-    viewRef.current = next;
-    setView(next);
-  }, []);
-
-  /** Glide the shown map to `target`, then redraw it sharply. */
+  /** Glide to `next`. */
   const animateTo = useCallback(
-    (target: MapView) => {
-      const rel = transformForView(viewRef.current, target, sizeRef.current);
-      live.current = rel;
-      scale.set(
-        withTiming(rel.s, SETTLE, (finished) => {
-          if (finished) runOnJS(commit)(target);
-        })
-      );
-      tx.set(withTiming(rel.tx, SETTLE));
-      ty.set(withTiming(rel.ty, SETTLE));
+    (next: MapView) => {
+      viewRef.current = next;
+      zoom.set(withTiming(next.zoom, SETTLE));
+      cx.set(withTiming(next.cx, SETTLE));
+      cy.set(withTiming(next.cy, SETTLE));
+      setZoomed(next.zoom > 1.05);
     },
-    [commit, scale, tx, ty]
+    [zoom, cx, cy]
   );
 
   const measure = useCallback(() => {
@@ -166,11 +120,13 @@ function WorldMap({
   }, []);
 
   const onLayout = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width === 0 || height === 0) return;
-    sizeRef.current = { width, height };
-    setSize({ width, height });
-    commit(clampView(viewRef.current, { width, height }));
+    const { width: w, height: h } = e.nativeEvent.layout;
+    if (w === 0 || h === 0) return;
+    sizeRef.current = { width: w, height: h };
+    width.set(w);
+    height.set(h);
+    apply(clampView(viewRef.current, { width: w, height: h }));
+    setSize({ width: w, height: h });
     measure();
   };
 
@@ -179,56 +135,47 @@ function WorldMap({
       .slice(0, 2)
       .map((touch) => ({ x: touch.pageX - originRef.current.x, y: touch.pageY - originRef.current.y }));
 
-  /** Remember the transform and fingers as the reference for the next movement (also when a finger is added or lifted). */
   const rebase = (pts: Point[]) => {
-    base.current = { ...live.current, c0: centroid(pts), r0: spread(pts), n: pts.length };
+    gesture.current = { view: viewRef.current, c0: centroid(pts), r0: spread(pts), n: pts.length };
   };
 
   const onTouchStart = (e: GestureResponderEvent) => {
     const pts = pointsOf(e);
     if (pts.length === 0) return;
     if (pts.length === 1) {
-      cancelAnimation(scale);
-      cancelAnimation(tx);
-      cancelAnimation(ty);
-      live.current = { s: scale.get(), tx: tx.get(), ty: ty.get() };
       startPoint.current = pts[0];
       moved.current = false;
       lastMove.current = { c: pts[0], time: Date.now(), vx: 0, vy: 0 };
+      moving.set(0);
       onInteractionChange?.(true);
     } else {
       moved.current = true;
+      moving.set(1);
     }
     rebase(pts);
   };
 
   const onTouchMove = (e: GestureResponderEvent) => {
-    if (!base.current) return;
+    const g = gesture.current;
+    if (!g) return;
     const pts = pointsOf(e);
     if (pts.length === 0) return;
-    if (pts.length !== base.current.n) rebase(pts);
-    const b = base.current;
+    if (pts.length !== g.n) {
+      rebase(pts);
+      return;
+    }
     const c = centroid(pts);
 
     if (!moved.current) {
       if (Math.hypot(c.x - startPoint.current.x, c.y - startPoint.current.y) < DRAG_SLOP) return;
       moved.current = true;
-      dragged.current = true;
+      moving.set(1);
       rebase(pts); // start from here, so the map does not jump by the slop
       return;
     }
-    dragged.current = true;
 
-    const zoom = viewRef.current.zoom;
-    const k = pts.length > 1 && b.r0 > 0 ? spread(pts) / b.r0 : 1;
-    const s = Math.min((MAX_ZOOM * 1.25) / zoom, Math.max(0.7 / zoom, b.s * k));
-    const kk = s / b.s;
-    const centre = { x: sizeRef.current.width / 2, y: sizeRef.current.height / 2 };
-    setLive({
-      s,
-      tx: c.x + kk * (b.tx + centre.x - b.c0.x) - centre.x,
-      ty: c.y + kk * (b.ty + centre.y - b.c0.y) - centre.y,
-    });
+    const k = pts.length > 1 && g.r0 > 0 ? spread(pts) / g.r0 : 1;
+    apply(zoomAround(g.view, sizeRef.current, g.view.zoom * k, g.c0, c));
 
     const now = Date.now();
     const dt = Math.max(1, now - lastMove.current.time);
@@ -240,36 +187,33 @@ function WorldMap({
     };
   };
 
-  const finish = () => {
-    onInteractionChange?.(false);
-    base.current = null;
-    if (!moved.current) return;
-    const recent = Date.now() - lastMove.current.time < 90;
-    const glide = recent ? { x: lastMove.current.vx * GLIDE_MS, y: lastMove.current.vy * GLIDE_MS } : { x: 0, y: 0 };
-    const target = viewFromTransform(viewRef.current, sizeRef.current, {
-      s: live.current.s,
-      tx: live.current.tx + glide.x,
-      ty: live.current.ty + glide.y,
-    });
-    animateTo(target);
-    setTimeout(() => {
-      dragged.current = false;
-    }, 120);
-  };
-
-  const onTouchEnd = (e: GestureResponderEvent) => {
-    if (!base.current) return;
-    const remaining = pointsOf(e);
-    if (remaining.length === 0) finish();
-    else rebase(remaining);
-  };
+  const select = useCallback(
+    (id: string) => {
+      const marked = countries.find((c) => c.id.toUpperCase() === id.toUpperCase());
+      const country = marked || availableCatalog.find((c) => c.id.toUpperCase() === id.toUpperCase());
+      if (!country) return;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const label = marked
+        ? marked.status === 'lived'
+          ? activeT?.livedIn || (currentLang === 'tr' ? 'YAŞANAN' : 'LIVED')
+          : marked.status === 'want'
+            ? activeT?.wishlist || (currentLang === 'tr' ? 'HEDEF' : 'WISHLIST')
+            : activeT?.visited || (currentLang === 'tr' ? 'GEZİLEN' : 'VISITED')
+        : currentLang === 'tr'
+          ? 'KEŞFEDİLMEDİ'
+          : 'UNEXPLORED';
+      setSelectedInfo(`${country.flag || '🌍'} ${getLocalizedCountryName(country, currentLang)} (${label})`);
+      onSelectCountry?.(country.id);
+    },
+    [countries, activeT, currentLang, onSelectCountry]
+  );
 
   const zoomBy = useCallback(
-    (factor: number) => {
+    (factor: number, around?: Point) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const current = viewRef.current;
-      const centre = { x: sizeRef.current.width / 2, y: sizeRef.current.height / 2 };
-      animateTo(zoomAround(current, sizeRef.current, current.zoom * factor, centre, centre));
+      const point = around ?? { x: sizeRef.current.width / 2, y: sizeRef.current.height / 2 };
+      animateTo(zoomAround(current, sizeRef.current, current.zoom * factor, point, point));
     },
     [animateTo]
   );
@@ -279,7 +223,43 @@ function WorldMap({
     animateTo(clampView(INITIAL_VIEW, sizeRef.current));
   }, [animateTo]);
 
-  useEffect(() => measure, [measure]);
+  const tap = (point: Point) => {
+    if (!shapes) return;
+    const now = Date.now();
+    const doubleTap = now - lastTap.current < 300;
+    lastTap.current = doubleTap ? 0 : now;
+    if (doubleTap) {
+      zoomBy(viewRef.current.zoom > 1.4 ? 1 / MAX_ZOOM : 2.2, point);
+      return;
+    }
+    const m = toMapPoint(viewRef.current, sizeRef.current, point);
+    const id = shapeAt(shapes, m.x, m.y);
+    if (id) select(id);
+  };
+
+  const finish = (lifted: boolean) => {
+    const wasDrag = moved.current;
+    onInteractionChange?.(false);
+    gesture.current = null;
+    if (!lifted) return;
+    if (!wasDrag) {
+      tap(startPoint.current);
+      return;
+    }
+    const recent = Date.now() - lastMove.current.time < 90;
+    const glide = recent ? { dx: lastMove.current.vx * GLIDE_MS, dy: lastMove.current.vy * GLIDE_MS } : { dx: 0, dy: 0 };
+    const target = recent ? panBy(viewRef.current, sizeRef.current, glide.dx, glide.dy) : viewRef.current;
+    moving.set(0);
+    setZoomed(target.zoom > 1.05);
+    if (recent) animateTo(target);
+  };
+
+  const onTouchEnd = (e: GestureResponderEvent) => {
+    if (!gesture.current) return;
+    const remaining = pointsOf(e);
+    if (remaining.length === 0) finish(true);
+    else rebase(remaining);
+  };
 
   const fills = useMemo(() => {
     const map: Record<string, string> = {};
@@ -298,42 +278,29 @@ function WorldMap({
     return map;
   }, [countries, activeFilter, colors]);
 
-  const handleCountryPress = useCallback(
-    (id: string) => {
-      if (dragged.current) return;
-      const now = Date.now();
-      if (now - lastTap.current < 300) {
-        lastTap.current = 0;
-        zoomBy(viewRef.current.zoom > 1.4 ? 1 / MAX_ZOOM : 2.2);
-        return;
-      }
-      lastTap.current = now;
-
-      const marked = countries.find((c) => c.id.toUpperCase() === id.toUpperCase());
-      const country = marked || availableCatalog.find((c) => c.id.toUpperCase() === id.toUpperCase());
-      if (!country) return;
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const label = marked
-        ? marked.status === 'lived'
-          ? activeT?.livedIn || (currentLang === 'tr' ? 'YAŞANAN' : 'LIVED')
-          : marked.status === 'want'
-            ? activeT?.wishlist || (currentLang === 'tr' ? 'HEDEF' : 'WISHLIST')
-            : activeT?.visited || (currentLang === 'tr' ? 'GEZİLEN' : 'VISITED')
-        : currentLang === 'tr'
-          ? 'KEŞFEDİLMEDİ'
-          : 'UNEXPLORED';
-      setSelectedInfo(`${country.flag || '🌍'} ${getLocalizedCountryName(country, currentLang)} (${label})`);
-      onSelectCountry?.(country.id);
-    },
-    [countries, activeT, currentLang, onSelectCountry, zoomBy]
+  // One path per country: merged paths cancel where rings overlap with opposite winding, which left Italy unfilled.
+  const fillElements = useMemo(
+    () => (shapes ? shapes.map((shape, index) => <Path key={`${shape.id}-${index}`} path={shape.path} color={fills[shape.id] ?? colors.map.land} style="fill" />) : []),
+    [shapes, fills, colors.map.land]
+  );
+  const borders = useMemo(() => (shapes ? mergeAll(shapes) : null), [shapes]);
+  const selectedPath = useMemo(
+    () => (shapes && selectedCountryId ? shapes.find((s) => s.id === selectedCountryId.toUpperCase())?.path ?? null : null),
+    [shapes, selectedCountryId]
   );
 
-  const mapStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: tx.get() }, { translateY: ty.get() }, { scale: scale.get() }],
-  }));
+  // Map units to screen: centre the visible area, scale, move the view centre to the middle.
+  const transform = useDerivedValue(() => {
+    const s = (width.get() / MAP_BOUNDS.width) * zoom.get();
+    return [{ translateX: width.get() / 2 }, { translateY: height.get() / 2 }, { scale: s }, { translateX: -cx.get() }, { translateY: -cy.get() }];
+  });
+  // Border width stays about 0.7 points at every zoom; while moving a hairline is cheaper to draw.
+  const borderWidth = useDerivedValue(() => (moving.get() ? 0 : 0.7 / ((width.get() / MAP_BOUNDS.width) * zoom.get())));
+  const selectedWidth = useDerivedValue(() => 2.2 / ((width.get() / MAP_BOUNDS.width) * zoom.get()));
 
-  const zoomed = view.zoom > 1.05;
+  const ready = Boolean(shapes && size);
   const showUi = showControls !== null ? showControls : interactive;
+  const loadingText = currentLang === 'tr' ? 'Harita yükleniyor…' : 'Loading map…';
 
   return (
     <View
@@ -343,23 +310,26 @@ function WorldMap({
       onTouchStart={interactive ? onTouchStart : undefined}
       onTouchMove={interactive ? onTouchMove : undefined}
       onTouchEnd={interactive ? onTouchEnd : undefined}
-      onTouchCancel={interactive ? finish : undefined}
+      onTouchCancel={interactive ? () => finish(false) : undefined}
     >
-      <Animated.View style={[StyleSheet.absoluteFill, mapStyle]}>
-        <Svg width="100%" height="100%" viewBox={viewBoxOf(view, size)} preserveAspectRatio="none">
-          <CountryPaths
-            fills={fills}
-            selectedId={selectedCountryId ? selectedCountryId.toUpperCase() : null}
-            landColor={colors.map.land}
-            borderColor={colors.map.border}
-            selectedStroke={colors.text.primary}
-            interactive={interactive}
-            onPressCountry={handleCountryPress}
-          />
-        </Svg>
-      </Animated.View>
+      {ready && borders && (
+        <Canvas style={StyleSheet.absoluteFill}>
+          <Group transform={transform}>
+            {fillElements}
+            <Path path={borders} color={colors.map.border} style="stroke" strokeWidth={borderWidth} strokeJoin="round" />
+            {selectedPath && <Path path={selectedPath} color={colors.text.primary} style="stroke" strokeWidth={selectedWidth} strokeJoin="round" />}
+          </Group>
+        </Canvas>
+      )}
 
-      {showUi && (
+      {!ready && (
+        <View style={styles.loading} pointerEvents="none">
+          <ActivityIndicator color={colors.gold.base} />
+          <Text style={styles.loadingText}>{loadingText}</Text>
+        </View>
+      )}
+
+      {ready && showUi && (
         <>
           {!fullScreen && (
             <View style={styles.badge} pointerEvents="none">
@@ -377,7 +347,8 @@ function WorldMap({
             </View>
           )}
 
-          <View style={styles.controls}>
+          {/* touches on the buttons must not reach the map as taps */}
+          <View style={styles.controls} onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
             {zoomed && (
               <TouchableOpacity onPress={reset} style={styles.controlBtn} accessibilityRole="button" accessibilityLabel="Reset zoom">
                 <RotateCcw size={16} color={colors.text.primary} />
@@ -413,6 +384,8 @@ const useStyles = makeStyles((colors) =>
       backgroundColor: colors.map.ocean,
       overflow: 'hidden',
     },
+    loading: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+    loadingText: { fontSize: 14, fontWeight: '700', color: colors.text.secondary },
     badge: {
       position: 'absolute',
       left: spacing.md,

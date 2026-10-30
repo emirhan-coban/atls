@@ -44,7 +44,7 @@ export default function DestinationSheet({ dest, visible, onClose, currentLang, 
   const months = goodMonthsFor(dest.id);
   const monthNames = MONTHS.map((m) => (currentLang === 'tr' ? m.shortTr : m.shortEn));
   const group = facts ? visaGroup(facts.visa.status) : null;
-  const visaColor = group === 'free' ? colors.status.lived.color : group === 'easy' ? colors.gold.base : group === 'required' ? colors.danger : colors.text.muted;
+  const visaColor = group === 'free' ? colors.status.visited.color : group === 'easy' ? colors.gold.base : group === 'required' ? colors.danger : colors.text.muted;
   const diff = climate ? hoursFromTurkey(climate.utc) : 0;
   const diffText = diff === 0 ? rt('sameTime', currentLang) : rt(diff > 0 ? 'hoursAhead' : 'hoursBehind', currentLang, { n: Math.abs(diff) });
   const onWishlist = status === 'want';
@@ -152,7 +152,7 @@ export default function DestinationSheet({ dest, visible, onClose, currentLang, 
             style={styles.actionMain}
           />
           {been ? (
-            <View style={[styles.statusPill]}><Check size={15} color={colors.status.lived.color} /><Text style={styles.statusText}>{rt('visited', currentLang)}</Text></View>
+            <View style={[styles.statusPill]}><Check size={15} color={colors.status.visited.color} /><Text style={styles.statusText}>{rt('visited', currentLang)}</Text></View>
           ) : (
             <Button
               variant="secondary"
@@ -217,7 +217,7 @@ const useStyles = makeStyles((colors) =>
     actionMain: { flexGrow: 1, flexBasis: '45%' },
     actionSide: { flexGrow: 1, flexBasis: '45%' },
     statusPill: { flexGrow: 1, flexBasis: '45%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 },
-    statusText: { fontSize: 15, fontWeight: '800', color: colors.status.lived.color },
+    statusText: { fontSize: 15, fontWeight: '800', color: colors.status.visited.color },
     link: { width: '100%', alignItems: 'center', paddingVertical: 6 },
     linkText: { fontSize: 13, fontWeight: '700', color: colors.gold.light },
   })
