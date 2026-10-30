@@ -47,15 +47,23 @@ export default function CalendarPicker({ value, onChange, lang, min, minYear = 2
   return (
     <View style={styles.wrap}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => shift(-1)} style={styles.arrow} accessibilityRole="button" accessibilityLabel="Previous month">
-          <ChevronLeft size={20} color={colors.text.primary} />
-        </TouchableOpacity>
+        {jumping ? (
+          <View style={styles.spacer} />
+        ) : (
+          <TouchableOpacity onPress={() => shift(-1)} style={styles.arrow} accessibilityRole="button" accessibilityLabel="Previous month">
+            <ChevronLeft size={20} color={colors.text.primary} />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity onPress={() => setJumping((v) => !v)} style={styles.titleBtn} accessibilityRole="button" accessibilityLabel={`${monthName} ${view.y}`}>
           <Text style={styles.title}>{monthName} {view.y}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => shift(1)} style={styles.arrow} accessibilityRole="button" accessibilityLabel="Next month">
-          <ChevronRight size={20} color={colors.text.primary} />
-        </TouchableOpacity>
+        {jumping ? (
+          <View style={styles.spacer} />
+        ) : (
+          <TouchableOpacity onPress={() => shift(1)} style={styles.arrow} accessibilityRole="button" accessibilityLabel="Next month">
+            <ChevronRight size={20} color={colors.text.primary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {jumping ? (
@@ -67,7 +75,9 @@ export default function CalendarPicker({ value, onChange, lang, min, minYear = 2
           maxYear={maxYear}
           onChange={({ year, month }) => {
             setView({ y: year, m: Number(month ?? view.m) });
-            if (month) setJumping(false);
+            // A year arrow changes the year, a month tap does not: only a month tap closes the chooser,
+            // so the year can be stepped several times in a row.
+            if (month && year === view.y) setJumping(false);
           }}
         />
       ) : (
@@ -116,6 +126,7 @@ const useStyles = makeStyles((colors) =>
     wrap: { gap: spacing.md },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     arrow: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glass.fillStrong },
+    spacer: { width: 44, height: 44 },
     titleBtn: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm },
     title: { fontSize: 19, fontWeight: '800', color: colors.text.primary },
     row: { flexDirection: 'row', flexWrap: 'wrap' },
