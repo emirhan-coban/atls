@@ -38,6 +38,7 @@ import { getCountryTrivia } from '../data/countryTrivia';
 import { Country, Trip } from '../stores/types';
 import GlassCard from './GlassCard';
 import { theme } from '../theme';
+import { layout } from '../theme/spacing';
 
 
 interface CountryDetailModalProps {
@@ -406,7 +407,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     overflow: 'hidden',
   },
   bannerHeader: {
-    paddingHorizontal: 24,
+    paddingHorizontal: layout.screen,
     paddingTop: 20,
     paddingBottom: 24,
     position: 'relative',
@@ -473,7 +474,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     fontWeight: '800',
   },
   scrollBody: {
-    paddingHorizontal: 24,
+    paddingHorizontal: layout.screen,
   },
   scrollContent: {
     paddingTop: 20,

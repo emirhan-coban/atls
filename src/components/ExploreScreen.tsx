@@ -10,6 +10,7 @@ import { fonts } from '../theme/typography';
 import { pt } from '../localization/profile';
 import { rt } from '../localization/routes';
 import { Country, Profile } from '../stores/types';
+import { layout } from '../theme/spacing';
 
 interface ExploreScreenProps {
   countries: Country[];
@@ -64,7 +65,7 @@ const useStyles = makeStyles((colors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.canvas.base },
     scrollView: { flex: 1 },
-    contentContainer: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 110 },
+    contentContainer: { paddingHorizontal: layout.screen, paddingTop: 8, paddingBottom: layout.tabBarClearance },
     header: { marginBottom: 14, gap: 4 },
     eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     eyebrow: { fontSize: 11, fontWeight: '800', color: colors.gold.base, letterSpacing: 1.2 },
