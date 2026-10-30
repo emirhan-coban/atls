@@ -31,6 +31,7 @@ import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
 import { getCountryTrivia } from '../data/countryTrivia';
 import { Country, Profile } from '../stores/types';
 import Heading from './ui/Heading';
+import { layout } from '../theme/spacing';
 
 type StatusFilter = Country['status'] | 'all';
 
@@ -124,6 +125,25 @@ function HomeScreen({
               : 'Your journeys, visas & personal travel map.'}
           </Text>
         </View>
+
+        {/* PRIMARY ACTION: add a country (the most used action sits first) */}
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onOpenAddModal();
+          }}
+          activeOpacity={0.8}
+          style={styles.searchBar}
+        >
+          <View style={styles.searchLeft}>
+            <Search size={18} color={colors.text.secondary} />
+            <Text style={styles.searchPlaceholder}>{t.findCountry}</Text>
+          </View>
+          <View style={styles.plusButton}>
+            <Plus size={16} color={colors.canvas.raised} strokeWidth={2.5} />
+          </View>
+        </TouchableOpacity>
+
 
         {/* HERO CARD: Empty State OR Visited Country Highlight */}
         {!currentMarkedCountry ? (
@@ -384,7 +404,7 @@ function HomeScreen({
 
       {/* Travel journal: level, trips and badges */}
       {onOpenJourney && hasCountries && (
-        <View style={{ marginTop: 14, marginBottom: 14 }}>
+        <View>
           <JourneyCard
             countries={countries}
             tripCount={tripCount}
@@ -396,64 +416,13 @@ function HomeScreen({
 
       {/* Trip planner: countdown to the next trip */}
       {onOpenPlanner && (
-        <View style={{ marginBottom: 14 }}>
+        <View>
           <PlanCard currentLang={currentLang} onPress={onOpenPlanner} />
         </View>
       )}
 
-      {/* Search & Quick Mark Bar */}
-      <TouchableOpacity
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onOpenAddModal();
-        }}
-        activeOpacity={0.8}
-        style={styles.searchBar}
-      >
-        <View style={styles.searchLeft}>
-          <Search size={18} color={colors.text.secondary} />
-          <Text style={styles.searchPlaceholder}>{t.findCountry}</Text>
-        </View>
-        <View style={styles.plusButton}>
-          <Plus size={16} color={colors.canvas.raised} strokeWidth={2.5} />
-        </View>
-      </TouchableOpacity>
-
-      {/* NEXT MILESTONE BANNER */}
-      {/* GEZGİN REHBERİ: NE YENİR? NE GEZİLİR? DISCOVER BANNER */}
-      <TouchableOpacity
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          if (onNavigateToExplore) onNavigateToExplore();
-        }}
-        activeOpacity={0.85}
-        style={styles.milestoneCard}
-      >
-        <View style={styles.milestoneLeft}>
-          <View style={styles.milestoneIconBox}>
-            <Utensils size={20} color={colors.gold.base} />
-          </View>
-          <View style={styles.milestoneTextContainer}>
-            <View style={styles.milestoneTitleRow}>
-              <Text style={styles.milestoneBadgeLabel}>
-                {currentLang === 'tr' ? 'GEZGİN REHBERİ' : 'TRAVEL GUIDE'}
-              </Text>
-            </View>
-            <Text style={styles.milestoneTitle}>
-              {currentLang === 'tr' ? 'Hangi ülkede ne yenir, ne gezilir?' : 'What to eat, what to explore?'}
-            </Text>
-            <Text style={styles.milestoneSubtitle}>
-              {currentLang === 'tr'
-                ? 'İkonik lezzetler ve gizli seyahat tüyoları'
-                : 'Iconic street bites & secret travel hacks'}
-            </Text>
-          </View>
-        </View>
-        <ChevronRight size={18} color={colors.text.secondary} />
-      </TouchableOpacity>
-
       {/* SECTION: Recent trips */}
-      <View style={[styles.sectionHeader, { marginTop: 10 }]}>
+      <View style={styles.sectionHeader}>
         <Text style={styles.stampsTitle}>{t.recentArrivals}</Text>
         <TouchableOpacity onPress={onOpenJourney ?? onNavigateToPassport}>
           <Text style={styles.viewAllText}>{t.viewAll}</Text>
@@ -509,6 +478,40 @@ function HomeScreen({
           })}
         </View>
       )}
+
+      {/* NEXT MILESTONE BANNER */}
+      {/* GEZGİN REHBERİ: NE YENİR? NE GEZİLİR? DISCOVER BANNER */}
+      <TouchableOpacity
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          if (onNavigateToExplore) onNavigateToExplore();
+        }}
+        activeOpacity={0.85}
+        style={styles.milestoneCard}
+      >
+        <View style={styles.milestoneLeft}>
+          <View style={styles.milestoneIconBox}>
+            <Utensils size={20} color={colors.gold.base} />
+          </View>
+          <View style={styles.milestoneTextContainer}>
+            <View style={styles.milestoneTitleRow}>
+              <Text style={styles.milestoneBadgeLabel}>
+                {currentLang === 'tr' ? 'GEZGİN REHBERİ' : 'TRAVEL GUIDE'}
+              </Text>
+            </View>
+            <Text style={styles.milestoneTitle}>
+              {currentLang === 'tr' ? 'Hangi ülkede ne yenir, ne gezilir?' : 'What to eat, what to explore?'}
+            </Text>
+            <Text style={styles.milestoneSubtitle}>
+              {currentLang === 'tr'
+                ? 'İkonik lezzetler ve gizli seyahat tüyoları'
+                : 'Iconic street bites & secret travel hacks'}
+            </Text>
+          </View>
+        </View>
+        <ChevronRight size={18} color={colors.text.secondary} />
+      </TouchableOpacity>
+
     </ScrollView>
 
     {/* Full Screen Interactive Map Modal */}
@@ -537,9 +540,10 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     backgroundColor: 'transparent',
   },
   contentContainer: {
-    paddingHorizontal: 22,
+    paddingHorizontal: layout.screen,
     paddingTop: 6,
-    paddingBottom: 112,
+    paddingBottom: layout.tabBarClearance,
+    gap: layout.section,
   },
   header: {
     flexDirection: 'row',
@@ -563,8 +567,6 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     color: colors.text.primary,
   },
   explorerGreetingRow: {
-    marginTop: 2,
-    marginBottom: 12,
   },
   explorerGreetingText: {
     fontSize: 36,
@@ -644,7 +646,6 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     backgroundColor: colors.glass.fill,
     borderRadius: 24,
     padding: 22,
-    marginTop: 12,
     borderWidth: 1,
     borderColor: colors.glass.fillStrong,
     overflow: 'hidden',
@@ -705,7 +706,6 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     backgroundColor: colors.glass.fill,
     borderRadius: 24,
     padding: 22,
-    marginTop: 12,
     borderWidth: 1,
     borderColor: colors.glass.fillStrong,
     shadowColor: colors.black,
@@ -831,8 +831,6 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 22,
-    marginBottom: 10,
     paddingHorizontal: 2,
   },
   sectionTitle: {
@@ -989,7 +987,6 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     borderRadius: 22,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginTop: 14,
     borderWidth: 1,
     borderColor: colors.glass.hairline,
     shadowColor: '#000',
@@ -1103,8 +1100,6 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: colors.glass.fillStrong,
-    marginTop: 12,
-    marginBottom: 4,
   },
   milestoneLeft: {
     flexDirection: 'row',

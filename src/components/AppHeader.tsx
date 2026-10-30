@@ -4,6 +4,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Languages, User } from 'lucide-react-native';
+import { layout } from '../theme/spacing';
 
 interface AppHeaderProps {
   currentLang: 'tr' | 'en';
@@ -74,7 +75,7 @@ function AppHeader({ currentLang, onToggleLang, onOpenProfile }: AppHeaderProps)
 const useStyles = makeStyles((colors) => StyleSheet.create({
   headerContainer: {
     height: 52,
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.screen,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

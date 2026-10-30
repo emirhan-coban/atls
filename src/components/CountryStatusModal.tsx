@@ -1,4 +1,4 @@
-import Chip from './ui/Chip';
+import MonthYearPicker from './ui/MonthYearPicker';
 import Sheet from './ui/Sheet';
 import Button from './ui/Button';
 import { makeStyles, useTheme } from '../theme/ThemeContext';
@@ -23,9 +23,7 @@ import {
   Plane,
   Home,
   Target,
-  Plus,
-  Minus,
-} from 'lucide-react-native';
+  } from 'lucide-react-native';
 import { getLocalizedCountryName, MONTHS } from '../data/travelData';
 import { Country } from '../stores/types';
 
@@ -310,64 +308,17 @@ export default function CountryStatusModal({
                   </Text>
                 </View>
 
-                {/* Year Stepper & Input */}
-                <View style={styles.yearRow}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      const y = parseInt(year, 10) || new Date().getFullYear();
-                      setYear(String(y - 1));
-                    }}
-                    style={styles.yearStepperBtn}
-                    activeOpacity={0.7}
-                  >
-                    <Minus size={13} color={colors.text.faint} strokeWidth={2.5} />
-                  </TouchableOpacity>
-
-                  <View style={styles.yearInputBox}>
-                    <TextInput
-                      value={year}
-                      onChangeText={(txt) => setYear(txt.replace(/[^0-9]/g, '').slice(0, 4))}
-                      keyboardType="numeric"
-                      maxLength={4}
-                      placeholder={t.selectYear || 'Yıl'}
-                      placeholderTextColor={colors.text.secondary}
-                      style={styles.yearInputText}
-                    />
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      const y = parseInt(year, 10) || new Date().getFullYear();
-                      setYear(String(y + 1));
-                    }}
-                    style={styles.yearStepperBtn}
-                    activeOpacity={0.7}
-                  >
-                    <Plus size={13} color={colors.text.faint} strokeWidth={2.5} />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Months Horizontal Scroll */}
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.monthsScrollRow}
-                >
-                  {MONTHS.map((m) => {
-                    const isMonthSelected = selectedMonth === m.id;
-                    const monthLabel = currentLang === 'tr' ? m.shortTr : m.shortEn;
-                    return (
-                      <Chip
-                        key={m.id}
-                        label={monthLabel}
-                        selected={isMonthSelected}
-                        onPress={() => setSelectedMonth(m.id)}
-                      />
-                    );
-                  })}
-                </ScrollView>
+                <MonthYearPicker
+                  year={Number(year) || new Date().getFullYear()}
+                  month={selectedMonth}
+                  lang={currentLang}
+                  noFuture
+                  maxYear={new Date().getFullYear()}
+                  onChange={({ year: y, month }) => {
+                    setYear(String(y));
+                    if (month) setSelectedMonth(month);
+                  }}
+                />
               </View>
             )}
 

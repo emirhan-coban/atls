@@ -23,6 +23,7 @@ import { usePlanStore } from '../stores/usePlanStore';
 import { useTripStore } from '../stores/useTripStore';
 import { notificationService } from '../services/notificationService';
 import Heading from './ui/Heading';
+import { layout } from '../theme/spacing';
 
 interface PlannerModalProps {
   visible: boolean;
@@ -372,11 +373,11 @@ export default function PlannerModal({ visible, onClose, currentLang }: PlannerM
 const useStyles = makeStyles((colors) =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.canvas.base },
-    header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 12 },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: layout.screen, paddingTop: 22, paddingBottom: 12 },
     backBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glass.fillStrong },
     title: { flex: 1, fontSize: 32, color: colors.text.primary, fontFamily: fonts.display },
     closeBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glass.fillStrong },
-    content: { paddingHorizontal: 20, paddingBottom: 40, gap: 14 },
+    content: { paddingHorizontal: layout.screen, paddingBottom: 40, gap: layout.section },
     addBtn: { alignSelf: 'flex-start' },
     planCard: {
       flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 22,

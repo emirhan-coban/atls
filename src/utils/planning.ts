@@ -20,6 +20,9 @@ export const formatDateKey = (y: number, m: number, d: number) =>
 
 export const daysInMonth = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).getUTCDate();
 
+/** Index of the first day of the month in a Monday-first week (0 = Monday). */
+export const firstWeekdayOffset = (y: number, m: number) => (new Date(y, m - 1, 1).getDay() + 6) % 7;
+
 export const toDateKey = (date: Date) => formatDateKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
 
 /** Whole calendar days from `now` to the date (negative when it is in the past). Works on local dates, so DST never shifts it. */

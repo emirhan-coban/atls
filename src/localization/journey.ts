@@ -16,6 +16,7 @@ const strings = {
   cancel: { tr: 'Vazgeç', en: 'Cancel' },
   chooseCountry: { tr: 'Ülke seç', en: 'Choose country' },
   searchCountry: { tr: 'Ülke ara...', en: 'Search country...' },
+  when: { tr: 'NE ZAMAN (AY İSTEĞE BAĞLI)', en: 'WHEN (MONTH OPTIONAL)' },
   year: { tr: 'YIL', en: 'YEAR' },
   memoryReminders: { tr: 'Yıl dönümü anıları', en: 'Anniversary memories' },
   memoryRemindersDesc: { tr: 'Bir gezinin yıl dönümü olan ayın 1\'inde "N yıl önce bu ay" bildirimi gelir.', en: 'On the 1st of a trip\'s month you get an "N years ago this month" notification.' },
