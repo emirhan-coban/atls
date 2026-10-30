@@ -1,5 +1,6 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GestureResponderEvent, LayoutChangeEvent, PanResponder, StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { GestureResponderEvent, LayoutChangeEvent, StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import Animated, { cancelAnimation, Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { G, Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { Minus, Plus, RotateCcw } from 'lucide-react-native';
@@ -12,12 +13,14 @@ import { translations } from '../localization/translations';
 import {
   clampView,
   INITIAL_VIEW,
+  LiveTransform,
   MapView,
   MAX_ZOOM,
-  panBy,
   Point,
   Size,
+  transformForView,
   viewBoxOf,
+  viewFromTransform,
   zoomAround,
 } from '../utils/mapView';
 
@@ -40,23 +43,13 @@ interface CountryPathsProps {
   selectedId: string | null;
   landColor: string;
   borderColor: string;
-  selectedFill: string;
   selectedStroke: string;
   interactive: boolean;
   onPressCountry: (id: string) => void;
 }
 
-/** The ~200 country shapes. Memoised on purpose: panning and zooming only change the SVG viewBox, never these elements. */
-const CountryPaths = memo(function CountryPaths({
-  fills,
-  selectedId,
-  landColor,
-  borderColor,
-  selectedFill,
-  selectedStroke,
-  interactive,
-  onPressCountry,
-}: CountryPathsProps) {
+/** The country shapes. Memoised: a pan or zoom never touches them, only the Svg viewBox changes when a gesture ends. */
+const CountryPaths = memo(function CountryPaths({ fills, selectedId, landColor, borderColor, selectedStroke, interactive, onPressCountry }: CountryPathsProps) {
   return (
     <G strokeLinejoin="round" strokeLinecap="round">
       {worldMapFeatures.map((feature, index) => {
@@ -65,9 +58,9 @@ const CountryPaths = memo(function CountryPaths({
           <Path
             key={`${feature.id}-${index}`}
             d={feature.d}
-            fill={fills[feature.id] ?? (selected ? selectedFill : landColor)}
+            fill={fills[feature.id] ?? landColor}
             stroke={selected ? selectedStroke : borderColor}
-            strokeWidth={selected ? 2.2 : 0.5}
+            strokeWidth={selected ? 2 : 0.6}
             vectorEffect="non-scaling-stroke"
             onPress={interactive ? () => onPressCountry(feature.id) : undefined}
           />
@@ -77,12 +70,19 @@ const CountryPaths = memo(function CountryPaths({
   );
 });
 
-const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
-const midpoint = (a: Point, b: Point): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+/** A finger must travel this far before a touch counts as a drag instead of a tap. */
+const DRAG_SLOP = 8;
+/** How far (ms of travel at the release speed) the map keeps gliding after a drag. */
+const GLIDE_MS = 160;
+const SETTLE = { duration: 240, easing: Easing.out(Easing.cubic) };
+
+const centroid = (pts: Point[]): Point => ({ x: pts.reduce((a, p) => a + p.x, 0) / pts.length, y: pts.reduce((a, p) => a + p.y, 0) / pts.length });
+const spread = (pts: Point[]) => (pts.length > 1 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0);
 
 /**
- * World map with one- and two-finger gestures: drag to pan, pinch to zoom around the fingers, double tap to zoom in.
- * Zoom is done by changing the SVG viewBox, so the shapes stay sharp at any level.
+ * World map. While a finger is down the drawn map is only moved with a transform on the UI thread (smooth, no React work);
+ * when the fingers lift, the drawing is refreshed at the new zoom so it is sharp again and the map glides to rest inside its bounds.
+ * One finger pans, two fingers pan and pinch around the point between them, double tap zooms in. Touches on open sea work too.
  */
 function WorldMap({
   countries = [],
@@ -109,23 +109,60 @@ function WorldMap({
   const viewRef = useRef(view);
   const originRef = useRef<Point>({ x: 0, y: 0 });
   const containerRef = useRef<View>(null);
-  const gesture = useRef<{ view: MapView; fingers: Point[]; startDist: number; startMid: Point } | null>(null);
-  const frame = useRef<number | null>(null);
-  const lastTap = useRef(0);
+
+  const scale = useSharedValue(1);
+  const tx = useSharedValue(0);
+  const ty = useSharedValue(0);
+
+  /** Transform currently shown (mirrors the shared values, so touch maths never waits on the UI thread mid-gesture). */
+  const live = useRef<LiveTransform>({ s: 1, tx: 0, ty: 0 });
+  const base = useRef<{ s: number; tx: number; ty: number; c0: Point; r0: number; n: number } | null>(null);
+  const startPoint = useRef<Point>({ x: 0, y: 0 });
+  const moved = useRef(false);
   const dragged = useRef(false);
+  const lastMove = useRef<{ c: Point; time: number; vx: number; vy: number }>({ c: { x: 0, y: 0 }, time: 0, vx: 0, vy: 0 });
+  const lastTap = useRef(0);
+
+  const setLive = useCallback(
+    (next: LiveTransform) => {
+      live.current = next;
+      scale.set(next.s);
+      tx.set(next.tx);
+      ty.set(next.ty);
+    },
+    [scale, tx, ty]
+  );
+
+  // A new drawing replaces the transform: reset it in the same commit so there is no visible jump.
+  useLayoutEffect(() => {
+    setLive({ s: 1, tx: 0, ty: 0 });
+  }, [view, setLive]);
 
   const commit = useCallback((next: MapView) => {
     viewRef.current = next;
-    if (frame.current === null) {
-      frame.current = requestAnimationFrame(() => {
-        frame.current = null;
-        setView(viewRef.current);
-      });
-    }
+    setView(next);
   }, []);
 
-  useEffect(() => () => {
-    if (frame.current !== null) cancelAnimationFrame(frame.current);
+  /** Glide the shown map to `target`, then redraw it sharply. */
+  const animateTo = useCallback(
+    (target: MapView) => {
+      const rel = transformForView(viewRef.current, target, sizeRef.current);
+      live.current = rel;
+      scale.set(
+        withTiming(rel.s, SETTLE, (finished) => {
+          if (finished) runOnJS(commit)(target);
+        })
+      );
+      tx.set(withTiming(rel.tx, SETTLE));
+      ty.set(withTiming(rel.ty, SETTLE));
+    },
+    [commit, scale, tx, ty]
+  );
+
+  const measure = useCallback(() => {
+    containerRef.current?.measureInWindow((x, y) => {
+      originRef.current = { x, y };
+    });
   }, []);
 
   const onLayout = (e: LayoutChangeEvent) => {
@@ -134,94 +171,121 @@ function WorldMap({
     sizeRef.current = { width, height };
     setSize({ width, height });
     commit(clampView(viewRef.current, { width, height }));
-    containerRef.current?.measureInWindow((x, y) => {
-      originRef.current = { x, y };
-    });
+    measure();
   };
 
-  const fingersOf = (e: GestureResponderEvent): Point[] =>
-    e.nativeEvent.touches.map((touch) => ({ x: touch.pageX - originRef.current.x, y: touch.pageY - originRef.current.y }));
+  const pointsOf = (e: GestureResponderEvent): Point[] =>
+    Array.from(e.nativeEvent.touches)
+      .slice(0, 2)
+      .map((touch) => ({ x: touch.pageX - originRef.current.x, y: touch.pageY - originRef.current.y }));
 
-  const beginGesture = (e: GestureResponderEvent) => {
-    const fingers = fingersOf(e);
-    gesture.current = {
-      view: viewRef.current,
-      fingers,
-      startDist: fingers.length > 1 ? distance(fingers[0], fingers[1]) : 0,
-      startMid: fingers.length > 1 ? midpoint(fingers[0], fingers[1]) : fingers[0],
+  /** Remember the transform and fingers as the reference for the next movement (also when a finger is added or lifted). */
+  const rebase = (pts: Point[]) => {
+    base.current = { ...live.current, c0: centroid(pts), r0: spread(pts), n: pts.length };
+  };
+
+  const onTouchStart = (e: GestureResponderEvent) => {
+    const pts = pointsOf(e);
+    if (pts.length === 0) return;
+    if (pts.length === 1) {
+      cancelAnimation(scale);
+      cancelAnimation(tx);
+      cancelAnimation(ty);
+      live.current = { s: scale.get(), tx: tx.get(), ty: ty.get() };
+      startPoint.current = pts[0];
+      moved.current = false;
+      lastMove.current = { c: pts[0], time: Date.now(), vx: 0, vy: 0 };
+      onInteractionChange?.(true);
+    } else {
+      moved.current = true;
+    }
+    rebase(pts);
+  };
+
+  const onTouchMove = (e: GestureResponderEvent) => {
+    if (!base.current) return;
+    const pts = pointsOf(e);
+    if (pts.length === 0) return;
+    if (pts.length !== base.current.n) rebase(pts);
+    const b = base.current;
+    const c = centroid(pts);
+
+    if (!moved.current) {
+      if (Math.hypot(c.x - startPoint.current.x, c.y - startPoint.current.y) < DRAG_SLOP) return;
+      moved.current = true;
+      dragged.current = true;
+      rebase(pts); // start from here, so the map does not jump by the slop
+      return;
+    }
+    dragged.current = true;
+
+    const zoom = viewRef.current.zoom;
+    const k = pts.length > 1 && b.r0 > 0 ? spread(pts) / b.r0 : 1;
+    const s = Math.min((MAX_ZOOM * 1.25) / zoom, Math.max(0.7 / zoom, b.s * k));
+    const kk = s / b.s;
+    const centre = { x: sizeRef.current.width / 2, y: sizeRef.current.height / 2 };
+    setLive({
+      s,
+      tx: c.x + kk * (b.tx + centre.x - b.c0.x) - centre.x,
+      ty: c.y + kk * (b.ty + centre.y - b.c0.y) - centre.y,
+    });
+
+    const now = Date.now();
+    const dt = Math.max(1, now - lastMove.current.time);
+    lastMove.current = {
+      c,
+      time: now,
+      vx: 0.6 * ((c.x - lastMove.current.c.x) / dt) + 0.4 * lastMove.current.vx,
+      vy: 0.6 * ((c.y - lastMove.current.c.y) / dt) + 0.4 * lastMove.current.vy,
     };
   };
 
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        // Two fingers, or a real drag, are taken before a country shape can claim the touch. A plain tap still reaches the shape.
-        onStartShouldSetPanResponderCapture: (e) => interactive && e.nativeEvent.touches.length > 1,
-        onMoveShouldSetPanResponderCapture: (_, g) =>
-          interactive && (g.numberActiveTouches > 1 || Math.abs(g.dx) > 6 || Math.abs(g.dy) > 6),
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: (e) => {
-          dragged.current = true;
-          onInteractionChange?.(true);
-          containerRef.current?.measureInWindow((x, y) => {
-            originRef.current = { x, y };
-          });
-          beginGesture(e);
-        },
-        onPanResponderMove: (e, g) => {
-          const fingers = fingersOf(e);
-          const start = gesture.current;
-          if (!start) return;
-          if (fingers.length > 1) {
-            // a second finger arrived after the drag began: restart from the current state
-            if (start.startDist === 0) {
-              gesture.current = { view: viewRef.current, fingers, startDist: distance(fingers[0], fingers[1]), startMid: midpoint(fingers[0], fingers[1]) };
-              return;
-            }
-            const dist = distance(fingers[0], fingers[1]);
-            commit(zoomAround(start.view, sizeRef.current, start.view.zoom * (dist / start.startDist), start.startMid, midpoint(fingers[0], fingers[1])));
-          } else if (start.startDist === 0) {
-            commit(panBy(start.view, sizeRef.current, g.dx, g.dy));
-          }
-        },
-        onPanResponderRelease: () => {
-          gesture.current = null;
-          onInteractionChange?.(false);
-          setTimeout(() => {
-            dragged.current = false;
-          }, 80);
-        },
-        onPanResponderTerminate: () => {
-          gesture.current = null;
-          onInteractionChange?.(false);
-          dragged.current = false;
-        },
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [interactive, onInteractionChange, commit]
-  );
+  const finish = () => {
+    onInteractionChange?.(false);
+    base.current = null;
+    if (!moved.current) return;
+    const recent = Date.now() - lastMove.current.time < 90;
+    const glide = recent ? { x: lastMove.current.vx * GLIDE_MS, y: lastMove.current.vy * GLIDE_MS } : { x: 0, y: 0 };
+    const target = viewFromTransform(viewRef.current, sizeRef.current, {
+      s: live.current.s,
+      tx: live.current.tx + glide.x,
+      ty: live.current.ty + glide.y,
+    });
+    animateTo(target);
+    setTimeout(() => {
+      dragged.current = false;
+    }, 120);
+  };
+
+  const onTouchEnd = (e: GestureResponderEvent) => {
+    if (!base.current) return;
+    const remaining = pointsOf(e);
+    if (remaining.length === 0) finish();
+    else rebase(remaining);
+  };
 
   const zoomBy = useCallback(
     (factor: number) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const current = viewRef.current;
       const centre = { x: sizeRef.current.width / 2, y: sizeRef.current.height / 2 };
-      commit(zoomAround(current, sizeRef.current, current.zoom * factor, centre, centre));
+      animateTo(zoomAround(current, sizeRef.current, current.zoom * factor, centre, centre));
     },
-    [commit]
+    [animateTo]
   );
 
   const reset = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    commit(clampView(INITIAL_VIEW, sizeRef.current));
-  }, [commit]);
+    animateTo(clampView(INITIAL_VIEW, sizeRef.current));
+  }, [animateTo]);
 
-  // Fill colour per country id; recomputed only when the countries or filter change
+  useEffect(() => measure, [measure]);
+
   const fills = useMemo(() => {
     const map: Record<string, string> = {};
     countries.forEach((c) => {
-      const filtered = activeFilter !== 'all' && c.status !== activeFilter;
-      map[c.id.toUpperCase()] = filtered
+      const dimmed = activeFilter !== 'all' && c.status !== activeFilter;
+      map[c.id.toUpperCase()] = dimmed
         ? colors.map.landDim
         : c.status === 'lived'
           ? colors.status.lived.color
@@ -240,7 +304,7 @@ function WorldMap({
       const now = Date.now();
       if (now - lastTap.current < 300) {
         lastTap.current = 0;
-        zoomBy(viewRef.current.zoom > 1.4 ? 1 / MAX_ZOOM : 2);
+        zoomBy(viewRef.current.zoom > 1.4 ? 1 / MAX_ZOOM : 2.2);
         return;
       }
       lastTap.current = now;
@@ -264,6 +328,10 @@ function WorldMap({
     [countries, activeT, currentLang, onSelectCountry, zoomBy]
   );
 
+  const mapStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: tx.get() }, { translateY: ty.get() }, { scale: scale.get() }],
+  }));
+
   const zoomed = view.zoom > 1.05;
   const showUi = showControls !== null ? showControls : interactive;
 
@@ -272,37 +340,41 @@ function WorldMap({
       ref={containerRef}
       style={[fullScreen ? styles.fullScreen : styles.container, style]}
       onLayout={onLayout}
-      {...(interactive ? panResponder.panHandlers : {})}
+      onTouchStart={interactive ? onTouchStart : undefined}
+      onTouchMove={interactive ? onTouchMove : undefined}
+      onTouchEnd={interactive ? onTouchEnd : undefined}
+      onTouchCancel={interactive ? finish : undefined}
     >
-      <Svg width="100%" height="100%" viewBox={viewBoxOf(view, size)} preserveAspectRatio="none">
-        <CountryPaths
-          fills={fills}
-          selectedId={selectedCountryId ? selectedCountryId.toUpperCase() : null}
-          landColor={colors.map.land}
-          borderColor={colors.map.border}
-          selectedFill={colors.map.landDim}
-          selectedStroke={colors.text.primary}
-          interactive={interactive}
-          onPressCountry={handleCountryPress}
-        />
-      </Svg>
+      <Animated.View style={[StyleSheet.absoluteFill, mapStyle]}>
+        <Svg width="100%" height="100%" viewBox={viewBoxOf(view, size)} preserveAspectRatio="none">
+          <CountryPaths
+            fills={fills}
+            selectedId={selectedCountryId ? selectedCountryId.toUpperCase() : null}
+            landColor={colors.map.land}
+            borderColor={colors.map.border}
+            selectedStroke={colors.text.primary}
+            interactive={interactive}
+            onPressCountry={handleCountryPress}
+          />
+        </Svg>
+      </Animated.View>
 
       {showUi && (
         <>
           {!fullScreen && (
-          <View style={styles.badge} pointerEvents="none">
-            <View style={styles.badgeDot} />
-            <Text style={styles.badgeText} numberOfLines={1}>
-              {selectedInfo ||
-                (countries.length === 0
-                  ? currentLang === 'tr'
-                    ? 'DÜNYA HARİTASI'
-                    : 'WORLD MAP'
-                  : currentLang === 'tr'
-                    ? `${countries.length} İŞARETLİ ÜLKE`
-                    : `${countries.length} MARKED COUNTRIES`)}
-            </Text>
-          </View>
+            <View style={styles.badge} pointerEvents="none">
+              <View style={styles.badgeDot} />
+              <Text style={styles.badgeText} numberOfLines={1}>
+                {selectedInfo ||
+                  (countries.length === 0
+                    ? currentLang === 'tr'
+                      ? 'DÜNYA HARİTASI'
+                      : 'WORLD MAP'
+                    : currentLang === 'tr'
+                      ? `${countries.length} İŞARETLİ ÜLKE`
+                      : `${countries.length} MARKED COUNTRIES`)}
+              </Text>
+            </View>
           )}
 
           <View style={styles.controls}>
@@ -311,10 +383,10 @@ function WorldMap({
                 <RotateCcw size={16} color={colors.text.primary} />
               </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={() => zoomBy(1.6)} style={styles.controlBtn} accessibilityRole="button" accessibilityLabel="Zoom in">
+            <TouchableOpacity onPress={() => zoomBy(1.8)} style={styles.controlBtn} accessibilityRole="button" accessibilityLabel="Zoom in">
               <Plus size={18} color={colors.text.primary} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => zoomBy(1 / 1.6)} disabled={!zoomed} style={[styles.controlBtn, !zoomed && styles.controlOff]} accessibilityRole="button" accessibilityLabel="Zoom out">
+            <TouchableOpacity onPress={() => zoomBy(1 / 1.8)} disabled={!zoomed} style={[styles.controlBtn, !zoomed && styles.controlOff]} accessibilityRole="button" accessibilityLabel="Zoom out">
               <Minus size={18} color={colors.text.primary} />
             </TouchableOpacity>
           </View>
@@ -328,7 +400,7 @@ const useStyles = makeStyles((colors) =>
   StyleSheet.create({
     container: {
       width: '100%',
-      aspectRatio: 16 / 9.5,
+      aspectRatio: 2.1,
       backgroundColor: colors.map.ocean,
       borderRadius: 22,
       borderWidth: 1,
@@ -360,9 +432,9 @@ const useStyles = makeStyles((colors) =>
     badgeText: { flexShrink: 1, fontSize: 11, fontWeight: '800', letterSpacing: 0.4, color: colors.text.primary },
     controls: { position: 'absolute', right: spacing.md, top: spacing.md, gap: spacing.sm },
     controlBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.panel.raised,
