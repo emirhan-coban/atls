@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.atlas.passport",
-      "buildNumber": "16",
+      "buildNumber": "17",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIStatusBarStyle": "UIStatusBarStyleLightContent",
