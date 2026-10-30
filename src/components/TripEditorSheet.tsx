@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Check, ImagePlus, Minus, Plus, Search, Star, Trash2, X } from 'lucide-react-native';
+import { Check, ImagePlus, Search, Star, Trash2, X } from 'lucide-react-native';
 import Sheet from './ui/Sheet';
 import Button from './ui/Button';
 import Chip from './ui/Chip';
+import MonthYearPicker from './ui/MonthYearPicker';
 import { makeStyles, useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
-import { MONTHS } from '../data/months';
 import { jt, TRIP_TYPES } from '../localization/journey';
 import { Trip, TripType } from '../stores/types';
 import { TripInput, useTripStore } from '../stores/useTripStore';
@@ -198,38 +198,19 @@ export default function TripEditorSheet({ visible, onClose, currentLang, country
         {activeCountryId && (
           <>
             <View style={styles.section}>
-              <Text style={styles.label}>{jt('year', currentLang)}</Text>
-              <View style={styles.yearRow}>
-                <TouchableOpacity
-                  onPress={() => setYear((y) => Math.max(1950, y - 1))}
-                  style={styles.stepBtn}
-                  accessibilityLabel="Previous year"
-                >
-                  <Minus size={16} color={colors.text.secondary} />
-                </TouchableOpacity>
-                <Text style={styles.yearText}>{year}</Text>
-                <TouchableOpacity
-                  onPress={() => setYear((y) => Math.min(thisYear() + 1, y + 1))}
-                  style={styles.stepBtn}
-                  accessibilityLabel="Next year"
-                >
-                  <Plus size={16} color={colors.text.secondary} />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.label}>{jt('month', currentLang)}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                {MONTHS.map((m) => (
-                  <Chip
-                    key={m.id}
-                    label={currentLang === 'tr' ? m.shortTr : m.shortEn}
-                    selected={month === m.id}
-                    onPress={() => setMonth(month === m.id ? null : m.id)}
-                  />
-                ))}
-              </ScrollView>
+              <Text style={styles.label}>{jt('when', currentLang)}</Text>
+              <MonthYearPicker
+                year={year}
+                month={month}
+                lang={currentLang}
+                noFuture
+                optionalMonth
+                maxYear={thisYear()}
+                onChange={({ year: y, month: m }) => {
+                  setYear(y);
+                  setMonth(m);
+                }}
+              />
             </View>
 
             <View style={styles.section}>

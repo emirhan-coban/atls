@@ -180,14 +180,14 @@ export default function PlanEditorSheet({ visible, onClose, currentLang, country
           <>
             <View style={styles.section}>
               <Text style={styles.label}>{lt('startDate', currentLang)}</Text>
-              <DateField value={start} onChange={(v) => { setStart(v); setError(null); }} lang={currentLang} minYear={new Date().getFullYear() - 1} />
+              <DateField value={start} onChange={(v) => { setStart(v); setEnd((e) => (e && e < v ? v : e)); setError(null); }} lang={currentLang} minYear={new Date().getFullYear() - 1} />
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>{lt('endDate', currentLang)}</Text>
               {end ? (
                 <>
-                  <DateField value={end} onChange={(v) => { setEnd(v); setError(null); }} lang={currentLang} minYear={new Date().getFullYear() - 1} />
+                  <DateField value={end} min={start} onChange={(v) => { setEnd(v); setError(null); }} lang={currentLang} minYear={new Date().getFullYear() - 1} />
                   <Chip label={lt('noEndDate', currentLang)} onPress={() => setEnd(null)} style={styles.clearEnd} />
                 </>
               ) : (

@@ -10,18 +10,10 @@ import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { getCountryFacts, VISA_RANK, visaGroup, VisaGroup, VisaStatus, visaLabel } from '../data/countryProfile';
 import { pt } from '../localization/profile';
 import { Country } from '../stores/types';
+import { CONTINENT_FILTERS, ContinentFilter, inContinent } from '../data/continents';
 
 type VisaFilter = 'all' | VisaGroup;
-type ContinentFilter = 'all' | 'Europe' | 'Asia' | 'Americas' | 'Africa' | 'Oceania';
 
-const CONTINENTS: { id: ContinentFilter; tr: string; en: string }[] = [
-  { id: 'all', tr: 'Tümü', en: 'All' },
-  { id: 'Europe', tr: 'Avrupa', en: 'Europe' },
-  { id: 'Asia', tr: 'Asya', en: 'Asia' },
-  { id: 'Americas', tr: 'Amerika', en: 'Americas' },
-  { id: 'Africa', tr: 'Afrika', en: 'Africa' },
-  { id: 'Oceania', tr: 'Okyanusya', en: 'Oceania' },
-];
 
 const PAGE = 30;
 
@@ -79,7 +71,7 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
     const q = fold(query.trim());
     return availableCatalog
       .filter((c: any) => {
-        if (continent !== 'all' && c.continent !== continent) return false;
+        if (!inContinent(c.continent, continent)) return false;
         const facts = getCountryFacts(c.id);
         if (visa !== 'all' && (!facts || visaGroup(facts.visa.status) !== visa)) return false;
         if (schengenOnly && !facts?.schengen) return false;
@@ -185,7 +177,7 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
       </ScrollView>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        {CONTINENTS.map((item) => (
+        {CONTINENT_FILTERS.map((item) => (
           <Chip
             key={item.id}
             label={item[currentLang]}

@@ -24,6 +24,7 @@ import { Country, Profile, Trip } from '../stores/types';
 import { useProgressStore } from '../stores/useProgressStore';
 import { useAppStore } from '../stores/useAppStore';
 import Heading from './ui/Heading';
+import { layout } from '../theme/spacing';
 
 type Tab = 'timeline' | 'stats' | 'badges';
 
@@ -384,7 +385,7 @@ const useStyles = makeStyles((colors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 20,
+      paddingHorizontal: layout.screen,
       paddingTop: 22,
       paddingBottom: 12,
     },
@@ -397,8 +398,8 @@ const useStyles = makeStyles((colors) =>
       justifyContent: 'center',
       backgroundColor: colors.glass.fillStrong,
     },
-    tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 12 },
-    content: { paddingHorizontal: 20, paddingBottom: 40, gap: 14 },
+    tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: layout.screen, paddingBottom: 12 },
+    content: { paddingHorizontal: layout.screen, paddingBottom: 40, gap: layout.section },
     addBtn: { alignSelf: 'flex-start' },
     yearBlock: { gap: 10 },
     yearHeading: { fontSize: 25, color: colors.text.primary, fontFamily: fonts.display, marginTop: 8 },

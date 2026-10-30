@@ -18,6 +18,7 @@ import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { rt } from '../localization/routes';
 import { isGoodIn, monthPicks } from '../utils/discover';
 import { Country } from '../stores/types';
+import { CONTINENT_FILTERS, ContinentFilter, inContinent } from '../data/continents';
 
 const ALL_DESTINATIONS = [...CURATED_DESTINATIONS, ...MORE_DESTINATIONS];
 const BY_ID = new Map(ALL_DESTINATIONS.map((d) => [d.id, d]));
@@ -26,14 +27,6 @@ const COLUMN_GAP = 12;
 const CARD_WIDTH = (Dimensions.get('window').width - 40 - COLUMN_GAP) / 2;
 
 type Quick = 'all' | 'now' | 'free' | 'new';
-const CONTINENTS = [
-  { id: 'all', tr: 'Tümü', en: 'All' },
-  { id: 'Europe', tr: 'Avrupa', en: 'Europe' },
-  { id: 'Asia', tr: 'Asya', en: 'Asia' },
-  { id: 'Americas', tr: 'Amerika', en: 'Americas' },
-  { id: 'Africa', tr: 'Afrika', en: 'Africa' },
-  { id: 'Oceania', tr: 'Okyanusya', en: 'Oceania' },
-];
 
 const fold = (v: string) => v.toLocaleLowerCase('tr').replace(/ı/g, 'i').normalize('NFD').replace(/[̀-ͯ]/g, '');
 
@@ -62,7 +55,7 @@ export default function RoutesExplorer({ countries, currentLang, onAddToWishlist
   const results = useMemo(() => {
     const q = fold(query.trim());
     return ALL_DESTINATIONS.filter((d) => {
-      if (continent !== 'all' && d.continent !== continent) return false;
+      if (!inContinent(d.continent, continent as ContinentFilter)) return false;
       if (quick === 'now' && !isGoodIn(d.id, month)) return false;
       if (quick === 'free') {
         const facts = getCountryFacts(d.id);
@@ -159,7 +152,7 @@ export default function RoutesExplorer({ countries, currentLang, onAddToWishlist
         <Chip label={rt('filterNew', currentLang)} selected={quick === 'new'} onPress={() => pickQuick('new')} />
       </ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        {CONTINENTS.map((c) => (
+        {CONTINENT_FILTERS.map((c) => (
           <Chip key={c.id} label={c[currentLang]} selected={continent === c.id} onPress={() => { Haptics.selectionAsync(); setContinent(c.id); setLimit(PAGE); }} />
         ))}
       </ScrollView>

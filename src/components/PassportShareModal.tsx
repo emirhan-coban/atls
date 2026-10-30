@@ -32,6 +32,7 @@ import { getDynamicLocation } from '../utils/locationHelper';
 import { Country, Profile } from '../stores/types';
 import Heading from './ui/Heading';
 import { fonts } from '../theme/typography';
+import { layout } from '../theme/spacing';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(width - 44, 350);
@@ -362,7 +363,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingTop: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.screen,
     paddingBottom: Platform.OS === 'ios' ? 36 : 24,
     borderWidth: 1,
     borderColor: colors.glass.hairline,

@@ -4,6 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { availableCatalog } from '../data/travelData';
 import { Country } from '../stores/types';
 import { theme } from '../theme';
+import { continentGroup } from '../data/continents';
 
 interface ContinentalProgressProps {
   countries: Country[];
@@ -57,32 +58,8 @@ export default function ContinentalProgress({ countries, currentLang }: Continen
   ];
 
   const summaries: ContinentSummary[] = continentConfigs.map((cfg) => {
-    // Total in catalog
-    const totalCount = availableCatalog.filter((c) => {
-      const matchEn = c.continent?.toLowerCase().includes(cfg.key.toLowerCase());
-      const matchTr = c.continentTr?.toLowerCase().includes(cfg.nameTr.toLowerCase());
-      // Handle North/South America grouping
-      if (cfg.key === 'Americas') {
-        return (
-          c.continent?.includes('America') ||
-          c.continentTr?.includes('Amerika')
-        );
-      }
-      return matchEn || matchTr;
-    }).length;
-
-    // Visited in this continent
-    const visitedCount = visited.filter((c) => {
-      const matchEn = c.continent?.toLowerCase().includes(cfg.key.toLowerCase());
-      const matchTr = c.continentTr?.toLowerCase().includes(cfg.nameTr.toLowerCase());
-      if (cfg.key === 'Americas') {
-        return (
-          c.continent?.includes('America') ||
-          c.continentTr?.includes('Amerika')
-        );
-      }
-      return matchEn || matchTr;
-    }).length;
+    const totalCount = availableCatalog.filter((c) => continentGroup(c.continent) === cfg.key).length;
+    const visitedCount = visited.filter((c) => continentGroup(c.continent) === cfg.key).length;
 
     const percentage = totalCount > 0 ? Math.min(Math.round((visitedCount / totalCount) * 100), 100) : 0;
 

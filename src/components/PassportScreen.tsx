@@ -48,6 +48,7 @@ import EditProfileModal from './EditProfileModal';
 import CountryStatusModal from './CountryStatusModal';
 import AnimatedCounter from './AnimatedCounter';
 import { getDynamicLocation } from '../utils/locationHelper';
+import { layout } from '../theme/spacing';
 
 interface PassportScreenProps {
   profile: Profile;
@@ -887,9 +888,9 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     backgroundColor: 'transparent',
   },
   contentContainer: {
-    paddingHorizontal: 22,
+    paddingHorizontal: layout.screen,
     paddingTop: 6,
-    paddingBottom: 112,
+    paddingBottom: layout.tabBarClearance,
   },
   header: {
     flexDirection: 'row',
@@ -957,7 +958,7 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     backgroundColor: colors.panel.base,
     borderRadius: 30,
     paddingVertical: 20,
-    paddingHorizontal: 22,
+    paddingHorizontal: layout.screen,
     marginTop: 16,
     borderWidth: 1,
     borderColor: colors.glass.fillActive,
