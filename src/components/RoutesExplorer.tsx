@@ -165,7 +165,7 @@ export default function RoutesExplorer({ countries, currentLang, onAddToWishlist
             const photo = photoOf(d);
             const facts = getCountryFacts(d.id);
             const group = facts ? visaGroup(facts.visa.status) : null;
-            const dot = group === 'free' ? colors.status.lived.color : group === 'easy' ? colors.gold.base : null;
+            const dot = group === 'free' ? colors.status.visited.color : group === 'easy' ? colors.gold.base : null;
             const status = statusById.get(d.id);
             return (
               <TouchableOpacity key={d.id} style={styles.card} activeOpacity={0.88} onPress={() => openCountry(d.id)} accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? d.nameTr : d.name}>
