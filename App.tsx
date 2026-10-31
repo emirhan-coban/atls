@@ -25,7 +25,7 @@ import { ErrorBoundary } from './src/components/ErrorBoundary';
 import JourneyModal from './src/components/JourneyModal';
 import PlannerModal from './src/components/PlannerModal';
 import { useProgressStore } from './src/stores/useProgressStore';
-import { SkeletonItem, SkeletonCountryCard } from './src/components/SkeletonLoader';
+import * as SplashScreen from 'expo-splash-screen';
 import { storageService } from './src/services/storageService';
 import { warmMapShapes } from './src/utils/mapShapes';
 import { refreshMemoryReminders } from './src/services/memoryReminders';
@@ -36,6 +36,10 @@ import { clearVault } from './src/utils/vault';
 if (process.env.EXPO_PUBLIC_DEMO_MODE === '1') {
   LogBox.ignoreAllLogs(true);
 }
+
+// Keep the native splash up until storage and the display font are ready, so no placeholder screen is ever shown
+SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ duration: 350, fade: true });
 
 function AppContent() {
   const [fontsLoaded, fontError] = useFonts({ InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic });
@@ -227,18 +231,17 @@ function AppContent() {
   const openPlanner = useCallback(() => setIsPlannerOpen(true), []);
   const closeAccountModal = useCallback(() => setIsAccountModalOpen(false), []);
 
-  // Loading screen before persistent storage is ready
-  // Wait for storage and the display font so headings never flash in the fallback face
-  if (!isLoaded || (!fontsLoaded && !fontError)) {
-    return (
-      <View style={[styles.container, styles.loadingScreen]}>
-        <SkeletonItem width={96} height={32} borderRadius={10} />
-        <SkeletonItem width="64%" height={26} borderRadius={10} />
-        <SkeletonCountryCard />
-        <SkeletonCountryCard />
-      </View>
-    );
-  }
+  // Wait for storage and the display font so headings never flash in the fallback face; the native splash stays up meanwhile
+  const appReady = isLoaded && (fontsLoaded || Boolean(fontError));
+  useEffect(() => {
+    if (appReady) SplashScreen.hide();
+  }, [appReady]);
+  useEffect(() => {
+    // never leave the user on the splash if something above never resolves
+    const t = setTimeout(() => SplashScreen.hide(), 8000);
+    return () => clearTimeout(t);
+  }, []);
+  if (!appReady) return null;
 
   // 1. If user hasn't completed onboarding, show onboarding
   if (!hasCompletedOnboarding) {
@@ -433,10 +436,5 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
   },
   screenWrapper: {
     flex: 1,
-  },
-  loadingScreen: {
-    paddingTop: 72,
-    paddingHorizontal: 20,
-    gap: 16,
   },
 }));
