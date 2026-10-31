@@ -9,7 +9,7 @@
 **Açıklama:**
 atls., seyahatlerini tek yerde toplayan kişisel dünya pasaportun.
 
-• Dünya haritası: Gezdiğin, yaşadığın ve gitmek istediğin ülkeleri renklendir. İki parmakla yakınlaştır, istediğin ülkeye dokun.
+• 3B dünya: Gezdiğin, yaşadığın ve gitmek istediğin ülkeler küre üzerinde renklenir. Küreyi çevir, istediğin ülkeye dokun.
 • Vize bilgisi: T.C. pasaportu için vizesiz, e-vize ve vizeli ülkeleri ülke sayfasında gör.
 • Bu ay nereye? Mevsime, vizeye ve henüz gitmediğin yerlere göre öneriler al.
 • Rotalar: Ülkeler için şehir, yemek ve gezilecek yer önerileri.
@@ -20,7 +20,7 @@ atls., seyahatlerini tek yerde toplayan kişisel dünya pasaportun.
 Vize bilgileri Vikipedi verisine dayanır ve değişmiş olabilir. Seyahatten önce ilgili ülkenin büyükelçiliğinden veya T.C. Dışişleri Bakanlığı'ndan kontrol et.
 
 **Anahtar kelimeler (≤100):** seyahat,pasaport,harita,vize,gezi,planlayıcı,günlük,ülke,tatil,rota
-**Bu sürümde yenilik:** Daha hızlı ve akıcı dünya haritası, yeni logo, takvim ve ana ekran iyileştirmeleri.
+**Bu sürümde yenilik:** Ana ekran artık etkileşimli 3B bir dünya: ülkelere dokun, detayları gör, yeni ülke eklediğinde kutlamayı izle. Yeni logo.
 
 ## English
 
@@ -31,7 +31,7 @@ Vize bilgileri Vikipedi verisine dayanır ve değişmiş olabilir. Seyahatten ö
 **Description:**
 atls. is your personal world passport, keeping all your travel in one place.
 
-• World map: colour countries you've visited, lived in or want to see. Pinch to zoom, tap any country.
+• 3D globe: the countries you've visited, lived in or want to see light up on the globe. Spin it, tap any country.
 • Visa info: see visa-free, e-visa and visa-required status on every country page (Turkish passport).
 • Where this month? Suggestions based on season, visa and places you haven't been.
 • Routes: city, food and sightseeing ideas for each country.

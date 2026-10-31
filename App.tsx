@@ -301,6 +301,10 @@ function AppContent() {
               tripCount={trips.length}
               onOpenJourney={openJourney}
               onOpenPlanner={openPlanner}
+              isActive={activeTab === 'home'}
+              isCovered={isJourneyOpen || isPlannerOpen || isShareModalOpen}
+              isModalOpen={isAddModalOpen || isJourneyOpen || isPlannerOpen || isShareModalOpen || Boolean(selectedCountryDetailId) || Boolean(countryToEdit)}
+              onEditCountry={setCountryToEdit}
             />
           </View>
 

@@ -2,14 +2,14 @@ import Button from './ui/Button';
 import JourneyCard from './JourneyCard';
 import PlanCard from './PlanCard';
 import { fonts } from '../theme/typography';
-import { makeStyles, useTheme } from '../theme/ThemeContext';
-import React, { useState } from 'react';
+import { ForceDarkTheme, makeStyles, useTheme } from '../theme/ThemeContext';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
+  AppState,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {  
@@ -22,16 +22,22 @@ import {
   Calendar,
   Sparkles,
   Utensils,
-  Maximize2,
 } from 'lucide-react-native';
-import WorldMap from './WorldMap';
-import InteractiveMapModal from './InteractiveMapModal';
+import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
+import GlobeView, { GlobeHandle } from '../globe/GlobeView';
+import HomeSheet, { SheetHandle, SnapName } from '../globe/HomeSheet';
+import GlobeOverlay from '../globe/GlobeOverlay';
+import CountryPanel, { resolveCountry } from '../globe/CountryPanel';
+import { createCelebrationDetector, createCelebrationQueue } from '../globe/celebration';
+import { resolveHomeCountry } from '../globe/homeCountry';
+import { shortenName } from '../globe/countryNames';
+import { useCountryStore } from '../stores/useCountryStore';
+import { useCelebrationStore } from '../stores/useCelebrationStore';
 import AnimatedCounter from './AnimatedCounter';
-import { getLocalizedCountryName, formatCountryDate } from '../data/travelData';
+import { availableCatalog, getLocalizedCountryName, formatCountryDate } from '../data/travelData';
 import { getCountryTrivia } from '../data/countryTrivia';
 import { Country, Profile } from '../stores/types';
 import Heading from './ui/Heading';
-import { layout } from '../theme/spacing';
 
 type StatusFilter = Country['status'] | 'all';
 
@@ -49,7 +55,26 @@ interface HomeScreenProps {
   tripCount?: number;
   onOpenJourney: () => void;
   onOpenPlanner: () => void;
+  /** Home is the visible tab. */
+  isActive?: boolean;
+  /** A full-screen modal hides the globe completely: stop drawing. */
+  isCovered?: boolean;
+  /** Any modal is open over Home: hold celebrations until it closes. */
+  isModalOpen?: boolean;
+  onEditCountry?: (country: Country) => void;
   [key: string]: any;
+}
+
+/** Height of the floating tab bar region the sheet stays above. */
+const DOCK = 92;
+
+function useAppIsActive() {
+  const [active, setActive] = useState(AppState.currentState === 'active');
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => setActive(s === 'active'));
+    return () => sub.remove();
+  }, []);
+  return active;
 }
 
 function HomeScreen({
@@ -66,12 +91,15 @@ function HomeScreen({
   tripCount = 0,
   onOpenJourney,
   onOpenPlanner,
+  isActive = true,
+  isCovered = false,
+  isModalOpen = false,
+  onEditCountry,
 }: HomeScreenProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const [countryCardIndex, setCountryCardIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
-  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   const markedCountries = countries.filter((c) => c.status === 'visited' || c.status === 'lived');
   const hasCountries = markedCountries.length > 0;
@@ -87,7 +115,7 @@ function HomeScreen({
   const livedCount = countries.filter((c) => c.status === 'lived').length;
   const wantCount = countries.filter((c) => c.status === 'want').length;
   const totalMarked = visitedCount + livedCount;
-  const earthPercentage = ((totalMarked / 195) * 100).toFixed(1);
+  const earthPercentage = ((totalMarked / availableCatalog.length) * 100).toFixed(1);
 
   const handleNextCountry = () => {
     if (markedCountries.length <= 1) return;
@@ -106,26 +134,158 @@ function HomeScreen({
     setActiveFilter((prev) => (prev === filter ? 'all' : filter));
   };
 
+  // ---- Globe + bottom sheet ----
+  const [area, setArea] = useState({ w: 0, h: 0 });
+  const [selectedIso, setSelectedIso] = useState<string | null>(null);
+  const [sheetName, setSheetName] = useState<SnapName>('peek');
+  const [introDone, setIntroDone] = useState(false);
+  const globeRef = useRef<GlobeHandle>(null);
+  const sheetRef = useRef<SheetHandle>(null);
+  const returnSnap = useRef<SnapName>('peek');
+  const sheetVisible = useSharedValue(0);
+  // the tab is hidden with display: none, which drops the native views; re-attach the sheet's gestures on return
+  const [gestureEpoch, setGestureEpoch] = useState(0);
+  const wasActive = useRef(isActive);
+  useEffect(() => {
+    if (isActive && !wasActive.current) setGestureEpoch((n) => n + 1);
+    wasActive.current = isActive;
+  }, [isActive]);
+  const appActive = useAppIsActive();
+
+  const sheetArea = Math.max(area.h - DOCK, 0);
+  const peekH = Math.max(112, Math.round(sheetArea * 0.16));
+  const halfH = Math.round(sheetArea * 0.55);
+  // The globe rides up with the sheet (up to half) so it stays in the clear part of the screen
+  const extraLift = useDerivedValue(() => Math.min(Math.max((sheetVisible.value - DOCK - peekH) * 0.5, 0), (halfH - peekH) * 0.5));
+
+  const homeTarget = useMemo(() => resolveHomeCountry(profile, availableCatalog), [profile]);
+  const running = isActive && appActive && !isCovered;
+  const celebrationsVisible = running && !isModalOpen && introDone;
+
+  const selectCountry = useCallback((iso: string) => {
+    if (!selectedIso) returnSnap.current = sheetRef.current?.current() ?? 'peek';
+    setSelectedIso(iso);
+    sheetRef.current?.snapTo('half');
+    globeRef.current?.flyTo(iso);
+  }, [selectedIso]);
+
+  const closeCountry = useCallback(() => {
+    setSelectedIso(null);
+    sheetRef.current?.snapTo(returnSnap.current);
+    globeRef.current?.glideHome();
+  }, []);
+
+  const handleSnapChange = useCallback((name: SnapName) => {
+    setSheetName(name);
+    if (name === 'peek' && selectedIso) {
+      setSelectedIso(null);
+      globeRef.current?.glideHome();
+    }
+  }, [selectedIso]);
+
+  // Celebrations: diff the store, ignore hydration and bulk loads, queue while Home is hidden
+  const [queue] = useState(createCelebrationQueue);
+  const playing = useRef(false);
+  const visibleRef = useRef(celebrationsVisible);
+  const lastConfetti = useRef(0);
+  const flushRef = useRef<() => void>(() => {});
+  const flush = useCallback(() => {
+    if (playing.current) return;
+    const next = queue.next(visibleRef.current);
+    if (!next) return;
+    playing.current = true;
+    globeRef.current?.celebrate(next.id, next.status, () => {
+      // the add flow already bursts confetti itself; only add one when nothing just did
+      if (next.status !== 'want' && Date.now() - lastConfetti.current > 3000) {
+        useCelebrationStore.getState().burstConfetti();
+      }
+      playing.current = false;
+      flushRef.current();
+    });
+  }, [queue]);
+  useEffect(() => {
+    flushRef.current = flush;
+  }, [flush]);
+  useEffect(() => {
+    visibleRef.current = celebrationsVisible;
+    if (celebrationsVisible) flush();
+  }, [celebrationsVisible, flush]);
+  useEffect(() => {
+    const mountedAt = Date.now();
+    const diff = createCelebrationDetector(() => Date.now() - mountedAt > 1500);
+    diff(useCountryStore.getState().countries);
+    const unsubCountries = useCountryStore.subscribe((state) => {
+      const events = diff(state.countries);
+      if (events.length) {
+        queue.push(events);
+        flush();
+      }
+    });
+    const unsubConfetti = useCelebrationStore.subscribe(() => {
+      lastConfetti.current = Date.now();
+    });
+    return () => {
+      unsubCountries();
+      unsubConfetti();
+    };
+  }, [queue, flush]);
+
+  const selectedInfo = selectedIso ? resolveCountry(selectedIso) : null;
+  const peekSummary = (
+    <View style={styles.peekRow}>
+      {selectedInfo ? (
+        <Text style={styles.peekText} numberOfLines={1}>
+          {`${selectedInfo.flag} ${shortenName(currentLang === 'tr' ? selectedInfo.nameTr : selectedInfo.name)}`}
+        </Text>
+      ) : (
+        <>
+          <View style={styles.peekItem}><View style={[styles.statusDot, { backgroundColor: colors.status.visited.color }]} /><Text style={styles.peekText}>{`${visitedCount} ${currentLang === 'tr' ? 'gidildi' : 'visited'}`}</Text></View>
+          <View style={styles.peekItem}><View style={[styles.statusDot, { backgroundColor: colors.status.lived.color }]} /><Text style={styles.peekText}>{`${livedCount} ${currentLang === 'tr' ? 'yaşandı' : 'lived'}`}</Text></View>
+          <View style={styles.peekItem}><View style={[styles.statusDot, { backgroundColor: colors.gold.base }]} /><Text style={styles.peekText}>{`${wantCount} ${currentLang === 'tr' ? 'istek' : 'wishlist'}`}</Text></View>
+        </>
+      )}
+    </View>
+  );
 
   return (
-    <View style={styles.outerWrapper}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Clean Travel Passport Greeting */}
-        <View style={styles.explorerGreetingRow}>
-          <Heading style={styles.explorerGreetingText}>
-            {currentLang === 'tr' ? 'Dünya Pasaportun' : 'World Passport'}
-          </Heading>
-          <Text style={styles.explorerGreetingSub}>
-            {currentLang === 'tr'
-              ? 'Rotaların, vizelerin ve seyahat haritan.'
-              : 'Your journeys, visas & personal travel map.'}
-          </Text>
-        </View>
-
+    <View
+      style={styles.outerWrapper}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        // a hidden tab (display: none) reports 0x0; keep the last real size so the globe and sheet stay mounted
+        if (width > 0 && height > 0) setArea((prev) => (prev.w === width && prev.h === height ? prev : { w: width, h: height }));
+      }}
+    >
+      {area.h > 0 ? (
+        <>
+          <GlobeView
+            ref={globeRef}
+            countries={countries}
+            selectedIso={selectedIso}
+            lang={currentLang}
+            running={running}
+            autoSpin={!selectedIso && sheetName === 'peek'}
+            bottomInset={peekH + DOCK}
+            extraLift={extraLift}
+            home={homeTarget}
+            onPickCountry={selectCountry}
+            onIntroDone={() => setIntroDone(true)}
+          />
+          <ForceDarkTheme>
+            <GlobeOverlay markedCount={totalMarked} lang={currentLang} show={introDone} hideStat={Boolean(selectedIso)} onPickCountry={selectCountry} />
+            <View style={[styles.sheetArea, { bottom: 0 }]} pointerEvents="box-none">
+              <HomeSheet ref={sheetRef} areaHeight={area.h} dock={DOCK} epoch={gestureEpoch} peek={peekSummary} visible={sheetVisible} onSnapChange={handleSnapChange}>
+                {selectedIso ? (
+                  <CountryPanel
+                    iso={selectedIso}
+                    countries={countries}
+                    lang={currentLang}
+                    onClose={closeCountry}
+                    onEditStatus={(c) => onEditCountry?.(c)}
+                    onMoreDetails={(iso) => onSelectCountry(iso)}
+                  />
+                ) : (
+                  <>
         {/* PRIMARY ACTION: add a country (the most used action sits first) */}
         <TouchableOpacity
           onPress={() => {
@@ -282,44 +442,6 @@ function HomeScreen({
 
       {/* Map Card */}
       <View style={styles.mapCard}>
-        <TouchableOpacity
-          activeOpacity={0.88}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setIsMapModalOpen(true);
-          }}
-          style={styles.mapTouchContainer}
-        >
-          <WorldMap
-            countries={countries}
-            activeFilter={activeFilter}
-            onSelectCountry={() => {
-              // Tapping preview opens the full interactive map modal
-              setIsMapModalOpen(true);
-            }}
-            t={t}
-            currentLang={currentLang}
-            interactive={false}
-          />
-
-          {/* Expand Badge Overlay */}
-          <View style={styles.mapExpandOverlay}>
-            <View style={styles.mapExpandPill}>
-              <Maximize2 size={11} color={colors.gold.base} strokeWidth={2.5} />
-              <Text style={styles.mapExpandText}>
-                {currentLang === 'tr' ? 'Haritayı Büyüt' : 'Expand Map'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Subtle bottom prompt */}
-          <View style={styles.mapTapPromptWrap}>
-            <Text style={styles.mapTapPromptText}>
-              {currentLang === 'tr' ? 'Tam ekran incelemek için dokunun' : 'Tap to explore interactive map'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
         {/* Stats Row - Playful Candy Tiles */}
         <View style={styles.statsRow}>
           {/* Visited */}
@@ -512,19 +634,14 @@ function HomeScreen({
         <ChevronRight size={18} color={colors.text.secondary} />
       </TouchableOpacity>
 
-    </ScrollView>
-
-    {/* Full Screen Interactive Map Modal */}
-    <InteractiveMapModal
-      visible={isMapModalOpen}
-      onClose={() => setIsMapModalOpen(false)}
-      countries={countries}
-      onSelectCountry={onSelectCountry}
-      currentLang={currentLang}
-      t={t}
-      initialFilter={activeFilter}
-    />
-  </View>
+                  </>
+                )}
+              </HomeSheet>
+            </View>
+          </ForceDarkTheme>
+        </>
+      ) : null}
+    </View>
   );
 }
 
@@ -539,12 +656,10 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-  contentContainer: {
-    paddingHorizontal: layout.screen,
-    paddingTop: 6,
-    paddingBottom: layout.tabBarClearance,
-    gap: layout.section,
-  },
+  sheetArea: { position: 'absolute', left: 0, right: 0, top: 0, overflow: 'hidden' },
+  peekRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  peekItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  peekText: { color: colors.text.soft, fontSize: 14, fontWeight: '600' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -868,61 +983,9 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
     shadowRadius: 18,
     elevation: 3,
   },
-  mapTouchContainer: {
-    position: 'relative',
-    borderRadius: 22,
-    overflow: 'hidden',
-  },
-  mapExpandOverlay: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 5,
-  },
-  mapExpandPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.panel.raised,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.glass.borderStrong,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  mapExpandText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.text.primary,
-    letterSpacing: 0.3,
-  },
-  mapTapPromptWrap: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    right: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'none',
-  },
-  mapTapPromptText: {
-    fontSize: 9.5,
-    fontWeight: '600',
-    color: colors.glass.borderStrong,
-    letterSpacing: 0.2,
-  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.glass.fillStrong,
     gap: 8,
   },
   statBox: {
@@ -1143,4 +1206,13 @@ const useStyles = makeStyles((colors) => StyleSheet.create({
   },
 }));
 
-export default React.memo(HomeScreen);
+// Home is drawn on an always-dark stage, so its own styles must resolve against the dark palette
+function DarkHomeScreen(props: HomeScreenProps) {
+  return (
+    <ForceDarkTheme>
+      <HomeScreen {...props} />
+    </ForceDarkTheme>
+  );
+}
+
+export default React.memo(DarkHomeScreen);

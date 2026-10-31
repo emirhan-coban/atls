@@ -53,3 +53,10 @@ export function makeStyles<T extends StyleSheet.NamedStyles<T> | StyleSheet.Name
     return useMemo(() => factory(colors), [colors]);
   };
 }
+
+const DARK_VALUE: ThemeValue = { colors: darkColors, scheme: 'dark' };
+
+/** Forces the dark palette for a subtree: the Home globe stage is always dark, whatever the system theme. */
+export function ForceDarkTheme({ children }: { children: React.ReactNode }) {
+  return <ThemeContext.Provider value={DARK_VALUE}>{children}</ThemeContext.Provider>;
+}

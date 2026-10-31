@@ -10,7 +10,7 @@ import EmptyState from './EmptyState';
 import DestinationSheet from './DestinationSheet';
 import { makeStyles, useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
-import { CURATED_DESTINATIONS, CuratedDestination } from '../data/curatedDestinations';
+import { CURATED_DESTINATIONS } from '../data/curatedDestinations';
 import { MORE_DESTINATIONS } from '../data/moreDestinations';
 import { ROUTE_PHOTOS } from '../data/routePhotos';
 import { getCountryFacts, visaGroup, visaLabel } from '../data/countryProfile';
@@ -82,7 +82,7 @@ export default function RoutesExplorer({ countries, currentLang, onAddToWishlist
     setLimit(PAGE);
   };
 
-  const photoOf = (d: CuratedDestination | undefined) => (d ? d.heroImage ?? ROUTE_PHOTOS[d.id]?.url ?? null : null);
+  const photoOf = (id: string) => BY_ID.get(id)?.heroImage ?? ROUTE_PHOTOS[id]?.url ?? null;
 
   const openCountry = (id: string) => {
     Haptics.selectionAsync();
@@ -107,7 +107,7 @@ export default function RoutesExplorer({ countries, currentLang, onAddToWishlist
           {picks.map((p) => {
             const entry = availableCatalog.find((c) => c.id === p.id);
             if (!entry) return null;
-            const photo = photoOf(BY_ID.get(p.id));
+            const photo = photoOf(p.id);
             return (
               <TouchableOpacity key={p.id} style={styles.pick} activeOpacity={0.85} onPress={() => openCountry(p.id)} accessibilityRole="button" accessibilityLabel={getLocalizedCountryName(entry, currentLang)}>
                 {photo ? (
@@ -162,7 +162,7 @@ export default function RoutesExplorer({ countries, currentLang, onAddToWishlist
       ) : (
         <View style={styles.grid}>
           {results.slice(0, limit).map((d) => {
-            const photo = photoOf(d);
+            const photo = photoOf(d.id);
             const facts = getCountryFacts(d.id);
             const group = facts ? visaGroup(facts.visa.status) : null;
             const dot = group === 'free' ? colors.status.visited.color : group === 'easy' ? colors.gold.base : null;

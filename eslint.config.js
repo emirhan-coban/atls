@@ -33,4 +33,12 @@ module.exports = defineConfig([
       'react-hooks/set-state-in-effect': 'warn',
     },
   },
+  {
+    // Reanimated shared values are written through `.value` by design; the React Compiler
+    // immutability rule reads that as mutating a hook result.
+    files: ['src/globe/**/*.{ts,tsx}', 'src/components/HomeScreen.tsx'],
+    rules: {
+      'react-hooks/immutability': 'off',
+    },
+  },
 ]);
