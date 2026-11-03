@@ -277,3 +277,26 @@ CREATE POLICY "Users can update their own planned trips"
 DROP POLICY IF EXISTS "Users can delete their own planned trips" ON public.planned_trips;
 CREATE POLICY "Users can delete their own planned trips"
   ON public.planned_trips FOR DELETE USING (auth.uid() = user_id);
+
+-- 12. Country rarity (schema v4): how many atls travelers have been to each country.
+-- Returns aggregates only (no user ids). Nothing is returned until at least 50 travelers exist,
+-- so early on a percentage can never single out one person.
+CREATE OR REPLACE FUNCTION public.country_visit_stats()
+RETURNS TABLE (country_id TEXT, travelers BIGINT, total_travelers BIGINT)
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  WITH people AS (
+    SELECT COUNT(DISTINCT user_id) AS n
+    FROM public.user_countries
+    WHERE status IN ('visited', 'lived')
+  )
+  SELECT uc.country_id, COUNT(DISTINCT uc.user_id), people.n
+  FROM public.user_countries uc, people
+  WHERE uc.status IN ('visited', 'lived') AND people.n >= 50
+  GROUP BY uc.country_id, people.n;
+$$ LANGUAGE sql STABLE;
+
+REVOKE ALL ON FUNCTION public.country_visit_stats() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.country_visit_stats() FROM anon;
+GRANT EXECUTE ON FUNCTION public.country_visit_stats() TO authenticated;
