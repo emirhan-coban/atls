@@ -1,6 +1,7 @@
 import Button from './ui/Button';
 import JourneyCard from './JourneyCard';
 import PlanCard from './PlanCard';
+import DailyGameCard from './DailyGameCard';
 import { fonts } from '../theme/typography';
 import { ForceDarkTheme, makeStyles, useTheme } from '../theme/ThemeContext';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -55,6 +56,7 @@ interface HomeScreenProps {
   tripCount?: number;
   onOpenJourney: () => void;
   onOpenPlanner: () => void;
+  onOpenGame?: () => void;
   /** Home is the visible tab. */
   isActive?: boolean;
   /** A full-screen modal hides the globe completely: stop drawing. */
@@ -91,6 +93,7 @@ function HomeScreen({
   tripCount = 0,
   onOpenJourney,
   onOpenPlanner,
+  onOpenGame,
   isActive = true,
   isCovered = false,
   isModalOpen = false,
@@ -523,6 +526,13 @@ function HomeScreen({
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Daily secret-country game */}
+      {onOpenGame && (
+        <View>
+          <DailyGameCard currentLang={currentLang} onPress={onOpenGame} />
+        </View>
+      )}
 
       {/* Travel journal: level, trips and badges */}
       {onOpenJourney && hasCountries && (
