@@ -46,11 +46,26 @@ Each store is a separate concern, re-exported from `src/stores/index.ts`:
 
 Static catalogs (countries, continents, climate, trivia, destinations, travel guides, achievements, levels, world map path data) live as plain TS modules here. This is the content the UI renders against, not something fetched at runtime — e.g. `worldMapPaths.ts` backs the world map, `countryFacts.ts`/`countryTrivia.ts` back the country detail sheets.
 
-### Map rendering
+### Home globe & map rendering
 
-Two map implementations coexist:
-- `src/components/WorldMap.tsx` — SVG-based map (`react-native-svg`), the original/legacy view.
-- Skia-based rendering, backed by `src/utils/mapShapes.ts` (`warmMapShapes`, called once at startup in `App.tsx` to pre-process shapes and show a loading state) and `src/utils/mapView.ts`/`src/utils/mapHelper.ts` for geo projection. `d3-geo`/`topojson-client`/`world-atlas` (devDependencies) are build-time tools for generating map path data, not runtime deps.
+- **Home screen is a 3D globe** (`src/globe/`, composed in `HomeScreen.tsx`): `GlobeView.tsx` ray-traces an orthographic sphere in a single Skia SkSL fragment shader (`globeShader.ts`) driven by Reanimated shared values + gesture-handler. A country-ID texture map (`countryIndex.ts`, `useGlobeTextures.ts`) plus a status LUT (`statusLut.ts`) tints visited/lived/wishlist countries and selection on the GPU. `GlobeOverlay`, `HomeSheet` (bottom sheet with snap points) and `CountryPanel` sit on top; `globeMath.ts` holds the coordinate conventions and has the unit tests. The globe stops drawing when a full-screen modal covers it.
+- **Flat maps** (`src/components/WorldMap.tsx`, SVG via `react-native-svg`, plus Skia rendering backed by `src/utils/mapShapes.ts` — `warmMapShapes` is called once at startup in `App.tsx` — and `mapView.ts`/`mapHelper.ts` for projection) still exist; `WorldMap` is currently imported only by `OnboardingScreen`.
+- `d3-geo`/`topojson-client`/`world-atlas` (devDependencies) are build-time tools for generating map path data, not runtime deps.
+
+### Engagement features
+
+- **Daily "Secret Country"** (`src/game/dailyCountry.ts`, pure and tested; state in `useGameStore`, persisted to AsyncStorage; UI in `DailyGameModal`/`DailyGameCard`). The country is a hash of the local date over the pool of countries that have facts, climate and trivia, so every device agrees without a backend. Clue text must never contain the country's name (the test enforces it).
+- **Journey story** (`JourneyStoryModal`, numbers from `utils/storyFacts.ts`): one 9:16 view whose elements animate in with Reanimated; sharing captures the finished frame as a PNG (there is no video export).
+- **Rarity** (`utils/rarity.ts`, `services/rarityService.ts`, shown in `globe/CountryPanel.tsx`): reads the `country_visit_stats()` Supabase function, which returns nothing until 50 travelers exist, so the badge stays hidden offline or early on. The SQL must be applied from `supabase/schema.sql` §12.
+- **Passport clash** (`utils/compareCode.ts`, `CompareModal`, `app/compare.tsx`): visited countries are encoded as a bitset over the id-sorted catalog (versioned prefix). Changing the catalog requires a new version prefix. Links use the `atls://` scheme, which chat apps often do not make tappable, so the modal also accepts a pasted message or code.
+
+### Launch / splash
+
+`App.tsx` calls `SplashScreen.preventAutoHideAsync()` at module load and hides the native splash only once `appReady` (fonts, stores, map shapes) is true, with an 8 s failsafe. There is no JS skeleton boot screen; don't reintroduce one.
+
+### `promo-video/`
+
+A separate HyperFrames (HTML → MP4) project for marketing video, with its own `CLAUDE.md`. It is unrelated to the app bundle; ignore it unless working on promo video.
 
 ### Theming (`src/theme/`)
 

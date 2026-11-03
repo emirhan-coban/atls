@@ -24,6 +24,11 @@ import { useCelebrationStore } from './src/stores/useCelebrationStore';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import JourneyModal from './src/components/JourneyModal';
 import PlannerModal from './src/components/PlannerModal';
+import DailyGameModal from './src/components/DailyGameModal';
+import JourneyStoryModal from './src/components/JourneyStoryModal';
+import CompareModal from './src/components/CompareModal';
+import { useCompareStore } from './src/stores/useCompareStore';
+import { useGameStore } from './src/stores/useGameStore';
 import { useProgressStore } from './src/stores/useProgressStore';
 import * as SplashScreen from 'expo-splash-screen';
 import { storageService } from './src/services/storageService';
@@ -78,6 +83,10 @@ function AppContent() {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false);
   const [isJourneyOpen, setIsJourneyOpen] = useState<boolean>(false);
   const [isPlannerOpen, setIsPlannerOpen] = useState<boolean>(false);
+  const [isStoryOpen, setIsStoryOpen] = useState<boolean>(false);
+  const isCompareOpen = useCompareStore((s) => s.isOpen);
+  const isGameOpen = useGameStore((s) => s.isOpen);
+  const setGameOpen = useGameStore((s) => s.setOpen);
   const trips = useTripStore((state) => state.trips);
   const checkUnlocks = useProgressStore((state) => state.checkUnlocks);
   const badgeQueue = useProgressStore((state) => state.queue);
@@ -85,6 +94,7 @@ function AppContent() {
   // Load saved state on mount (offline-first & Supabase sync via Zustand AppStore)
   useEffect(() => {
     initApp();
+    useGameStore.getState().hydrate();
   }, [initApp]);
 
   // Every visited country gets a trip, so the timeline and statistics also cover older data
@@ -229,6 +239,7 @@ function AppContent() {
   // Stable callbacks: the three screens are memoised, and inline arrows would re-render all of them on every tab change
   const openJourney = useCallback(() => setIsJourneyOpen(true), []);
   const openPlanner = useCallback(() => setIsPlannerOpen(true), []);
+  const openGame = useCallback(() => setGameOpen(true), [setGameOpen]);
   const closeAccountModal = useCallback(() => setIsAccountModalOpen(false), []);
 
   // Wait for storage and the display font so headings never flash in the fallback face; the native splash stays up meanwhile
@@ -304,9 +315,10 @@ function AppContent() {
               tripCount={trips.length}
               onOpenJourney={openJourney}
               onOpenPlanner={openPlanner}
+              onOpenGame={openGame}
               isActive={activeTab === 'home'}
-              isCovered={isJourneyOpen || isPlannerOpen || isShareModalOpen}
-              isModalOpen={isAddModalOpen || isJourneyOpen || isPlannerOpen || isShareModalOpen || Boolean(selectedCountryDetailId) || Boolean(countryToEdit)}
+              isCovered={isJourneyOpen || isPlannerOpen || isShareModalOpen || isGameOpen || isStoryOpen || isCompareOpen}
+              isModalOpen={isAddModalOpen || isJourneyOpen || isPlannerOpen || isShareModalOpen || isGameOpen || isStoryOpen || isCompareOpen || Boolean(selectedCountryDetailId) || Boolean(countryToEdit)}
               onEditCountry={setCountryToEdit}
             />
           </View>
@@ -371,6 +383,28 @@ function AppContent() {
           countries={countries}
           t={t}
           currentLang={currentLang}
+          onOpenCompare={() => {
+            setIsShareModalOpen(false);
+            setTimeout(() => useCompareStore.getState().open(), 350);
+          }}
+          onOpenStory={() => {
+            setIsShareModalOpen(false);
+            setTimeout(() => setIsStoryOpen(true), 350); // let the share sheet finish dismissing first
+          }}
+        />
+        <CompareModal
+          visible={isCompareOpen}
+          onClose={() => useCompareStore.getState().close()}
+          countries={countries}
+          profile={profile}
+          currentLang={currentLang}
+        />
+        <JourneyStoryModal
+          visible={isStoryOpen}
+          onClose={() => setIsStoryOpen(false)}
+          countries={countries}
+          profile={profile}
+          currentLang={currentLang}
         />
 
         {/* Modal: Country Detail Sheet */}
@@ -400,6 +434,7 @@ function AppContent() {
 
         {/* Travel journal: timeline, statistics, badges */}
         <PlannerModal visible={isPlannerOpen} onClose={() => setIsPlannerOpen(false)} currentLang={currentLang} />
+        <DailyGameModal visible={isGameOpen} onClose={() => setGameOpen(false)} currentLang={currentLang} />
 
         <JourneyModal
           visible={isJourneyOpen}
