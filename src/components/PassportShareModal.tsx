@@ -44,6 +44,10 @@ interface PassportShareModalProps {
   countries: Country[];
   t?: Record<string, any>;
   currentLang: 'tr' | 'en';
+  /** Opens the animated journey story (the caller closes this sheet first: iOS cannot stack two modals). */
+  onOpenStory?: () => void;
+  /** Opens the passport clash sheet (same close-then-open rule as the story). */
+  onOpenCompare?: () => void;
 }
 
 export default function PassportShareModal({
@@ -53,6 +57,8 @@ export default function PassportShareModal({
   countries,
   t,
   currentLang,
+  onOpenStory,
+  onOpenCompare,
 }: PassportShareModalProps) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -342,6 +348,34 @@ export default function PassportShareModal({
                 </>
               )}
             </TouchableOpacity>
+            {onOpenStory && (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  onOpenStory();
+                }}
+                activeOpacity={0.85}
+                style={[styles.primaryActionBtn, { marginTop: 10, backgroundColor: colors.glass.fillStrong }]}
+              >
+                <Text style={[styles.primaryActionBtnText, { color: colors.text.primary }]}>
+                  {currentLang === 'tr' ? '✨ Animasyonlu hikâyeni oluştur' : '✨ Create your animated story'}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {onOpenCompare && (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  onOpenCompare();
+                }}
+                activeOpacity={0.85}
+                style={[styles.primaryActionBtn, { marginTop: 10, backgroundColor: colors.glass.fillStrong }]}
+              >
+                <Text style={[styles.primaryActionBtnText, { color: colors.text.primary }]}>
+                  {currentLang === 'tr' ? '🤝 Pasaportları çarpıştır' : '🤝 Clash passports'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>

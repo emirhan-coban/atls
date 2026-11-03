@@ -13,8 +13,16 @@ import type { Country } from '../stores/types';
 import { indexNames } from './countryIndex';
 import { shortenName } from './countryNames';
 import { getHighlights } from './highlights';
+import { useRarityMap } from '../services/rarityService';
+import { formatPercent, rarityOf, type RarityTier } from '../utils/rarity';
 
 type Lang = 'tr' | 'en';
+
+const TIER_TEXT: Record<RarityTier, { en: string; tr: string; emoji: string }> = {
+  legendary: { en: 'Legendary', tr: 'Efsanevi', emoji: '💎' },
+  rare: { en: 'Rare', tr: 'Nadir', emoji: '✨' },
+  uncommon: { en: 'Uncommon', tr: 'Seçkin', emoji: '🔹' },
+};
 
 const VISA: Record<VisaStatus, { en: string; tr: string }> = {
   free: { en: 'Visa-free', tr: 'Vizesiz' },
@@ -128,6 +136,7 @@ function Details({ iso, countries, lang, onEditStatus, onMoreDetails }: Omit<Pro
   const name = info ? (lang === 'tr' ? info.nameTr : info.name) : iso;
   const status = mine?.status ?? 'none';
   const trivia = info ? getCountryTrivia(iso, name, lang) : '';
+  const rarity = rarityOf(useRarityMap(), iso);
 
   const edit = () => {
     if (!info) return;
@@ -161,6 +170,19 @@ function Details({ iso, countries, lang, onEditStatus, onMoreDetails }: Omit<Pro
           <Text style={styles.ctaText}>{status === 'none' ? (lang === 'tr' ? 'İşaretle' : 'Mark') : lang === 'tr' ? 'Düzenle' : 'Edit'}</Text>
         </TouchableOpacity>
       </View>
+
+      {rarity?.tier ? (
+        <View style={styles.rarity}>
+          <Text style={styles.rarityText}>
+            {`${TIER_TEXT[rarity.tier].emoji} ${TIER_TEXT[rarity.tier][lang]} · `}
+            {rarity.percent === 0
+              ? lang === 'tr' ? 'henüz hiçbir atls gezgini gitmedi' : 'no atls traveler has been here yet'
+              : lang === 'tr'
+                ? `atls gezginlerinde oran: %${formatPercent(rarity.percent)}`
+                : `${formatPercent(rarity.percent)}% of atls travelers have been here`}
+          </Text>
+        </View>
+      ) : null}
 
       {chips.length ? (
         <View style={styles.chips}>
@@ -301,6 +323,8 @@ const styles = StyleSheet.create({
   statusText: { color: colors.text.soft, fontSize: 14, flex: 1 },
   cta: { backgroundColor: colors.gold.base, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16 },
   ctaText: { color: colors.gold.onGold, fontWeight: '800', fontSize: 13 },
+  rarity: { alignSelf: 'flex-start', backgroundColor: colors.gold.tint, borderWidth: 1, borderColor: colors.gold.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+  rarityText: { color: colors.gold.light, fontSize: 12, fontWeight: '700' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { backgroundColor: colors.glass.fill, borderWidth: 1, borderColor: colors.glass.hairline, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, maxWidth: '100%' },
   chipK: { color: colors.text.muted, fontSize: 10, letterSpacing: 0.8, fontWeight: '700', textTransform: 'uppercase' },
