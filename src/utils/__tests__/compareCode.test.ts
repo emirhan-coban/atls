@@ -1,4 +1,5 @@
 /// <reference types="jest" />
+import { INVITE_URL } from '../links';
 import { buildCompareLink, compareVisited, decodeVisited, encodeVisited, parseInvite } from '../compareCode';
 
 describe('compare code', () => {
@@ -32,7 +33,7 @@ describe('compare code', () => {
 
   it('builds a link with an encoded, trimmed name', () => {
     const link = buildCompareLink(['TR'], 'Ayşe & Co');
-    expect(link.startsWith('atls://compare?c=1')).toBe(true);
+    expect(link.startsWith(`${INVITE_URL}?c=1`)).toBe(true);
     expect(link).toContain('&n=Ay%C5%9Fe%20%26%20Co');
   });
 
@@ -45,5 +46,7 @@ describe('compare code', () => {
     expect(parseInvite(`  ${bare} `)).toEqual({ code: bare, name: '' });
     expect(parseInvite('merhaba')).toBeNull();
     expect(parseInvite('atls://compare?c=1AAAA')).toBeNull();
+    // links written by older builds (custom scheme) keep working
+    expect(parseInvite(`atls://compare?c=${bare}&n=Ay%C5%9Fe`)).toEqual({ code: bare, name: 'Ayşe' });
   });
 });

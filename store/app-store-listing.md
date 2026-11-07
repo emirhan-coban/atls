@@ -22,7 +22,7 @@ atls., seyahatlerini tek yerde toplayan kişisel dünya pasaportun.
 
 Vize bilgileri Vikipedi verisine dayanır ve değişmiş olabilir. Seyahatten önce ilgili ülkenin büyükelçiliğinden veya T.C. Dışişleri Bakanlığı'ndan kontrol et.
 
-**Anahtar kelimeler (≤100):** seyahat,pasaport,harita,vize,gezi,planlayıcı,günlük,ülke,tatil,rota
+**Anahtar kelimeler (≤100, 88 karakter):** seyahat,pasaport,harita,vize,vizesiz,gezi,planlayıcı,günlük,ülke,tatil,rota,bulmaca,küre
 **Bu sürümde yenilik (1.3):** Yeni: Gizli Ülke günlük oyunu, animasyonlu yolculuk hikâyesi ve arkadaşınla pasaport çarpıştırma. (1.2: etkileşimli 3B dünya ve yeni logo.)
 
 ## English
@@ -47,11 +47,29 @@ atls. is your personal world passport, keeping all your travel in one place.
 
 Visa information is based on Wikipedia data and may change. Check with the embassy before travelling.
 
-**Keywords:** travel,passport,map,visa,trip,planner,journal,countries,holiday,routes
+**Keywords (≤100, 93 chars):** travel,passport,map,visa,visa free,trip,planner,journal,countries,holiday,routes,puzzle,globe
 **What's new (1.3):** New: the daily Secret Country game, an animated journey story and passport clash with friends. (1.2: interactive 3D globe and a new logo.)
 
 ## App Review notları
 Hesap açmadan test etmek için "Hesap açmadan devam et" seçeneğini kullanın. Hesap silme: Pasaport > Hesap Yönetimi.
 
-## Görseller
-`appstore-6.9-0X-*.png` dosyaları 1290×2796 (6.9" iPhone). Metin görselleri Türkçe arayüzle alındı; İngilizce mağaza için ayrıca İngilizce arayüzle çekilmesi gerekir.
+## Görseller ve önizleme videosu
+
+**Yükleme sırası (ilk üçü arama sonuçlarında görünür, o yüzden en güçlü üç mesaj başta):**
+
+| Sıra | TR dosya | EN dosya | Mesaj |
+|---|---|---|---|
+| 1 | `appstore-6.9-01-s1-home.png` | `en/appstore-6.9-01-en.png` | 3B küre |
+| 2 | `appstore-6.9-04-s3-country.png` | `en/appstore-6.9-04-en.png` | Vize bilgisi (T.C. pasaportu) |
+| 3 | `appstore-6.9-07-s7-game.png` | `en/appstore-6.9-07-en.png` | Gizli Ülke |
+| 4 | `appstore-6.9-08-s8-compare.png` | `en/appstore-6.9-08-en.png` | Pasaport çarpıştır |
+| 5 | `appstore-6.9-03-s2b-routes.png` | `en/appstore-6.9-03-en.png` | Bu ay nereye? |
+| 6 | `appstore-6.9-09-s9-story.png` | `en/appstore-6.9-09-en.png` | Yolculuk hikâyesi |
+| 7 | `appstore-6.9-05-s5-plan.png` | `en/appstore-6.9-05-en.png` | Gezi planla |
+| 8 | `appstore-6.9-06-s6-journal.png` | `en/appstore-6.9-06-en.png` | Günlük |
+
+(`02-s4-map` eski "bir ülkeye dokun" görseli, ilk üçe girmediği için listeden çıkarıldı; istersen 9. olarak ekle.) Hepsi 1290×2796 (6.9" iPhone). 07–09 yeni, `scripts/store-shots/` ile üretildi (aşağıda).
+
+**Önizleme videosu:** `atls-preview-tr.mp4`, 886×1920, 30 fps, h264, 24 sn, sessiz (AAC boş kanal). Küre, ülke paneli, Gizli Ülke ve hikâye kartı. App Store Connect > 6.9" > Uygulama Önizlemeleri bölümüne yükle. Apple önizlemelerin 15–30 sn olmasını ister. İngilizce mağaza için ayrı video yok, TR önizleme olduğu gibi gider (arayüz Türkçe).
+
+**Yeniden üretmek:** `scripts/store-shots/README.md`.

@@ -2,6 +2,7 @@ import { makeStyles, ThemeProvider } from './src/theme/ThemeContext';
 import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, View, Alert, LogBox, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { useFonts } from 'expo-font';
 import { InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -29,6 +30,8 @@ import JourneyStoryModal from './src/components/JourneyStoryModal';
 import CompareModal from './src/components/CompareModal';
 import { useCompareStore } from './src/stores/useCompareStore';
 import { useGameStore } from './src/stores/useGameStore';
+import { refreshGameReminder } from './src/services/gameReminder';
+import { maybeAskForReview } from './src/services/reviewService';
 import { useProgressStore } from './src/stores/useProgressStore';
 import * as SplashScreen from 'expo-splash-screen';
 import { storageService } from './src/services/storageService';
@@ -94,7 +97,8 @@ function AppContent() {
   // Load saved state on mount (offline-first & Supabase sync via Zustand AppStore)
   useEffect(() => {
     initApp();
-    useGameStore.getState().hydrate();
+    // the reminder needs the saved switch and streak, so it is rebuilt once the game store has loaded
+    useGameStore.getState().hydrate().then(() => refreshGameReminder());
   }, [initApp]);
 
   // Every visited country gets a trip, so the timeline and statistics also cover older data
@@ -130,10 +134,21 @@ function AppContent() {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         storageService.flushOutbox();
+        refreshGameReminder();
       }
     });
     return () => subscription.remove();
   }, []);
+
+  // Tapping the evening reminder opens the Secret Country game. The hook also covers the tap that launched the app.
+  const lastResponse = Notifications.useLastNotificationResponse();
+  const handledResponse = React.useRef<string | null>(null);
+  useEffect(() => {
+    const id = lastResponse?.notification.request.identifier;
+    if (!id || handledResponse.current === id) return;
+    handledResponse.current = id;
+    if (lastResponse.notification.request.content.data?.kind === 'game') setGameOpen(true);
+  }, [lastResponse, setGameOpen]);
 
   const t = translations[currentLang];
 
@@ -157,6 +172,9 @@ function AppContent() {
     addCountry(newCountry);
     if (newCountry?.id && newCountry.status !== 'want') {
       useCelebrationStore.getState().burstConfetti();
+      // third country onwards the user has felt the app work: ask for a rating after the stamp animation
+      const marked = useCountryStore.getState().countries.filter((c) => c.status === 'visited' || c.status === 'lived').length;
+      if (marked >= 3) setTimeout(() => maybeAskForReview(), 4000);
     }
   }, [addCountry]);
 
