@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-itunes-app" content="app-id=6819009608">
+  <meta name="robots" content="noindex">
+  <title>atls. · Pasaport çarpıştır / Passport clash</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #e2e8f0;
+      background: radial-gradient(120% 80% at 50% 0%, #1b2740 0%, #090b0e 70%); }
+    main { width: 100%; max-width: 420px; text-align: center; }
+    .logo { font-family: "Instrument Serif", Georgia, serif; font-size: 44px; color: #fff; margin: 0 0 4px; }
+    .logo span { color: #e5a93c; }
+    h1 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 30px; line-height: 1.15; margin: 20px 0 8px; color: #fff; }
+    h1 em { color: #e5a93c; }
+    p { color: #94a3b8; font-size: 15px; line-height: 1.55; margin: 0 0 16px; }
+    .btn { display: block; width: 100%; padding: 15px 18px; border-radius: 16px; font-size: 16px; font-weight: 700; text-decoration: none; margin-top: 12px; }
+    .primary { background: #e5a93c; color: #090b0e; }
+    .secondary { background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.16); }
+    .code { margin-top: 22px; padding: 12px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      font: 12px ui-monospace, Menlo, monospace; color: #cbd5e1; word-break: break-all; }
+    .code small { display: block; font: 12px -apple-system, sans-serif; color: #64748b; margin-bottom: 6px; }
+    .en { display: none; }
+    html[lang="en"] .tr { display: none; }
+    html[lang="en"] .en { display: block; }
+    html[lang="en"] span.en, html[lang="en"] em.en { display: inline; }
+    .code small.en { display: none; }
+    html[lang="en"] .code small.tr { display: none; }
+    html[lang="en"] .code small.en { display: block; }
+    .hidden { display: none !important; }
+    .foot { margin-top: 28px; font-size: 12px; color: #64748b; }
+    .foot a { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="logo">atls<span>.</span></p>
+
+    <h1 class="tr"><span id="who-tr">Bir arkadaşın</span> seninle <em>pasaport çarpıştırmak</em> istiyor</h1>
+    <h1 class="en"><span id="who-en">A friend</span> wants to <em>clash passports</em> with you</h1>
+
+    <p class="tr">Ortak ve farklı ülkelerinizi yan yana gör. Sadece gezilen ülkelerin listesi paylaşılır.</p>
+    <p class="en">See the countries you share and the ones you don't. Only a list of visited countries is shared.</p>
+
+    <a id="open" class="btn primary hidden" href="atls://compare">
+      <span class="tr">atls.'ta aç</span><span class="en">Open in atls.</span>
+    </a>
+    <a class="btn secondary" href="https://apps.apple.com/app/id6819009608">
+      <span class="tr">App Store'dan indir</span><span class="en">Get it on the App Store</span>
+    </a>
+
+    <div id="code" class="code hidden">
+      <small class="tr">Uygulama yüklüyse bu kodu Pasaport çarpıştır ekranına da yapıştırabilirsin:</small>
+      <small class="en">If the app is installed you can also paste this code into Passport clash:</small>
+      <span id="code-text"></span>
+    </div>
+
+    <p class="foot"><a href="../">Gizlilik / Privacy</a></p>
+  </main>
+
+  <script>
+    (function () {
+      var lang = (navigator.language || 'en').toLowerCase().indexOf('tr') === 0 ? 'tr' : 'en';
+      document.documentElement.lang = lang;
+
+      var params = new URLSearchParams(location.search);
+      var code = params.get('c') || '';
+      var name = (params.get('n') || '').slice(0, 30);
+      // the code is a short base64url string written by the app; anything else is ignored so nothing odd reaches the page
+      if (!/^[A-Za-z0-9_-]{1,64}$/.test(code)) return;
+
+      if (name) {
+        document.getElementById('who-tr').textContent = name;
+        document.getElementById('who-en').textContent = name;
+      }
+      var open = document.getElementById('open');
+      open.href = 'atls://compare?c=' + encodeURIComponent(code) + (name ? '&n=' + encodeURIComponent(name) : '');
+      open.classList.remove('hidden');
+      document.getElementById('code-text').textContent = code;
+      document.getElementById('code').classList.remove('hidden');
+    })();
+  </script>
+</body>
+</html>
