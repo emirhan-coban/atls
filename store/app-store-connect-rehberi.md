@@ -1,14 +1,14 @@
-# App Store Connect: 1.1.0 yükleme rehberi
+# App Store Connect: sürüm yükleme rehberi
 
 Build otomatik gönderim (auto-submit) ile TestFlight'a gider. İşlenmesi birkaç dakika sürer, Apple "İşleniyor" yazısı bitince seçilebilir.
 
 ## 1. Yeni sürümü oluştur
 1. appstoreconnect.apple.com > Uygulamalarım > **atls.**
-2. Sol üstte **iOS Uygulaması +** > **1.1.0** yaz > Oluştur. (Zaten 1.1.0 varsa onu aç.)
+2. Sol üstte **iOS Uygulaması +** > yeni sürüm numarasını (`app.json` içindeki `version`) yaz > Oluştur. (Zaten varsa onu aç.)
 
 ## 2. Build seç
 1. Sayfada **Build** bölümü > **Build Ekle**.
-2. Listeden 1.1.0'ın **en yüksek build numarasını** seç (EAS ile gönderilen, TestFlight'ta "İşleniyor" bitmiş olmalı).
+2. Listeden bu sürümün **en yüksek build numarasını** seç (EAS ile gönderilen, TestFlight'ta "İşleniyor" bitmiş olmalı).
 3. Şifreleme sorusu çıkarsa: "Standart dışı şifreleme kullanmıyor" (uygulama yalnızca HTTPS/standart şifreleme kullanır) > Başla.
 
 ## 3. Sürüm sayfası alanları (Türkçe ana dil)

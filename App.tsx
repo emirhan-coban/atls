@@ -117,13 +117,13 @@ function AppContent() {
     }
   }, [badgeQueue.length]);
 
-  // Prepare the world map shapes in the background once the app is up, so opening the map needs no waiting
+  // The flat SVG map is only used by onboarding now (Home is the globe), so only warm it up while onboarding is showing
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || hasCompletedOnboarding) return;
     // idle time, so it never competes with the first screens
     const handle = requestIdleCallback(() => warmMapShapes());
     return () => cancelIdleCallback(handle);
-  }, [isLoaded]);
+  }, [isLoaded, hasCompletedOnboarding]);
 
   // Retry any cloud writes that failed while offline whenever the app returns to the foreground
   useEffect(() => {
