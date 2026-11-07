@@ -6,6 +6,7 @@ import { makeStyles, useTheme } from '../theme/ThemeContext';
 import { useAppStore } from '../stores/useAppStore';
 import { useTripStore } from '../stores/useTripStore';
 import { exportAndShare } from '../utils/exportFiles';
+import { PRIVACY_URL } from '../utils/links';
 import { jt } from '../localization/journey';
 import React, { useState } from 'react';
 import {
@@ -19,6 +20,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import * as WebBrowser from 'expo-web-browser';
 import {
   ShieldCheck,
   Check,
@@ -35,6 +37,7 @@ import {
   ChevronRight,
   Cloud,
   Download,
+  FileText,
   CalendarClock,
   BookOpen,
   Sun,
@@ -753,6 +756,24 @@ function PassportScreen({
                   <Download size={17} color={colors.gold.base} />
                 </View>
                 <Text style={styles.accountListItemLabel}>{jt('exportData', currentLang)}</Text>
+              </View>
+              <ChevronRight size={17} color={colors.text.secondary} />
+            </TouchableOpacity>
+
+            {/* Privacy policy: required to be reachable from inside the app */}
+            <TouchableOpacity
+              onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL).catch(() => {})}
+              activeOpacity={0.7}
+              style={styles.accountListItem}
+              accessibilityRole="link"
+            >
+              <View style={styles.accountListItemLeft}>
+                <View style={[styles.accountActionIconBox, { backgroundColor: colors.glass.fillStrong }]}>
+                  <FileText size={17} color={colors.gold.base} />
+                </View>
+                <Text style={styles.accountListItemLabel}>
+                  {currentLang === 'tr' ? 'Gizlilik Politikası' : 'Privacy Policy'}
+                </Text>
               </View>
               <ChevronRight size={17} color={colors.text.secondary} />
             </TouchableOpacity>
