@@ -49,7 +49,7 @@ Static catalogs (countries, continents, climate, trivia, destinations, travel gu
 ### Home globe & map rendering
 
 - **Home screen is a 3D globe** (`src/globe/`, composed in `HomeScreen.tsx`): `GlobeView.tsx` ray-traces an orthographic sphere in a single Skia SkSL fragment shader (`globeShader.ts`) driven by Reanimated shared values + gesture-handler. A country-ID texture map (`countryIndex.ts`, `useGlobeTextures.ts`) plus a status LUT (`statusLut.ts`) tints visited/lived/wishlist countries and selection on the GPU. `GlobeOverlay`, `HomeSheet` (bottom sheet with snap points) and `CountryPanel` sit on top; `globeMath.ts` holds the coordinate conventions and has the unit tests. The globe stops drawing when a full-screen modal covers it.
-- **Flat maps** (`src/components/WorldMap.tsx`, SVG via `react-native-svg`, plus Skia rendering backed by `src/utils/mapShapes.ts` — `warmMapShapes` is called once at startup in `App.tsx` — and `mapView.ts`/`mapHelper.ts` for projection) still exist; `WorldMap` is currently imported only by `OnboardingScreen`.
+- **Flat maps** (`src/components/WorldMap.tsx`, SVG via `react-native-svg`, plus Skia rendering backed by `src/utils/mapShapes.ts` — `App.tsx` calls `warmMapShapes` only while onboarding is showing — and `mapView.ts`/`mapHelper.ts` for projection) still exist; `WorldMap` is currently imported only by `OnboardingScreen`.
 - `d3-geo`/`topojson-client`/`world-atlas` (devDependencies) are build-time tools for generating map path data, not runtime deps.
 
 ### Engagement features
@@ -77,7 +77,7 @@ Token-based: `colors.ts`, `spacing.ts`, `typography.ts`, `shadows.ts`, `passport
 
 ### Known lint carve-outs
 
-`eslint.config.js` downgrades `react-hooks/refs`, `react-hooks/purity`, and `react-hooks/set-state-in-effect` to warnings for `SwipeDiscoveryCard`, `WorldMap`, `ConfettiCannon`, and `SkeletonLoader` — these use classic `Animated`/`PanResponder` patterns pending a Reanimated migration (tracked in `PLAN.md`), not accidental violations.
+`eslint.config.js` downgrades `react-hooks/refs`, `react-hooks/purity`, and `react-hooks/set-state-in-effect` to warnings (the components that still use them are `WorldMap` and `ConfettiCannon`) — these use classic `Animated`/`PanResponder` patterns pending a Reanimated migration (tracked in `PLAN.md`), not accidental violations.
 
 ### Tests
 

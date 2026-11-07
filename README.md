@@ -1,56 +1,68 @@
-# atls. — Your World Passport (React Native / iOS)
+# atls. — Dünya Pasaportun (React Native / Expo, iOS)
 
-**atls.** seyahat pasaportu uygulaması, **Fremd.** uygulamasının modern, yüksek kontrastlı ve neo-estetik tasarım diliyle kişisel dünya seyahat pasaportu deneyiminin birleşimidir.
+**atls.** gezdiğin, yaşadığın ve gitmek istediğin ülkeleri 3B bir dünya üzerinde işaretlediğin, pasaport temalı bir seyahat uygulamasıdır. Koyu tema, cam yüzeyler ve altın vurgu.
 
-Uygulama, iPhone ve iOS App Store'da yayınlanmaya hazır şekilde **React Native & Expo (iOS Native Pods + Xcode Workspace)** altyapısıyla geliştirilmiştir.
+- **Platform:** yalnızca iOS (Android kapsam dışı, bkz. `PLAN.md` §9)
+- **Bundle ID:** `com.atlas.passport`
+- **Sürüm:** `app.json` içinde (`version` ve `ios.buildNumber`); EAS derlemede build numarasını kendisi artırır
+- **Altyapı:** Expo SDK 57, React Native 0.86, Expo Router, Skia, Reanimated, zustand, Supabase (isteğe bağlı bulut senkronu)
 
----
-
-## 📱 iPhone'da Çalıştırma Seçenekleri
-
-### 1. Fiziksel iPhone'da Hemen Test Etmek İçin (En Hızlı Yöntem):
-1. iPhone'unuza App Store'dan **Expo Go** uygulamasını yükleyin.
-2. Terminalden projeye gidin ve başlatın:
-   ```bash
-   cd /Users/emirhan/Desktop/codebase/atls
-   npx expo start
-   ```
-3. Terminalde beliren **QR Kodunu** iPhone kameranızla tarayın. Uygulama anında telefonunuzda açılacaktır.
+Geliştirici rehberi için `CLAUDE.md` ve `AGENTS.md`, yol haritası ve geçmiş için `PLAN.md`, güncel denetim notları için `IYILESTIRME_NOTLARI.md`.
 
 ---
 
-### 2. Mac iOS Simülatöründe Çalıştırmak İçin:
+## Özellikler
+
+- **3B küre ana sayfa:** ülkeler duruma göre (gezildi / yaşandı / hedef) renklenir, dokununca ülke paneli açılır.
+- **Ülke bilgileri:** başkent, dil, para birimi, saat farkı, iklim ve T.C. pasaportu için vize durumu (Vikipedi verisi, tarihle ve uyarıyla gösterilir).
+- **Keşfet:** "Bu ay nereye?", rotalar ve tüm ülkeler listesi (vize, Schengen, kıta filtreleri).
+- **Seyahat günlüğü:** gezi kaydı, istatistik, yıllık hedef, seviyeler, rozetler, damgalar, yıl özeti.
+- **Planlayıcı:** tarih, hazırlık listesi, bütçe, hatırlatıcılar, belge kasası (Face ID).
+- **Gizli Ülke:** her gün herkese aynı ülke, 6 ipucu, seri ve paylaşılabilir sonuç.
+- **Paylaşım:** 4:3 pasaport kartı, 9:16 hikâye kartı, animasyonlu yolculuk hikâyesi, pasaport çarpıştırma.
+- **Hesap isteğe bağlı:** hesapsız (misafir) kullanılabilir; Apple, Google veya e-posta ile giriş yapınca veriler buluta eşitlenir. Hesap silme: Pasaport > Hesap Yönetimi.
+- **Türkçe ve İngilizce**, açık/koyu/sistem teması.
+
+---
+
+## Çalıştırma
+
 ```bash
-cd /Users/emirhan/Desktop/codebase/atls
-npx expo run:ios
+npm install            # .npmrc içinde legacy-peer-deps=true var
+npx expo start         # geliştirme sunucusu (geliştirme derlemesi gerekir, Expo Go yetmez)
+npx expo run:ios       # iOS simülatöründe derle ve çalıştır
 ```
 
-> `ios/` klasörü git'te tutulmaz (Continuous Native Generation). `app.json` ve config plugin'leri tek kaynaktır; klasör `npx expo run:ios` veya `npx expo prebuild --platform ios --clean` ile üretilir. Yerelde `pod install` için `LANG=en_US.UTF-8` gerekebilir.
+`ios/` klasörü git'te tutulmaz (Continuous Native Generation). `app.json` ve `plugins/` tek kaynaktır; klasör `npx expo run:ios` veya `npx expo prebuild --platform ios --clean` ile üretilir. Yerelde `pod install` için `LANG=en_US.UTF-8` gerekebilir.
 
----
+Kontroller (CI de bunları çalıştırır):
 
-### 3. Apple App Store'a Göndermek İçin (EAS Build):
-Projede `app.json` ve `eas.json` yapılandırmaları App Store için hazırlandı:
-- **Bundle ID:** `com.atls.passport`
-- **Display Name:** `atls.`
-- **Version:** `1.1.0 (Build 11)`
-- **ITSAppUsesNonExemptEncryption:** `false` (Ek evrak gerektirmez)
-
-Terminalden tek komutla bulutta IPA derleyip TestFlight / App Store'a gönderebilirsiniz:
 ```bash
-cd /Users/emirhan/Desktop/codebase/atls
-npx eas-cli login
-npx eas-cli build --platform ios
+npm run typecheck
+npm run lint
+npm test
 ```
 
+`.env.example` içindeki Supabase değişkenlerini `.env` olarak doldurursan bulut senkronu açılır; boş bırakırsan uygulama tamamen yerel çalışır. Veritabanı şeması `supabase/schema.sql` içindedir ve tekrar çalıştırılabilir.
+
 ---
 
-## 🎨 Temel Özellikler
+## TestFlight / App Store
 
-- **Tipografi & Logo:** Kalın tok **`atls.`** logosu ve elektrik moru nokta vurgusu.
-- **Onboarding Deneyimi:** 3 slaytlık modern karşılama ve tanıtım akışı.
-- **Kimlik & Giriş (Auth):** Apple ID, Google ve Misafir giriş seçenekleri.
-- **Dil Desteği:** Türkçe & İngilizce tek dokunuşla anlık geçiş.
-- **Spotify Tarzı Paylaşım Kartı:** 9:16 Instagram Story formatında, aydınlatılmış mini dünya haritalı, istatistikli hikaye kartı.
-- **Vektör Dünya Haritası:** 180+ ülkeyi içeren interaktif SVG dünya haritası.
-- **3 Sekmeli Alt Kapsül Menü:** Ana Sayfa (Home), Keşfet (Explore) ve Pasaport (Passport).
+```bash
+npx eas-cli@latest build --platform ios --profile production --auto-submit
+```
+
+`production` profili build numarasını otomatik artırır (`app.json` dosyasındaki `buildNumber` değişir; bu değişikliği commit'le). Metinler ve adım adım yükleme için `store/app-store-listing.md` ve `store/app-store-connect-rehberi.md`.
+
+---
+
+## Gizlilik sayfası (GitHub Pages)
+
+Gizlilik politikası `public_docs/index.html` dosyasındadır ve **https://emirhan-coban.github.io/atls/** adresinde yayınlanır (uygulamada Pasaport > Hesap Yönetimi > Gizlilik Politikası bu adrese gider, App Store Connect'teki Gizlilik Politikası URL'si de aynı olmalı). Metni değiştirdiysen yayınlamak için:
+
+```bash
+bash scripts/publish-docs.sh
+```
+
+Betik `public_docs/` klasörünü `gh-pages` dalına gönderir; GitHub Pages bu daldan yayın yapar. `main`'e veya çalıştığın dala dokunmaz. Sayfanın yayına girmesi bir iki dakika sürer.

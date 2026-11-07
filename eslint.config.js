@@ -25,7 +25,7 @@ module.exports = defineConfig([
   },
   {
     // The React Compiler rules flag the classic Animated/PanResponder ref patterns used by
-    // SwipeDiscoveryCard, WorldMap, ConfettiCannon and SkeletonLoader. They are not bugs today;
+    // WorldMap and ConfettiCannon. They are not bugs today;
     // they are tracked as warnings until those components move to Reanimated (see PLAN.md).
     rules: {
       'react-hooks/refs': 'warn',

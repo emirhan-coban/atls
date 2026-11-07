@@ -14,14 +14,6 @@ export const initialProfile = {
 // Production start: initial countries is empty (users start with 0 stamps)
 export const initialCountries = [];
 
-export const stampsData = {
-  en: [],
-  tr: [],
-};
-
-export const getPassportStamps = (lang = 'en') => stampsData[lang as 'en' | 'tr'] || stampsData.en;
-export const passportStamps = stampsData.en;
-
 /** One entry of the 196-country catalog. */
 export interface CatalogCountry {
   id: string;

@@ -15,12 +15,15 @@ atls., seyahatlerini tek yerde toplayan kişisel dünya pasaportun.
 • Rotalar: Ülkeler için şehir, yemek ve gezilecek yer önerileri.
 • Gezi planlayıcı: Tarihleri seç, hazırlık listeni ve bütçeni tut, geri sayımı izle.
 • Seyahat günlüğü: Her gezini puanla, istatistiklerini ve rozetlerini takip et.
+• Gizli Ülke: Her gün yeni bir ülke, 6 ipucu. Seri tut, sonucunu paylaş.
+• Yolculuk hikâyesi: Gezdiğin dünyayı animasyonlu bir kartla paylaş.
+• Pasaport çarpıştır: Bir arkadaşınla ortak ve farklı ülkelerini yan yana gör.
 • Hesap açmadan kullan; istersen hesapla verilerini cihazlar arasında eşitle.
 
 Vize bilgileri Vikipedi verisine dayanır ve değişmiş olabilir. Seyahatten önce ilgili ülkenin büyükelçiliğinden veya T.C. Dışişleri Bakanlığı'ndan kontrol et.
 
 **Anahtar kelimeler (≤100):** seyahat,pasaport,harita,vize,gezi,planlayıcı,günlük,ülke,tatil,rota
-**Bu sürümde yenilik:** Ana ekran artık etkileşimli 3B bir dünya: ülkelere dokun, detayları gör, yeni ülke eklediğinde kutlamayı izle. Yeni logo.
+**Bu sürümde yenilik (1.3):** Yeni: Gizli Ülke günlük oyunu, animasyonlu yolculuk hikâyesi ve arkadaşınla pasaport çarpıştırma. (1.2: etkileşimli 3B dünya ve yeni logo.)
 
 ## English
 
@@ -37,11 +40,15 @@ atls. is your personal world passport, keeping all your travel in one place.
 • Routes: city, food and sightseeing ideas for each country.
 • Trip planner: pick dates, keep a checklist and budget, watch the countdown.
 • Travel journal: rate each trip, follow your stats and badges.
+• Secret Country: a new country every day, six clues. Keep a streak and share your result.
+• Journey story: share the world you've travelled as an animated card.
+• Passport clash: compare the countries you share with a friend.
 • Works without an account; sign in to sync across devices.
 
 Visa information is based on Wikipedia data and may change. Check with the embassy before travelling.
 
 **Keywords:** travel,passport,map,visa,trip,planner,journal,countries,holiday,routes
+**What's new (1.3):** New: the daily Secret Country game, an animated journey story and passport clash with friends. (1.2: interactive 3D globe and a new logo.)
 
 ## App Review notları
 Hesap açmadan test etmek için "Hesap açmadan devam et" seçeneğini kullanın. Hesap silme: Pasaport > Hesap Yönetimi.
