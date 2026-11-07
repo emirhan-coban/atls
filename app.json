@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.atlas.passport",
-      "buildNumber": "22",
+      "buildNumber": "23",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIStatusBarStyle": "UIStatusBarStyleLightContent",
@@ -61,6 +61,14 @@
         }
       ],
       "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "atls., gezilerine ve belgelerine fotoğraf eklemen için galerine erişir. Fotoğraflar yalnızca cihazında kalır.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       [
         "expo-splash-screen",
         {
