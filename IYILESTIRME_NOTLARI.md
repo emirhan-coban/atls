@@ -108,3 +108,17 @@ Etiketler: **[doğrulandı]** komutla veya EAS/App Store Connect çıktısıyla 
 - İngilizce arayüzde yeni ekranlar.
 - Gerçek cihazda performans/açılış süresi, VoiceOver davranışı.
 - Güvenlik/RLS taraması yapmadım; `PLAN.md` Faz 0 bulgularının Supabase'e uygulandığını tek tek kontrol etmedim (yalnızca `country_visit_stats` fonksiyonunun varlığını doğruladım).
+
+---
+
+## 8 Kasım güncellemesi: büyüme turu (1, 2 ve 4)
+
+| Madde | Durum |
+|---|---|
+| Paylaşım metinlerine App Store bağlantısı | Yapıldı (Gizli Ülke sonucu). Hikâye kartı PNG olduğu için bağlantı taşıyamaz, kartın üstüne "App Store'da ücretsiz" yazıldı. |
+| Puanlama isteği | `expo-store-review`, yalnızca Gizli Ülke kazanınca veya 3. gezilen ülkede, en çok 3 kez ve 90 gün arayla. Yeni native modül, yeni derleme ister. |
+| Gizli Ülke akşam hatırlatması | 20:00 tek seferlik bildirim, varsayılan kapalı, sonuç kartında anahtar. Bildirime dokununca oyun açılır. Simülatörde açıp kapatma doğrulandı (bildirim kimliği yazılıp siliniyor); bildirimin gerçekten 20:00'de çaldığı cihazda doğrulanmadı. |
+| Evrensel bağlantı | Davet bağlantısı artık `https://emirhan-coban.github.io/atls/c/?c=...` (davet sayfası yayında). Uygulamayı doğrudan açması için `scripts/user-site/publish.sh` ile kullanıcı sitesi deposu yayınlanmalı ve yeni derleme alınmalı (`associatedDomains` eklendi). O zamana kadar sayfadaki "atls.'ta aç" ve App Store düğmeleri çalışır. |
+| Mağaza sayfası | 3 yeni ekran görüntüsü (oyun, çarpıştırma, hikâye) TR ve EN, 24 sn önizleme videosu, yükleme sırası ve anahtar kelimeler `store/app-store-listing.md`'de. |
+
+**Doğrulanmadı / dikkat:** puanlama penceresi (simülatör derlemesinde modül yok), evrensel bağlantının cihazda uygulamayı açması, `associatedDomains` ile ilk EAS derlemesinin provisioning'i (EAS capability'yi kendisi açmalı; açmazsa derleme imza adımında hata verir).

@@ -13,7 +13,8 @@ Build otomatik gönderim (auto-submit) ile TestFlight'a gider. İşlenmesi birka
 
 ## 3. Sürüm sayfası alanları (Türkçe ana dil)
 Metinleri `store/app-store-listing.md` dosyasından kopyala.
-- **Ekran görüntüleri:** "6.3 inç" alanına `store/6.3-tr/` (TR) veya `store/6.3-en/` (EN) (1206x2622); 6.9" için `store/appstore-6.9-0X-*.png` (6 adet, sırayla). 6.5" ve diğer boyutlar istenirse Apple 6.9"dan otomatik üretir; zorunlu yalnızca 6.9" (veya 6.5") seti.
+- **Uygulama önizlemesi (isteğe bağlı ama dönüşümü artırır):** 6.9" bölümüne `store/atls-preview-tr.mp4`.
+- **Ekran görüntüleri:** yükleme sırası için `store/app-store-listing.md` > Görseller (ilk üçü arama sonuçlarında görünür). "6.3 inç" alanına `store/6.3-tr/` (TR) veya `store/6.3-en/` (EN) (1206x2622); 6.9" için `store/appstore-6.9-0X-*.png` (8 adet, listing dosyasındaki sırayla). 6.5" ve diğer boyutlar istenirse Apple 6.9"dan otomatik üretir; zorunlu yalnızca 6.9" (veya 6.5") seti.
 - **Tanıtım Metni (170):** listing dosyasından.
 - **Açıklama:** listing dosyasından.
 - **Anahtar Kelimeler (100):** listing dosyasından (virgülle, boşluksuz).

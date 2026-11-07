@@ -99,9 +99,15 @@ export default function JourneyStoryModal({ visible, onClose, countries, profile
           <View ref={cardRef} collapsable={false} style={{ width: cardWidth, height: cardHeight }}>
             <LinearGradient colors={['#0B1220', '#14233F', '#2A1B05']} style={styles.card}>
               <View key={run} style={styles.cardInner}>
-                <Animated.Text entering={FadeIn.duration(500)} style={styles.brand}>
-                  atls.
-                </Animated.Text>
+                <View style={styles.brandRow}>
+                  <Animated.Text entering={FadeIn.duration(500)} style={styles.brand}>
+                    atls.
+                  </Animated.Text>
+                  {/* a shared PNG cannot carry a link, so the card itself says where to get the app */}
+                  <Animated.Text entering={FadeIn.delay(factsAt).duration(500)} style={styles.storeHint}>
+                    {tr ? "App Store'da ücretsiz" : 'Free on the App Store'}
+                  </Animated.Text>
+                </View>
 
                 <View style={styles.hero}>
                   <Animated.Text entering={FadeInDown.delay(250).duration(500)} style={styles.eyebrow}>
@@ -111,7 +117,7 @@ export default function JourneyStoryModal({ visible, onClose, countries, profile
                     <AnimatedCounter
                       value={facts.percent}
                       duration={1100}
-                      formatter={(v) => `%${v.toFixed(1)}`}
+                      formatter={(v) => (tr ? `%${v.toFixed(1)}` : `${v.toFixed(1)}%`)}
                       style={styles.percent}
                     />
                   </Animated.View>
@@ -193,7 +199,9 @@ const useStyles = makeStyles((colors) =>
     stage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     card: { flex: 1, borderRadius: 28, overflow: 'hidden' },
     cardInner: { flex: 1, padding: 24, justifyContent: 'space-between' },
+    brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     brand: { fontSize: 22, color: '#F3C766', fontFamily: fonts.display },
+    storeHint: { fontSize: 11, color: 'rgba(255,255,255,0.6)' },
     hero: { alignItems: 'center', gap: 4 },
     eyebrow: { fontSize: 12, fontWeight: '800', letterSpacing: 2.5, color: 'rgba(255,255,255,0.7)' },
     percent: { fontSize: 76, color: '#FFFFFF', fontFamily: fonts.display },

@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   Keyboard,
   Modal,
   Platform,
   ScrollView,
   Share,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -33,6 +35,9 @@ import {
   shareText,
 } from '../game/dailyCountry';
 import { useGameStore } from '../stores/useGameStore';
+import { refreshGameReminder } from '../services/gameReminder';
+import { maybeAskForReview } from '../services/reviewService';
+import { APP_STORE_URL } from '../utils/links';
 
 interface DailyGameModalProps {
   visible: boolean;
@@ -62,6 +67,8 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
   const days = useGameStore((s) => s.days);
   const stats = useGameStore((s) => s.stats);
   const guess = useGameStore((s) => s.guess);
+  const reminder = useGameStore((s) => s.reminder);
+  const setReminder = useGameStore((s) => s.setReminder);
 
   // Read on every render so a modal left alive past midnight shows the new puzzle
   const today = dayKeyOf();
@@ -90,6 +97,9 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
       Haptics.notificationAsync(
         after.won ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning
       );
+      // played today: the evening reminder moves to tomorrow, and a win is a good moment to ask for a rating
+      refreshGameReminder();
+      if (after.won) setTimeout(() => maybeAskForReview(), 2500);
     } else {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -97,10 +107,22 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
 
   const onShare = () => {
     if (!record) return;
-    Share.share({ message: shareText(today, record, secretId, currentLang) }).catch(() => {});
+    Share.share({ message: `${shareText(today, record, secretId, currentLang)}\n${APP_STORE_URL}` }).catch(() => {});
   };
 
   const streak = liveStreak(stats, today);
+
+  const toggleReminder = async (on: boolean) => {
+    const ok = await setReminder(on);
+    if (!ok) {
+      Alert.alert(
+        tr ? 'Bildirim izni kapalı' : 'Notifications are off',
+        tr ? 'Hatırlatma için Ayarlar > atls. > Bildirimler\'den izin verebilirsin.' : 'You can allow them in Settings > atls. > Notifications.'
+      );
+      return;
+    }
+    refreshGameReminder();
+  };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
@@ -192,6 +214,17 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
                   onPress={onShare}
                   icon={(color) => <Share2 size={16} color={color} />}
                 />
+                <View style={styles.reminderRow}>
+                  <Text style={styles.reminderText}>
+                    {tr ? 'Akşam 20:00 hatırlatması' : 'Evening reminder at 20:00'}
+                  </Text>
+                  <Switch
+                    value={reminder}
+                    onValueChange={toggleReminder}
+                    trackColor={{ true: colors.gold.base }}
+                    accessibilityLabel={tr ? 'Akşam hatırlatması' : 'Evening reminder'}
+                  />
+                </View>
                 <Text style={styles.resultNext}>
                   {tr ? 'Yeni ülke gece yarısı geliyor.' : 'A new country arrives at midnight.'}
                 </Text>
@@ -278,6 +311,8 @@ const useStyles = makeStyles((colors) =>
     resultName: { fontSize: 16, fontWeight: '700', color: colors.gold.base },
     resultSub: { fontSize: 12, color: colors.text.secondary, marginBottom: 6 },
     resultNext: { fontSize: 12, color: colors.text.muted },
+    reminderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch', paddingTop: 6 },
+    reminderText: { fontSize: 13, color: colors.text.secondary },
     inputArea: { padding: 16, gap: 8, borderTopWidth: 1, borderTopColor: colors.glass.hairline },
     suggestions: {
       borderRadius: 16, overflow: 'hidden', backgroundColor: colors.canvas.elevated,

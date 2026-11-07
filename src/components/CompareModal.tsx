@@ -47,8 +47,8 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
   const inviteMessage = () => {
     const link = buildCompareLink(mine, profile.name || '');
     const intro = tr
-      ? `Pasaportlarımızı çarpıştıralım! Bağlantıyı atls uygulamasında aç ya da kodu yapıştır:`
-      : `Let's clash our passports! Open the link in atls. or paste the code:`;
+      ? `Pasaportlarımızı çarpıştıralım! Bağlantıya dokun (atls. yüklü değilse App Store'a götürür):`
+      : `Let's clash our passports! Tap the link (it takes you to the App Store if you don't have atls.):`;
     return `${intro}\n${link}`;
   };
 
@@ -56,7 +56,7 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
     Share.share({ message: inviteMessage() }).catch(() => {});
   };
 
-  // Chat apps often do not make atls:// links tappable, so the message can also be copied and pasted anywhere
+  // The https invite link is tappable in chats; copying the message still lets someone paste it into the app by hand
   const copy = async () => {
     await Clipboard.setStringAsync(inviteMessage());
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -92,7 +92,7 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
               <View style={styles.hero}>
                 <AnimatedCounter
                   value={result.overlap}
-                  formatter={(v) => `%${Math.round(v)}`}
+                  formatter={(v) => (tr ? `%${Math.round(v)}` : `${Math.round(v)}%`)}
                   style={styles.overlap}
                 />
                 <Text style={styles.heroSub}>
