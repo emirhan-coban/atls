@@ -1,6 +1,8 @@
 # atls. — Denetim Raporu ve Geliştirme Planı
 
 Hazırlanma: 29 Ekim 2026. Kapsam: kod, veri katmanı, güvenlik, tema/UI, içerik ve özellikler.
+> **Not (7 Kasım 2026):** Bu belge kronolojik bir günlüktür; ilk bölümlerdeki bazı maddeler sonradan değişti (ör. açılış iskelet ekranı 1.2.1'de kalktı, başlık fontu Fraunces'ten Instrument Serif'e geçti, ana sayfa düz harita yerine 3B küre oldu). Güncel mimari için `CLAUDE.md`, güncel eksik/fazlalık listesi için `IYILESTIRME_NOTLARI.md`.
+
 Her bulgunun yanında doğrulama durumu yazıyor: **[doğrulandı]** simülatörde veya komutla gördüm, **[kodda gördüm]** kodu okudum ama çalıştırıp denemedim.
 
 ---
@@ -485,3 +487,16 @@ Bu bölüm kalan her maddeyi ya yapıldı ya da gerekçesiyle yapılmadı olarak
 | Takvim | Yıl okuna basınca seçici ay seçildi sanıp kapanıyordu. Yalnızca ay dokunuşu kapatır; yıl art arda atlanabilir. Seçici açıkken ay okları gizlenir. |
 
 **Sınırlar:** Yakınlaşma sırasında parmak altındaki çizim geçici olarak bitmap gibi ölçeklenir, parmaklar kalkınca keskinleşir. Gerçek cihazda ölçülmedi; simülatörde iki parmak, kaydırma, seçim ve takvim denendi.
+
+### Sürüm 1.2 – 1.3 (küre ana sayfa ve etkileşim özellikleri)
+
+| Madde | Durum |
+|---|---|
+| 3B küre ana sayfa (1.2) | Ana sayfa Skia tek-shader küreye geçti (`src/globe/`), içerik alttaki kayar sayfaya taşındı. Açılışta native splash, hazır olana kadar tutulur; JS iskelet ekranı kaldırıldı (1.2.1). |
+| Gizli Ülke (1.3.0) | Günlük bulmaca: tarihten seçilen ülke, 6 ipucu, seri, emoji paylaşım metni. Saf mantık `src/game/dailyCountry.ts`, durum `useGameStore`. Ülke adı hiçbir ipucunda geçmez (testle zorunlu). |
+| Yolculuk hikâyesi (1.3.0) | Animasyonlu 9:16 kart; paylaşımda bitmiş karenin PNG'si gider (video yok). |
+| Nadirlik (1.3.0) | `country_visit_stats()` Supabase fonksiyonu (yalnızca toplu sayı, 50 gezginden önce boş döner), ülke panelinde rozet. Gerçek veriyle denenmedi. |
+| Pasaport çarpıştırma (1.3.0) | Gezilen ülkeler sürümlü bitset olarak `atls://compare` bağlantısına veya yapıştırılabilir koda gömülür; karşılaştırma ekranı. Mesaj kopyalama düğmesi var. |
+| Temizlik (7 Kasım) | `SkeletonLoader` ve `travelGuides.ts` silindi (git geçmişinde duruyor), boş damga verisi kaldırıldı, `typescript` ve `@types/react` dev bağımlılığa taşındı, harita ön yüklemesi yalnızca onboarding'de çalışıyor, `expo-image-picker` eklentisi ve izin metni eklendi. |
+
+**Açık işler:** `IYILESTIRME_NOTLARI.md` §4.
