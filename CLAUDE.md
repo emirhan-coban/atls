@@ -63,10 +63,6 @@ Static catalogs (countries, continents, climate, trivia, destinations, travel gu
 
 `App.tsx` calls `SplashScreen.preventAutoHideAsync()` at module load and hides the native splash only once `appReady` (fonts, stores, map shapes) is true, with an 8 s failsafe. There is no JS skeleton boot screen; don't reintroduce one.
 
-### `promo-video/`
-
-A separate HyperFrames (HTML → MP4) project for marketing video, with its own `CLAUDE.md`. It is unrelated to the app bundle; ignore it unless working on promo video.
-
 ### Theming (`src/theme/`)
 
 Token-based: `colors.ts`, `spacing.ts`, `typography.ts`, `shadows.ts`, `passportThemes.ts` (per-passport-cover color themes), wired through `ThemeContext.tsx` (`ThemeProvider`, `makeStyles` hook factory used across components for themed `StyleSheet`s). Not all components consume tokens consistently yet — some still hardcode `rgba(...)`/hex values (see `PLAN.md` §3.1).
