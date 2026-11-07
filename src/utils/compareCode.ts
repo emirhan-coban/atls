@@ -4,6 +4,7 @@
  * and nothing but the country list leaves the phone. Adding countries to the catalog later requires a new version prefix.
  */
 import { availableCatalog } from '../data/travelData';
+import { INVITE_URL } from './links';
 
 const VERSION = '1';
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -56,7 +57,7 @@ export function compareVisited(mine: string[], theirs: string[]): Comparison {
 }
 
 export function buildCompareLink(ids: string[], name: string): string {
-  return `atls://compare?c=${encodeVisited(ids)}&n=${encodeURIComponent(name.slice(0, 30))}`;
+  return `${INVITE_URL}?c=${encodeVisited(ids)}&n=${encodeURIComponent(name.slice(0, 30))}`;
 }
 
 export interface Invite {
