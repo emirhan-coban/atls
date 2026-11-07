@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { Share2, X } from 'lucide-react-native';
+import { Check, Copy, Share2, X } from 'lucide-react-native';
 import { makeStyles, useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 import Heading from './ui/Heading';
@@ -32,6 +33,7 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
   const setInvite = useCompareStore((s) => s.setInvite);
   const [pasted, setPasted] = useState('');
   const [invalid, setInvalid] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const mine = useMemo(
     () => countries.filter((c) => c.status === 'visited' || c.status === 'lived').map((c) => c.id),
@@ -42,12 +44,24 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
     return theirs ? { theirs, ...compareVisited(mine, theirs) } : null;
   }, [invite, mine]);
 
-  const send = () => {
+  const inviteMessage = () => {
     const link = buildCompareLink(mine, profile.name || '');
     const intro = tr
       ? `Pasaportlarımızı çarpıştıralım! Bağlantıyı atls uygulamasında aç ya da kodu yapıştır:`
       : `Let's clash our passports! Open the link in atls. or paste the code:`;
-    Share.share({ message: `${intro}\n${link}` }).catch(() => {});
+    return `${intro}\n${link}`;
+  };
+
+  const send = () => {
+    Share.share({ message: inviteMessage() }).catch(() => {});
+  };
+
+  // Chat apps often do not make atls:// links tappable, so the message can also be copied and pasted anywhere
+  const copy = async () => {
+    await Clipboard.setStringAsync(inviteMessage());
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const compare = () => {
@@ -117,6 +131,12 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
                 label={tr ? 'Pasaportumu gönder' : 'Send my passport'}
                 onPress={send}
                 icon={(color) => <Share2 size={16} color={color} />}
+              />
+              <Button
+                label={copied ? (tr ? 'Kopyalandı' : 'Copied') : tr ? 'Mesajı kopyala' : 'Copy message'}
+                variant="secondary"
+                onPress={copy}
+                icon={(color) => (copied ? <Check size={16} color={color} /> : <Copy size={16} color={color} />)}
               />
 
               <Text style={styles.sectionTitle}>{tr ? 'ARKADAŞINDAN GELDİ Mİ?' : 'GOT ONE FROM A FRIEND?'}</Text>
