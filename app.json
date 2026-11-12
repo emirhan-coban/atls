@@ -10,8 +10,10 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.atlas.passport",
-      "buildNumber": "24",
-      "associatedDomains": ["applinks:emirhan-coban.github.io"],
+      "buildNumber": "26",
+      "associatedDomains": [
+        "applinks:emirhan-coban.github.io"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIStatusBarStyle": "UIStatusBarStyleLightContent",
@@ -82,13 +84,21 @@
             "image": "./assets/android-icon-foreground.png"
           }
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "extra": {
       "eas": {
         "projectId": "227130ab-ebd9-49c3-b55c-33f40a547ebe"
       }
     },
-    "owner": "emirhancoban"
+    "owner": "emirhancoban",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/227130ab-ebd9-49c3-b55c-33f40a547ebe",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

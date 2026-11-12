@@ -19,12 +19,17 @@
       },
       "ios": {
         "simulator": false
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
       "ios": {
         "simulator": false
+      },
+      "channel": "production",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },

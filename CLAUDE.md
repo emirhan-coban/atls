@@ -29,7 +29,7 @@ Run lint and typecheck before declaring any task done. Use `npx expo install <pk
 
 Despite using Expo Router for routing, the app is still structurally a single-screen app:
 - `src/app/index.tsx` just re-exports root `App.tsx`.
-- `App.tsx` (~17k chars) holds the real app shell: font loading, `ThemeProvider`, tab state, and every modal (`AddCountryModal`, `CountryDetailModal`, `CountryStatusModal`, `PassportShareModal`, `JourneyModal`, `PlannerModal`, etc.), wired directly to zustand stores.
+- `App.tsx` (~20k chars) holds the real app shell: font loading, `ThemeProvider`, tab state, and every modal (`AddCountryModal`, `CountryDetailModal`, `CountryStatusModal`, `PassportShareModal`, `JourneyModal`, `PlannerModal`, etc.), wired directly to zustand stores.
 - `src/app/_layout.tsx` is a bare `<Slot />`. Only a couple of real routes exist under `src/app/` (e.g. `country/[id].tsx`, a deep-link handler that sets store state and redirects back to `/`).
 - New routes should be added under `src/app/` per Expo Router convention, but most real UI composition still happens inside `App.tsx` and the three main screens (`HomeScreen`, `ExploreScreen`, `PassportScreen` in `src/components/`), which are kept mounted simultaneously and toggled with `display: none` rather than unmounted.
 
@@ -38,7 +38,7 @@ Despite using Expo Router for routing, the app is still structurally a single-sc
 Each store is a separate concern, re-exported from `src/stores/index.ts`:
 - `useAppStore` — app-level UI state (active tab, modals open/closed, language, onboarding flag).
 - `useCountryStore` — the core visited/lived/wishlist country records.
-- `useProfileStore`, `useTripStore`, `usePlanStore`, `useProgressStore`, `useCelebrationStore` — profile data, trips, trip planning, achievement progress, celebration/confetti triggers.
+- `useProfileStore`, `useTripStore`, `usePlanStore`, `useProgressStore`, `useCelebrationStore`, `useGameStore`, `useCompareStore` — profile data, trips, trip planning, achievement progress, celebration/confetti triggers, the daily game, passport clash.
 - Shared types live in `src/stores/types.ts` (e.g. `Country`).
 - Stores persist through `src/services/storageService.ts` (AsyncStorage) and sync opportunistically to Supabase (`src/services/supabase.ts`) when configured — `isSupabaseConfigured` gates cloud sync, since the app can run fully offline/local.
 
@@ -57,13 +57,18 @@ Static catalogs (countries, continents, climate, trivia, destinations, travel gu
 - **Daily "Secret Country"** (`src/game/dailyCountry.ts`, pure and tested; state in `useGameStore`, persisted to AsyncStorage; UI in `DailyGameModal`/`DailyGameCard`). The country is a hash of the local date over the pool of countries that have facts, climate and trivia, so every device agrees without a backend. Clue text must never contain the country's name (the test enforces it).
 - **Journey story** (`JourneyStoryModal`, numbers from `utils/storyFacts.ts`): one 9:16 view whose elements animate in with Reanimated; sharing captures the finished frame as a PNG (there is no video export).
 - **Rarity** (`utils/rarity.ts`, `services/rarityService.ts`, shown in `globe/CountryPanel.tsx`): reads the `country_visit_stats()` Supabase function, which returns nothing until 50 travelers exist, so the badge stays hidden offline or early on. The SQL must be applied from `supabase/schema.sql` §12.
-- **Passport clash** (`utils/compareCode.ts`, `CompareModal`, `app/compare.tsx`): visited countries are encoded as a bitset over the id-sorted catalog (versioned prefix). Changing the catalog requires a new version prefix. The shared link is an https invite page (`public_docs/c/index.html`, `INVITE_URL` in `utils/links.ts`) that opens the app through a universal link (`associatedDomains` in `app.json`, `src/app/+native-intent.tsx` rewrites `/atls/c` to `/compare`) or offers the App Store. The AASA file must be served from the domain root, so it lives in the GitHub user-site repo `emirhan-coban/emirhan-coban.github.io`; its source is `scripts/user-site/` (publish with `scripts/user-site/publish.sh`, not published yet unless that repo exists). The modal also accepts a pasted message or code, and old `atls://compare` links still work.
+- **Passport clash** (`utils/compareCode.ts`, `CompareModal`, `app/compare.tsx`): visited countries are encoded as a bitset over the id-sorted catalog (versioned prefix). Changing the catalog requires a new version prefix. The shared link is an https invite page (`public_docs/c/index.html`, `INVITE_URL` in `utils/links.ts`) that opens the app through a universal link (`associatedDomains` in `app.json`, `src/app/+native-intent.tsx` rewrites `/atls/c` to `/compare`) or offers the App Store. The AASA file must be served from the domain root, so it lives in the GitHub user-site repo `emirhan-coban/emirhan-coban.github.io`; its source is `scripts/user-site/` (published; `scripts/user-site/publish.sh` only adds the AASA files and never overwrites the repo's existing `index.html`). The modal also accepts a pasted message or code, and old `atls://compare` links still work.
 
 ### Growth hooks
 
 Shared text carries `APP_STORE_URL` (`utils/links.ts`); the journey story PNG carries a "Free on the App Store" line because an image cannot hold a link. `services/reviewService.ts` asks for an App Store rating only after a Secret Country win or the third marked country (`utils/reviewPrompt.ts` keeps it to 3 asks, 90 days apart). The optional 20:00 Secret Country reminder (`services/gameReminder.ts`, `utils/gameReminder.ts`) is a single one-off notification rebuilt on app start, on foreground and after each game; tapping it opens the game (`useLastNotificationResponse` in `App.tsx`).
 
-Store screenshots are composed with `scripts/store-shots/` (see its README); the App Store preview video and the upload order are described in `store/app-store-listing.md`.
+
+### Crash reporting & OTA
+
+- `src/services/crashReporting.ts` wraps Sentry and is a no-op unless `EXPO_PUBLIC_SENTRY_DSN` is set and the build is not `__DEV__`; no PII, no breadcrumbs. `ErrorBoundary` reports through it. Turning the DSN on requires updating the privacy page (`public_docs/index.html` says "no analytics") and the App Store privacy label (crash data). Source-map upload is disabled in `eas.json` (`SENTRY_DISABLE_AUTO_UPLOAD`).
+- `expo-updates` is configured (`runtimeVersion` policy `appVersion`, channels `preview`/`production`). JS-only fixes ship with `eas update --channel production`; anything touching native modules or `app.json` needs a new build. Bump `version` whenever native code changes, or an OTA update can reach a binary that lacks the module.
+- `store/` (App Store screenshots, listing text) and `scripts/store-shots/` were removed from the repo on purpose; they live in git history only.
 
 ### Launch / splash
 
