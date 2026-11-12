@@ -8,6 +8,7 @@ import { fonts } from '../theme/typography';
 import { availableCatalog } from '../data/travelData';
 import { searchCountries, shortenName } from './countryNames';
 
+import { tGlobeOverlay } from '../localization/screens/GlobeOverlay';
 interface Props {
   markedCount: number;
   lang: 'tr' | 'en';
@@ -45,19 +46,19 @@ export default function GlobeOverlay({ markedCount, lang, show, hideStat, onPick
         {open ? (
           <Animated.View entering={FadeIn.duration(200)} style={styles.field}>
             <Search size={16} color={colors.text.secondary} />
-            <TextInput
+            <TextInput accessibilityLabel={tGlobeOverlay('search_a_country', lang)}
               autoFocus
               value={query}
               onChangeText={setQuery}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              placeholder={lang === 'tr' ? 'Ülke ara' : 'Search a country'}
+              placeholder={tGlobeOverlay('search_a_country', lang)}
               placeholderTextColor={colors.text.faint}
               style={styles.input}
               returnKeyType="search"
               autoCorrect={false}
             />
-            <TouchableOpacity onPress={close} hitSlop={10}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={tGlobeOverlay('close_search', lang)} onPress={close} hitSlop={10}>
               <X size={16} color={colors.text.secondary} />
             </TouchableOpacity>
             <View style={[styles.hairline, focused && styles.hairlineOn]} />
@@ -72,7 +73,7 @@ export default function GlobeOverlay({ markedCount, lang, show, hideStat, onPick
               }}
               style={styles.iconBtn}
               accessibilityRole="button"
-              accessibilityLabel={lang === 'tr' ? 'Ülke ara' : 'Search'}
+              accessibilityLabel={tGlobeOverlay('search', lang)}
             >
               <Search size={18} color={colors.text.primary} />
             </TouchableOpacity>

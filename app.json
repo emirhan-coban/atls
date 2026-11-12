@@ -10,7 +10,10 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.atlas.passport",
-      "buildNumber": "23",
+      "buildNumber": "29",
+      "associatedDomains": [
+        "applinks:emirhan-coban.github.io"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIStatusBarStyle": "UIStatusBarStyleLightContent",
@@ -81,6 +84,51 @@
             "image": "./assets/android-icon-foreground.png"
           }
         }
+      ],
+      "@sentry/react-native",
+      "expo-image",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.atlas.passport",
+          "widgets": [
+            {
+              "name": "PassportWidget",
+              "displayName": "Pasaport",
+              "description": "Ülke sayın ve dünyanın ne kadarını gezdiğin.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium"
+                ]
+              }
+            },
+            {
+              "name": "GameWidget",
+              "displayName": "Gizli Ülke",
+              "description": "Günlük serin ve bugünün oyunu.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "accessoryCircular",
+                  "accessoryRectangular",
+                  "accessoryInline"
+                ]
+              }
+            },
+            {
+              "name": "TripWidget",
+              "displayName": "Sonraki gezi",
+              "description": "Bir sonraki gezine kalan gün.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium"
+                ]
+              }
+            }
+          ]
+        }
       ]
     ],
     "extra": {
@@ -88,6 +136,13 @@
         "projectId": "227130ab-ebd9-49c3-b55c-33f40a547ebe"
       }
     },
-    "owner": "emirhancoban"
+    "owner": "emirhancoban",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/227130ab-ebd9-49c3-b55c-33f40a547ebe",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

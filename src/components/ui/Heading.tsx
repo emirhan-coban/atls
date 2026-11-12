@@ -38,13 +38,13 @@ export default function Heading({ children, style, accentWords = 1, numberOfLine
 
   if (!parts) {
     return (
-      <Text style={style} numberOfLines={numberOfLines}>
+      <Text style={style} numberOfLines={numberOfLines} accessibilityRole="header">
         {children}
       </Text>
     );
   }
   return (
-    <Text style={style} numberOfLines={numberOfLines}>
+    <Text style={style} numberOfLines={numberOfLines} accessibilityRole="header">
       {parts.lead}
       {' '}
       <Text style={{ fontFamily: fonts.displayItalic, color: colors.gold.base }}>{parts.accent}</Text>

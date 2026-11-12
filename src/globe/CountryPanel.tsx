@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, FlatList, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -16,6 +16,8 @@ import { getHighlights } from './highlights';
 import { useRarityMap } from '../services/rarityService';
 import { formatPercent, rarityOf, type RarityTier } from '../utils/rarity';
 
+import { Image } from 'expo-image';
+import { tCountryPanel } from '../localization/screens/CountryPanel';
 type Lang = 'tr' | 'en';
 
 const TIER_TEXT: Record<RarityTier, { en: string; tr: string; emoji: string }> = {
@@ -112,7 +114,7 @@ export default function CountryPanel({ iso, countries, lang, onClose, onEditStat
 
   return (
     <View>
-      <TouchableOpacity style={styles.close} onPress={() => { Haptics.selectionAsync(); onClose(); }} accessibilityRole="button" accessibilityLabel={lang === 'tr' ? 'Kapat' : 'Close'} hitSlop={10}>
+      <TouchableOpacity style={styles.close} onPress={() => { Haptics.selectionAsync(); onClose(); }} accessibilityRole="button" accessibilityLabel={tCountryPanel('close', lang)} hitSlop={10}>
         <X size={18} color={colors.text.primary} />
       </TouchableOpacity>
       <View>
@@ -148,12 +150,12 @@ function Details({ iso, countries, lang, onEditStatus, onMoreDetails }: Omit<Pro
 
   const chips: { k: string; v: string }[] = [];
   if (facts) {
-    chips.push({ k: lang === 'tr' ? 'Başkent' : 'Capital', v: facts.capital[lang] });
-    if (facts.currency) chips.push({ k: lang === 'tr' ? 'Para birimi' : 'Currency', v: `${facts.currency[lang === 'tr' ? 'nameTr' : 'nameEn']} (${facts.currency.symbol || facts.currency.code})` });
-    if (facts.languages[lang].length) chips.push({ k: lang === 'tr' ? 'Dil' : 'Language', v: facts.languages[lang].slice(0, 2).join(', ') });
-    chips.push({ k: lang === 'tr' ? 'TR pasaportu' : 'TR passport', v: VISA[facts.visa.status][lang] });
-    chips.push({ k: lang === 'tr' ? 'Trafik' : 'Driving', v: facts.drivesOn === 'left' ? (lang === 'tr' ? 'Sol' : 'Left') : lang === 'tr' ? 'Sağ' : 'Right' });
-    chips.push({ k: lang === 'tr' ? 'Alan' : 'Area', v: `${Math.round(facts.areaKm2).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US')} km²` });
+    chips.push({ k: tCountryPanel('capital', lang), v: facts.capital[lang] });
+    if (facts.currency) chips.push({ k: tCountryPanel('currency', lang), v: `${facts.currency[lang === 'tr' ? 'nameTr' : 'nameEn']} (${facts.currency.symbol || facts.currency.code})` });
+    if (facts.languages[lang].length) chips.push({ k: tCountryPanel('language', lang), v: facts.languages[lang].slice(0, 2).join(', ') });
+    chips.push({ k: tCountryPanel('tr_passport', lang), v: VISA[facts.visa.status][lang] });
+    chips.push({ k: tCountryPanel('driving', lang), v: facts.drivesOn === 'left' ? (tCountryPanel('left', lang)) : tCountryPanel('right', lang) });
+    chips.push({ k: tCountryPanel('area', lang), v: `${Math.round(facts.areaKm2).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US')} km²` });
   }
 
   return (
@@ -167,7 +169,7 @@ function Details({ iso, countries, lang, onEditStatus, onMoreDetails }: Omit<Pro
         <View style={[styles.dot, { backgroundColor: status === 'lived' ? colors.status.lived.color : status === 'visited' ? colors.status.visited.color : status === 'want' ? colors.gold.base : colors.text.faint }]} />
         <Text style={styles.statusText}>{STATUS_TEXT[status][lang]}</Text>
         <TouchableOpacity style={styles.cta} onPress={edit} activeOpacity={0.8}>
-          <Text style={styles.ctaText}>{status === 'none' ? (lang === 'tr' ? 'İşaretle' : 'Mark') : lang === 'tr' ? 'Düzenle' : 'Edit'}</Text>
+          <Text style={styles.ctaText}>{status === 'none' ? (tCountryPanel('mark', lang)) : tCountryPanel('edit', lang)}</Text>
         </TouchableOpacity>
       </View>
 
@@ -176,10 +178,8 @@ function Details({ iso, countries, lang, onEditStatus, onMoreDetails }: Omit<Pro
           <Text style={styles.rarityText}>
             {`${TIER_TEXT[rarity.tier].emoji} ${TIER_TEXT[rarity.tier][lang]} · `}
             {rarity.percent === 0
-              ? lang === 'tr' ? 'henüz hiçbir atls gezgini gitmedi' : 'no atls traveler has been here yet'
-              : lang === 'tr'
-                ? `atls gezginlerinde oran: %${formatPercent(rarity.percent)}`
-                : `${formatPercent(rarity.percent)}% of atls travelers have been here`}
+              ? tCountryPanel('no_atls_traveler_has_been_here_yet', lang)
+              : tCountryPanel('of_atls_travelers_have_been_here', lang, { p1: formatPercent(rarity.percent) })}
           </Text>
         </View>
       ) : null}
@@ -200,7 +200,7 @@ function Details({ iso, countries, lang, onEditStatus, onMoreDetails }: Omit<Pro
       {trivia ? <Text style={styles.trivia}>{trivia}</Text> : null}
 
       <TouchableOpacity onPress={() => onMoreDetails(iso)} style={styles.more}>
-        <Text style={styles.moreText}>{lang === 'tr' ? 'Tüm ülke detayları' : 'Full country details'}</Text>
+        <Text style={styles.moreText}>{tCountryPanel('full_country_details', lang)}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -215,7 +215,7 @@ function HighlightsBlock({ iso, name, lang }: { iso: string; name: string; lang:
   const [viewer, setViewer] = useState<number | null>(null);
 
   if (!h.photos.length) {
-    return <Text style={styles.empty}>{lang === 'tr' ? `${name} için öne çıkanlar yolda.` : `Highlights for ${name} are on the way.`}</Text>;
+    return <Text style={styles.empty}>{tCountryPanel('highlights_for_are_on_the_way', lang, { name })}</Text>;
   }
   return (
     <View style={styles.hl}>
@@ -229,8 +229,8 @@ function HighlightsBlock({ iso, name, lang }: { iso: string; name: string; lang:
         decelerationRate="fast"
         onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / CARD_W))}
         renderItem={({ item }) => (
-          <Pressable onPress={() => setViewer(page)} style={styles.card}>
-            <Image source={{ uri: item.url }} style={styles.cardImg} resizeMode="cover" />
+          <Pressable accessibilityRole="button" accessibilityLabel={tCountryPanel('enlarge_photo', lang)} onPress={() => setViewer(page)} style={styles.card}>
+            <Image source={{ uri: item.url }} style={styles.cardImg} contentFit="cover" cachePolicy="disk" transition={150} />
           </Pressable>
         )}
       />
@@ -245,6 +245,7 @@ function HighlightsBlock({ iso, name, lang }: { iso: string; name: string; lang:
         <HighlightRow key={p.title} index={i} active={i === Math.min(page, h.places.length - 1)} title={p.title} city={p.city} />
       ))}
       <Viewer
+        lang={lang}
         visible={viewer !== null}
         photo={h.photos[viewer ?? 0]}
         place={h.places[Math.min(viewer ?? 0, Math.max(h.places.length - 1, 0))]}
@@ -270,7 +271,9 @@ function HighlightRow({ index, active, title, city }: { index: number; active: b
   );
 }
 
-function Viewer({ visible, photo, place, country, onClose }: { visible: boolean; photo?: { url: string; credit?: string }; place?: { title: string; city: string; blurb: string }; country: string; onClose: () => void }) {
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+
+function Viewer({ visible, photo, place, country, lang, onClose }: { lang: Lang; visible: boolean; photo?: { url: string; credit?: string }; place?: { title: string; city: string; blurb: string }; country: string; onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const zoom = useSharedValue(1.15);
   const fade = useSharedValue(0);
@@ -290,9 +293,9 @@ function Viewer({ visible, photo, place, country, onClose }: { visible: boolean;
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={close}>
       <View style={styles.viewer}>
-        {photo ? <Animated.Image source={{ uri: photo.url }} style={[StyleSheet.absoluteFill, img]} resizeMode="cover" /> : null}
+        {photo ? <AnimatedImage source={{ uri: photo.url }} style={[StyleSheet.absoluteFill, img]} contentFit="cover" cachePolicy="disk" /> : null}
         <View style={[StyleSheet.absoluteFill, styles.viewerShade]} />
-        <TouchableOpacity style={[styles.viewerClose, { top: insets.top + 12 }]} onPress={close} hitSlop={12}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={tCountryPanel('close', lang)} style={[styles.viewerClose, { top: insets.top + 12 }]} onPress={close} hitSlop={12}>
           <X size={20} color="#fff" />
         </TouchableOpacity>
         <View style={[styles.viewerText, { paddingBottom: insets.bottom + 36 }]}>

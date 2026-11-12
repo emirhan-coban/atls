@@ -2,6 +2,7 @@ import { makeStyles, ThemeProvider } from './src/theme/ThemeContext';
 import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, View, Alert, LogBox, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { useFonts } from 'expo-font';
 import { InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -29,12 +30,19 @@ import JourneyStoryModal from './src/components/JourneyStoryModal';
 import CompareModal from './src/components/CompareModal';
 import { useCompareStore } from './src/stores/useCompareStore';
 import { useGameStore } from './src/stores/useGameStore';
+import { refreshGameReminder } from './src/services/gameReminder';
+import { maybeAskForReview } from './src/services/reviewService';
 import { useProgressStore } from './src/stores/useProgressStore';
 import * as SplashScreen from 'expo-splash-screen';
 import { storageService } from './src/services/storageService';
 import { warmMapShapes } from './src/utils/mapShapes';
 import { refreshMemoryReminders } from './src/services/memoryReminders';
 import { clearVault } from './src/utils/vault';
+import { initCrashReporting } from './src/services/crashReporting';
+import { startWidgetSync } from './src/services/widgetSync';
+
+import { tApp } from './src/localization/screens/App';
+initCrashReporting();
 
 // Silence on-screen warning popups/banners only for screen recordings and demos
 // (set EXPO_PUBLIC_DEMO_MODE=1); normal builds keep warnings visible.
@@ -82,7 +90,8 @@ function AppContent() {
   const [countryToEdit, setCountryToEdit] = useState<Country | null>(null);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false);
   const [isJourneyOpen, setIsJourneyOpen] = useState<boolean>(false);
-  const [isPlannerOpen, setIsPlannerOpen] = useState<boolean>(false);
+  const isPlannerOpen = useAppStore((s) => s.isPlannerOpen);
+  const setIsPlannerOpen = useAppStore((s) => s.setPlannerOpen);
   const [isStoryOpen, setIsStoryOpen] = useState<boolean>(false);
   const isCompareOpen = useCompareStore((s) => s.isOpen);
   const isGameOpen = useGameStore((s) => s.isOpen);
@@ -94,7 +103,8 @@ function AppContent() {
   // Load saved state on mount (offline-first & Supabase sync via Zustand AppStore)
   useEffect(() => {
     initApp();
-    useGameStore.getState().hydrate();
+    // the reminder needs the saved switch and streak, so it is rebuilt once the game store has loaded
+    useGameStore.getState().hydrate().then(() => refreshGameReminder());
   }, [initApp]);
 
   // Every visited country gets a trip, so the timeline and statistics also cover older data
@@ -130,10 +140,21 @@ function AppContent() {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         storageService.flushOutbox();
+        refreshGameReminder();
       }
     });
     return () => subscription.remove();
   }, []);
+
+  // Tapping the evening reminder opens the Secret Country game. The hook also covers the tap that launched the app.
+  const lastResponse = Notifications.useLastNotificationResponse();
+  const handledResponse = React.useRef<string | null>(null);
+  useEffect(() => {
+    const id = lastResponse?.notification.request.identifier;
+    if (!id || handledResponse.current === id) return;
+    handledResponse.current = id;
+    if (lastResponse.notification.request.content.data?.kind === 'game') setGameOpen(true);
+  }, [lastResponse, setGameOpen]);
 
   const t = translations[currentLang];
 
@@ -157,6 +178,9 @@ function AppContent() {
     addCountry(newCountry);
     if (newCountry?.id && newCountry.status !== 'want') {
       useCelebrationStore.getState().burstConfetti();
+      // third country onwards the user has felt the app work: ask for a rating after the stamp animation
+      const marked = useCountryStore.getState().countries.filter((c) => c.status === 'visited' || c.status === 'lived').length;
+      if (marked >= 3) setTimeout(() => maybeAskForReview(), 4000);
     }
   }, [addCountry]);
 
@@ -228,17 +252,15 @@ function AppContent() {
     } catch (e) {
       console.warn('[App] deleteAccount failed:', e);
       Alert.alert(
-        currentLang === 'tr' ? 'Hesap silinemedi' : 'Could not delete account',
-        currentLang === 'tr'
-          ? 'Hesabınız silinemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.'
-          : 'Your account could not be deleted. Check your connection and try again.'
+        tApp('could_not_delete_account', currentLang),
+        tApp('your_account_could_not_be_deleted', currentLang)
       );
     }
   }, [clearCountries, currentLang, deleteAccount, t]);
 
   // Stable callbacks: the three screens are memoised, and inline arrows would re-render all of them on every tab change
   const openJourney = useCallback(() => setIsJourneyOpen(true), []);
-  const openPlanner = useCallback(() => setIsPlannerOpen(true), []);
+  const openPlanner = useCallback(() => setIsPlannerOpen(true), [setIsPlannerOpen]);
   const openGame = useCallback(() => setGameOpen(true), [setGameOpen]);
   const closeAccountModal = useCallback(() => setIsAccountModalOpen(false), []);
 
@@ -252,6 +274,9 @@ function AppContent() {
     const t = setTimeout(() => SplashScreen.hide(), 8000);
     return () => clearTimeout(t);
   }, []);
+  // Keeps the home and lock screen widgets in step with the stores once everything is loaded
+  useEffect(() => (appReady ? startWidgetSync() : undefined), [appReady]);
+
   if (!appReady) return null;
 
   // 1. If user hasn't completed onboarding, show onboarding

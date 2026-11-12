@@ -15,6 +15,7 @@ import { resolveHomeCountry } from '../globe/homeCountry';
 import { computeStoryFacts } from '../utils/storyFacts';
 import { Country, Profile } from '../stores/types';
 
+import { tJourneyStoryModal } from '../localization/screens/JourneyStoryModal';
 interface JourneyStoryModalProps {
   visible: boolean;
   onClose: () => void;
@@ -30,7 +31,6 @@ const REEL_START = 1500;
 export default function JourneyStoryModal({ visible, onClose, countries, profile, currentLang }: JourneyStoryModalProps) {
   const { colors } = useTheme();
   const styles = useStyles();
-  const tr = currentLang === 'tr';
   const cardRef = useRef<View>(null);
   const [run, setRun] = useState(0); // bumping the key replays every entering animation
   const [readyRun, setReadyRun] = useState(-1); // the run whose animation has finished
@@ -71,11 +71,11 @@ export default function JourneyStoryModal({ visible, onClose, countries, profile
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png' });
       } else {
-        Alert.alert(tr ? 'Bilgi' : 'Notice', tr ? 'Paylaşım bu cihazda desteklenmiyor.' : 'Sharing is not available on this device.');
+        Alert.alert(tJourneyStoryModal('notice', currentLang), tJourneyStoryModal('sharing_is_not_available_on_this_d', currentLang));
       }
     } catch (e) {
       console.warn('[JourneyStoryModal] share failed:', e);
-      Alert.alert(tr ? 'Hata' : 'Error', tr ? 'Hikaye hazırlanamadı.' : 'Could not prepare the story.');
+      Alert.alert(tJourneyStoryModal('error', currentLang), tJourneyStoryModal('could_not_prepare_the_story', currentLang));
     } finally {
       setSharing(false);
     }
@@ -89,7 +89,7 @@ export default function JourneyStoryModal({ visible, onClose, countries, profile
     <Modal visible={visible} animationType="fade" onRequestClose={close}>
       <SafeAreaView style={styles.screen}>
         <View style={styles.topBar}>
-          <Text style={styles.topTitle}>{tr ? 'Yolculuk Hikâyem' : 'My Journey Story'}</Text>
+          <Text style={styles.topTitle}>{tJourneyStoryModal('my_journey_story', currentLang)}</Text>
           <TouchableOpacity onPress={close} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close">
             <X size={18} color={colors.text.muted} />
           </TouchableOpacity>
@@ -99,24 +99,30 @@ export default function JourneyStoryModal({ visible, onClose, countries, profile
           <View ref={cardRef} collapsable={false} style={{ width: cardWidth, height: cardHeight }}>
             <LinearGradient colors={['#0B1220', '#14233F', '#2A1B05']} style={styles.card}>
               <View key={run} style={styles.cardInner}>
-                <Animated.Text entering={FadeIn.duration(500)} style={styles.brand}>
-                  atls.
-                </Animated.Text>
+                <View style={styles.brandRow}>
+                  <Animated.Text entering={FadeIn.duration(500)} style={styles.brand}>
+                    atls.
+                  </Animated.Text>
+                  {/* a shared PNG cannot carry a link, so the card itself says where to get the app */}
+                  <Animated.Text entering={FadeIn.delay(factsAt).duration(500)} style={styles.storeHint}>
+                    {tJourneyStoryModal('free_on_the_app_store', currentLang)}
+                  </Animated.Text>
+                </View>
 
                 <View style={styles.hero}>
                   <Animated.Text entering={FadeInDown.delay(250).duration(500)} style={styles.eyebrow}>
-                    {tr ? 'DÜNYANIN' : 'I HAVE SEEN'}
+                    {tJourneyStoryModal('i_have_seen', currentLang)}
                   </Animated.Text>
                   <Animated.View entering={FadeInDown.delay(450).duration(600)}>
                     <AnimatedCounter
                       value={facts.percent}
                       duration={1100}
-                      formatter={(v) => `%${v.toFixed(1)}`}
+                      formatter={(v) => (tJourneyStoryModal('k_', currentLang, { p1: v.toFixed(1) }))}
                       style={styles.percent}
                     />
                   </Animated.View>
                   <Animated.Text entering={FadeInDown.delay(900).duration(500)} style={styles.eyebrow}>
-                    {tr ? 'KADARINI GEZDİM' : 'OF THE WORLD'}
+                    {tJourneyStoryModal('of_the_world', currentLang)}
                   </Animated.Text>
                 </View>
 
@@ -133,11 +139,11 @@ export default function JourneyStoryModal({ visible, onClose, countries, profile
                 </View>
 
                 <Animated.View entering={FadeInDown.delay(factsAt).duration(600)} style={styles.facts}>
-                  <Fact value={String(facts.count)} label={tr ? 'ülke' : 'countries'} styles={styles} />
-                  <Fact value={String(facts.continents)} label={tr ? 'kıta' : 'continents'} styles={styles} />
+                  <Fact value={String(facts.count)} label={tJourneyStoryModal('countries', currentLang)} styles={styles} />
+                  <Fact value={String(facts.continents)} label={tJourneyStoryModal('continents', currentLang)} styles={styles} />
                   {farthest && facts.farthest ? (
                     <Fact
-                      value={`${facts.farthest.km.toLocaleString(tr ? 'tr-TR' : 'en-US')} km`}
+                      value={`${facts.farthest.km.toLocaleString(currentLang === 'tr' ? 'tr-TR' : 'en-US')} km`}
                       label={`${farthest.flag} ${getLocalizedCountryName(farthest, currentLang)}`}
                       styles={styles}
                     />
@@ -151,7 +157,7 @@ export default function JourneyStoryModal({ visible, onClose, countries, profile
         <View style={styles.actions}>
           <TouchableOpacity onPress={replay} style={styles.secondaryBtn} activeOpacity={0.8}>
             <RotateCcw size={16} color={colors.text.primary} />
-            <Text style={styles.secondaryText}>{tr ? 'Tekrar oynat' : 'Replay'}</Text>
+            <Text style={styles.secondaryText}>{tJourneyStoryModal('replay', currentLang)}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={share}
@@ -160,7 +166,7 @@ export default function JourneyStoryModal({ visible, onClose, countries, profile
             activeOpacity={0.85}
           >
             <Share2 size={16} color={colors.gold.onGold} />
-            <Text style={styles.primaryText}>{tr ? 'Story olarak paylaş' : 'Share as story'}</Text>
+            <Text style={styles.primaryText}>{tJourneyStoryModal('share_as_story', currentLang)}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -193,7 +199,9 @@ const useStyles = makeStyles((colors) =>
     stage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     card: { flex: 1, borderRadius: 28, overflow: 'hidden' },
     cardInner: { flex: 1, padding: 24, justifyContent: 'space-between' },
+    brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     brand: { fontSize: 22, color: '#F3C766', fontFamily: fonts.display },
+    storeHint: { fontSize: 11, color: 'rgba(255,255,255,0.6)' },
     hero: { alignItems: 'center', gap: 4 },
     eyebrow: { fontSize: 12, fontWeight: '800', letterSpacing: 2.5, color: 'rgba(255,255,255,0.7)' },
     percent: { fontSize: 76, color: '#FFFFFF', fontFamily: fonts.display },

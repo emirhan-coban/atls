@@ -150,7 +150,7 @@ export default function PlanEditorSheet({ visible, onClose, currentLang, country
           <View style={styles.section}>
             <View style={styles.searchBox}>
               <Search size={16} color={colors.text.muted} />
-              <TextInput
+              <TextInput accessibilityLabel={lt('searchCountry', currentLang)}
                 value={search}
                 onChangeText={setSearch}
                 placeholder={lt('searchCountry', currentLang)}
@@ -198,7 +198,7 @@ export default function PlanEditorSheet({ visible, onClose, currentLang, country
 
             <View style={styles.section}>
               <Text style={styles.label}>{lt('cities', currentLang)}</Text>
-              <TextInput
+              <TextInput accessibilityLabel="Roma, Floransa"
                 value={cities}
                 onChangeText={setCities}
                 placeholderTextColor={colors.text.muted}
@@ -209,7 +209,7 @@ export default function PlanEditorSheet({ visible, onClose, currentLang, country
 
             <View style={styles.section}>
               <Text style={styles.label}>{lt('notes', currentLang)}</Text>
-              <TextInput
+              <TextInput accessibilityLabel={lt('notesPlaceholder', currentLang)}
                 value={notes}
                 onChangeText={setNotes}
                 placeholder={lt('notesPlaceholder', currentLang)}

@@ -330,6 +330,7 @@ export default function JourneyModal({
                   <Text style={styles.memoryDesc}>{jt('memoryRemindersDesc', currentLang)}</Text>
                 </View>
                 <Switch
+                  accessibilityLabel={jt('memoryReminders', currentLang)}
                   value={memoryReminders}
                   onValueChange={async (value) => {
                     const ok = await setMemoryReminders(value);

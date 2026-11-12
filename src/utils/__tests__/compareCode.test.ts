@@ -1,5 +1,8 @@
 /// <reference types="jest" />
-import { buildCompareLink, compareVisited, decodeVisited, encodeVisited, parseInvite } from '../compareCode';
+import { INVITE_URL } from '../links';
+import { availableCatalog } from '../../data/travelData';
+import { CATALOG_VERSIONS, LATEST_VERSION } from '../compareCatalogs';
+import { buildCompareLink, compareVisited, decodeVisited, encodeVisited, inviteProblem, parseInvite } from '../compareCode';
 
 describe('compare code', () => {
   it('round-trips a country list and stays short', () => {
@@ -32,7 +35,7 @@ describe('compare code', () => {
 
   it('builds a link with an encoded, trimmed name', () => {
     const link = buildCompareLink(['TR'], 'Ayşe & Co');
-    expect(link.startsWith('atls://compare?c=1')).toBe(true);
+    expect(link.startsWith(`${INVITE_URL}?c=1`)).toBe(true);
     expect(link).toContain('&n=Ay%C5%9Fe%20%26%20Co');
   });
 
@@ -45,5 +48,23 @@ describe('compare code', () => {
     expect(parseInvite(`  ${bare} `)).toEqual({ code: bare, name: '' });
     expect(parseInvite('merhaba')).toBeNull();
     expect(parseInvite('atls://compare?c=1AAAA')).toBeNull();
+    // links written by older builds (custom scheme) keep working
+    expect(parseInvite(`atls://compare?c=${bare}&n=Ay%C5%9Fe`)).toEqual({ code: bare, name: 'Ayşe' });
+  });
+
+  it('keeps old codes decodable: every frozen version is sorted, unique and the latest one matches the catalog', () => {
+    for (const ids of Object.values(CATALOG_VERSIONS)) {
+      expect([...ids].sort()).toEqual(ids);
+      expect(new Set(ids).size).toBe(ids.length);
+    }
+    // If this fails the catalog changed: add a new version in compareCatalogs.ts instead of editing the old list.
+    expect(CATALOG_VERSIONS[LATEST_VERSION]).toEqual(availableCatalog.map((c) => c.id).sort());
+  });
+
+  it('tells a newer-version code apart from garbage', () => {
+    const body = encodeVisited(['TR']).slice(1);
+    expect(inviteProblem(`https://x/c/?c=9${body}`)).toBe('newer');
+    expect(inviteProblem('merhaba')).toBe('invalid');
+    expect(inviteProblem('')).toBe('invalid');
   });
 });

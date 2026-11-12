@@ -53,7 +53,7 @@ npm test
 npx eas-cli@latest build --platform ios --profile production --auto-submit
 ```
 
-`production` profili build numarasını otomatik artırır (`app.json` dosyasındaki `buildNumber` değişir; bu değişikliği commit'le). Metinler ve adım adım yükleme için `store/app-store-listing.md` ve `store/app-store-connect-rehberi.md`.
+`production` profili build numarasını otomatik artırır (`app.json` dosyasındaki `buildNumber` değişir; bu değişikliği commit'le).
 
 ---
 

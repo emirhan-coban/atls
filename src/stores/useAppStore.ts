@@ -22,6 +22,8 @@ interface AppState {
   selectedCountryId: string | null;
   isAddModalOpen: boolean;
   isShareModalOpen: boolean;
+  /** Trip planner sheet; also opened by the atls://planner deep link (the trip widget). */
+  isPlannerOpen: boolean;
 
   // Actions
   initApp: () => Promise<void>;
@@ -34,6 +36,7 @@ interface AppState {
   setSelectedCountryId: (id: string | null) => void;
   setIsAddModalOpen: (open: boolean) => void;
   setIsShareModalOpen: (open: boolean) => void;
+  setPlannerOpen: (open: boolean) => void;
   completeOnboarding: (payload?: any) => Promise<void>;
 }
 
@@ -47,6 +50,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedCountryId: null,
   isAddModalOpen: false,
   isShareModalOpen: false,
+  isPlannerOpen: false,
 
   initApp: async () => {
     try {
@@ -116,6 +120,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setIsShareModalOpen: (open) => {
     set({ isShareModalOpen: open });
+  },
+
+  setPlannerOpen: (open) => {
+    set({ isPlannerOpen: open });
   },
 
   completeOnboarding: async (onboardingPayload = {}) => {

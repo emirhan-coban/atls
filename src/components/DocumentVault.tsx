@@ -19,6 +19,7 @@ import {
   VaultDoc,
 } from '../utils/vault';
 
+import { tDocumentVault } from '../localization/screens/DocumentVault';
 interface DocumentVaultProps {
   planId: string;
   currentLang: 'tr' | 'en';
@@ -76,7 +77,7 @@ export default function DocumentVault({ planId, currentLang }: DocumentVaultProp
     Alert.alert(lt('deleteDocTitle', currentLang), lt('deleteDocMsg', currentLang), [
       { text: lt('cancel', currentLang), style: 'cancel' },
       {
-        text: currentLang === 'tr' ? 'Sil' : 'Delete',
+        text: tDocumentVault('delete', currentLang),
         style: 'destructive',
         onPress: async () => {
           await removeDocument(doc.id);

@@ -5,8 +5,10 @@ import { ChevronRight, HelpCircle } from 'lucide-react-native';
 import { makeStyles, useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 import { dayKeyOf, liveStreak, puzzleNumber } from '../game/dailyCountry';
+import { bonusUnlocked, puzzlesDone } from '../game/modes';
 import { useGameStore } from '../stores/useGameStore';
 
+import { gt } from '../localization/game';
 interface DailyGameCardProps {
   currentLang: 'tr' | 'en';
   onPress: () => void;
@@ -16,20 +18,28 @@ interface DailyGameCardProps {
 export default function DailyGameCard({ currentLang, onPress }: DailyGameCardProps) {
   const { colors } = useTheme();
   const styles = useStyles();
-  const tr = currentLang === 'tr';
   const today = dayKeyOf();
   const record = useGameStore((s) => s.days[today]);
   const stats = useGameStore((s) => s.stats);
+  const flag = useGameStore((s) => s.modeDays.flag[today]);
+  const shape = useGameStore((s) => s.modeDays.shape[today]);
   const streak = liveStreak(stats, today);
+  // the extra puzzles are mentioned only once the player has finished a classic one
+  const unlocked = bonusUnlocked(stats);
+  const doneCount = puzzlesDone(record, flag, shape);
+  const allDone = unlocked && doneCount === 3;
 
-  const headline = record?.done
-    ? record.won
-      ? tr ? 'Bugünkü ülkeyi buldun ✓' : "Today's country found ✓"
-      : tr ? 'Bugün olmadı, yarın yeni ülke' : 'Not today, new country tomorrow'
-    : tr ? 'Bugünün gizli ülkesi hangisi?' : "What's today's secret country?";
-  const sub = streak > 0
-    ? tr ? `🔥 ${streak} günlük seri` : `🔥 ${streak}-day streak`
-    : tr ? 'Her gün yeni bir ülke, 6 ipucu' : 'A new country every day, 6 clues';
+  const headline = allDone
+    ? gt('card_all_done', currentLang)
+    : record?.done
+      ? record.won
+        ? gt('card_win', currentLang)
+        : gt('card_loss', currentLang)
+      : gt('card_invite', currentLang);
+  const base = streak > 0 ? gt('card_streak', currentLang, { n: streak }) : gt('card_pitch', currentLang);
+  const waiting = unlocked && record?.done && !allDone ? gt('card_bonus_waiting', currentLang, { n: 3 - doneCount }) : '';
+  const sub = waiting ? `${base} · ${waiting}` : base;
+  const tally = unlocked ? gt('card_tally', currentLang, { n: doneCount }) : '';
 
   return (
     <TouchableOpacity
@@ -40,15 +50,22 @@ export default function DailyGameCard({ currentLang, onPress }: DailyGameCardPro
       activeOpacity={0.85}
       style={styles.card}
       accessibilityRole="button"
-      accessibilityLabel={headline}
+      accessibilityLabel={tally ? `${headline}. ${tally}` : headline}
     >
       <View style={styles.iconBox}>
         <HelpCircle size={22} color={colors.gold.base} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.eyebrow}>{(tr ? 'GİZLİ ÜLKE' : 'SECRET COUNTRY') + ` · #${puzzleNumber(today)}`}</Text>
+        <Text style={styles.eyebrow}>{`${gt('eyebrow', currentLang)} · #${puzzleNumber(today)}`}</Text>
         <Text style={styles.headline}>{headline}</Text>
         <Text style={styles.sub}>{sub}</Text>
+        {unlocked ? (
+          <View style={styles.dots}>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={[styles.dot, i < doneCount && styles.dotOn]} />
+            ))}
+          </View>
+        ) : null}
       </View>
       <ChevronRight size={18} color={colors.text.muted} />
     </TouchableOpacity>
@@ -69,5 +86,8 @@ const useStyles = makeStyles((colors) =>
     eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: colors.gold.base },
     headline: { fontSize: 18, color: colors.text.primary, fontFamily: fonts.display },
     sub: { fontSize: 12, color: colors.text.secondary },
+    dots: { flexDirection: 'row', gap: 5, marginTop: 5 },
+    dot: { width: 22, height: 6, borderRadius: 3, backgroundColor: colors.glass.fillActive },
+    dotOn: { backgroundColor: colors.status.visited.bright },
   })
 );

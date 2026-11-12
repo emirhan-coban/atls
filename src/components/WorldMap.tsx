@@ -12,6 +12,7 @@ import { translations } from '../localization/translations';
 import { getMapShapes, loadMapShapes, MapShape, mergeAll, shapeAt } from '../utils/mapShapes';
 import { clampView, INITIAL_VIEW, MAP_BOUNDS, MapView, MAX_ZOOM, panBy, Point, Size, toMapPoint, zoomAround } from '../utils/mapView';
 
+import { tWorldMap } from '../localization/screens/WorldMap';
 interface WorldMapProps {
   countries?: Country[];
   activeFilter?: string;
@@ -195,13 +196,11 @@ function WorldMap({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const label = marked
         ? marked.status === 'lived'
-          ? activeT?.livedIn || (currentLang === 'tr' ? 'YAŞANAN' : 'LIVED')
+          ? activeT?.livedIn || (tWorldMap('lived', currentLang))
           : marked.status === 'want'
-            ? activeT?.wishlist || (currentLang === 'tr' ? 'HEDEF' : 'WISHLIST')
-            : activeT?.visited || (currentLang === 'tr' ? 'GEZİLEN' : 'VISITED')
-        : currentLang === 'tr'
-          ? 'KEŞFEDİLMEDİ'
-          : 'UNEXPLORED';
+            ? activeT?.wishlist || (tWorldMap('wishlist', currentLang))
+            : activeT?.visited || (tWorldMap('visited', currentLang))
+        : tWorldMap('unexplored', currentLang);
       setSelectedInfo(`${country.flag || '🌍'} ${getLocalizedCountryName(country, currentLang)} (${label})`);
       onSelectCountry?.(country.id);
     },
@@ -300,7 +299,7 @@ function WorldMap({
 
   const ready = Boolean(shapes && size);
   const showUi = showControls !== null ? showControls : interactive;
-  const loadingText = currentLang === 'tr' ? 'Harita yükleniyor…' : 'Loading map…';
+  const loadingText = tWorldMap('loading_map', currentLang);
 
   return (
     <View
@@ -337,12 +336,8 @@ function WorldMap({
               <Text style={styles.badgeText} numberOfLines={1}>
                 {selectedInfo ||
                   (countries.length === 0
-                    ? currentLang === 'tr'
-                      ? 'DÜNYA HARİTASI'
-                      : 'WORLD MAP'
-                    : currentLang === 'tr'
-                      ? `${countries.length} İŞARETLİ ÜLKE`
-                      : `${countries.length} MARKED COUNTRIES`)}
+                    ? tWorldMap('world_map', currentLang)
+                    : tWorldMap('marked_countries', currentLang, { length: countries.length }))}
               </Text>
             </View>
           )}

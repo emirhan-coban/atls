@@ -1,0 +1,71 @@
+import { createT } from './i18n';
+
+/** Texts of the daily Secret Country game card and modal. */
+const strings = {
+  card_win: { tr: 'Bugünkü ülkeyi buldun ✓', en: "Today's country found ✓" },
+  card_loss: { tr: 'Bugün olmadı, yarın yeni ülke', en: 'Not today, new country tomorrow' },
+  card_invite: { tr: 'Bugünün gizli ülkesi hangisi?', en: "What's today's secret country?" },
+  card_streak: { tr: '🔥 {n} günlük seri', en: '🔥 {n}-day streak' },
+  card_pitch: { tr: 'Her gün yeni bir ülke, 6 ipucu', en: 'A new country every day, 6 clues' },
+
+  notif_off_title: { tr: 'Bildirim izni kapalı', en: 'Notifications are off' },
+  notif_off_body: {
+    tr: "Hatırlatma için Ayarlar > atls. > Bildirimler'den izin verebilirsin.",
+    en: 'You can allow them in Settings > atls. > Notifications.',
+  },
+  eyebrow: { tr: 'GİZLİ ÜLKE', en: 'SECRET COUNTRY' },
+  title: { tr: 'Bugünün gizli ülkesi', en: "Today's secret country" },
+  clue_locked: { tr: '{n}. ipucu yanlış tahminle açılır', en: 'Clue {n} opens after a wrong guess' },
+  fb_correct: { tr: 'Doğru!', en: 'Correct!' },
+  fb_continent: { tr: 'Aynı kıta', en: 'Same continent' },
+  fb_wrong: { tr: 'Farklı kıta', en: 'Other continent' },
+  found_in: { tr: '{n}. tahminde buldun!', en: 'Found in {n}!' },
+  not_today: { tr: 'Bugün olmadı', en: 'Not today' },
+  stats_line: {
+    tr: 'Seri: {streak} · En iyi: {best} · Kazanma: {won}/{played}',
+    en: 'Streak {streak} · Best {best} · Won {won}/{played}',
+  },
+  share: { tr: 'Sonucu paylaş', en: 'Share result' },
+  reminder: { tr: 'Akşam 20:00 hatırlatması', en: 'Evening reminder at 20:00' },
+  reminder_a11y: { tr: 'Akşam hatırlatması', en: 'Evening reminder' },
+  next_country: { tr: 'Yeni ülke gece yarısı geliyor.', en: 'A new country arrives at midnight.' },
+  guesses_left: { tr: '{n} tahmin hakkın kaldı', en: '{n} guesses left' },
+  search: { tr: 'Ülke ara…', en: 'Search a country…' },
+  dist_a11y: { tr: 'Tahmin dağılımı', en: 'Guess distribution' },
+  dist_lost: { tr: 'Kaybedilen', en: 'Lost' },
+  dist_title: { tr: 'KAÇINCI TAHMİNDE BULDUN', en: 'GUESSES TO SOLVE' },
+  dist_missed: { tr: 'Bulunamayan: {n}', en: 'Missed: {n}' },
+
+  // --- modes (Classic, Flag, Silhouette)
+  mode_clues: { tr: 'Klasik', en: 'Classic' },
+  mode_flag: { tr: 'Bayrak', en: 'Flag' },
+  mode_shape: { tr: 'Siluet', en: 'Silhouette' },
+  eyebrow_bonus: { tr: 'BONUS · {mode}', en: 'BONUS · {mode}' },
+  cl_continent: { tr: 'Kıta', en: 'Continent' },
+  cl_capital: { tr: 'Başkent', en: 'Capital' },
+  cl_capital_initial: { tr: 'Başkentin ilk harfi', en: 'Capital starts with' },
+  cl_size: { tr: 'Büyüklük', en: 'Size' },
+  cl_coast: { tr: 'Kıyı', en: 'Coast' },
+  letters_n: { tr: '{n} harfli', en: '{n} letters' },
+  size_large: { tr: 'Büyük bir ülke', en: 'A large country' },
+  size_medium: { tr: 'Orta büyüklükte', en: 'Medium-sized' },
+  size_small: { tr: 'Küçük bir ülke', en: 'A small country' },
+  coast_yes: { tr: 'Denize kıyısı var', en: 'Has a coastline' },
+  coast_no: { tr: 'Denize kıyısı yok', en: 'Landlocked' },
+  share_flag: { tr: 'atls. Bayrak', en: 'atls. Flag' },
+  share_shape: { tr: 'atls. Siluet', en: 'atls. Silhouette' },
+  unlock_title: { tr: 'Yeni: Bayrak ve Siluet', en: 'New: Flag and Silhouette' },
+  unlock_body: { tr: 'İki bonus bulmaca daha. Serine dokunmazlar.', en: 'Two more puzzles. They never touch your streak.' },
+  bonus_result_note: { tr: 'Bonus bulmaca, serine dokunmaz', en: 'Bonus puzzle, your streak is safe' },
+  flag_a11y: { tr: 'Bugünün bayrağı', en: "Today's flag" },
+  shape_a11y: { tr: 'Bir ülkenin dış çizgisi', en: 'The outline of a country' },
+  shape_tag: { tr: 'SİLUET · KUZEY YUKARI', en: 'SILHOUETTE · NORTH UP' },
+  flag_tag: { tr: 'BAYRAK · {n} TAHMİN', en: 'FLAG · {n} GUESSES' },
+  guesses_used_a11y: { tr: '{total} tahmin hakkından {used} tanesi kullanıldı', en: '{used} of {total} guesses used' },
+  card_tally: { tr: 'Bugün {n}/3 bulmaca', en: '{n}/3 puzzles today' },
+  card_bonus_waiting: { tr: '{n} bonus bulmaca seni bekliyor', en: '{n} bonus puzzles waiting for you' },
+  card_all_done: { tr: 'Bugünkü 3 bulmaca tamam', en: "All 3 of today's puzzles are done" },
+};
+
+export const gt = createT(strings);
+export const gameStrings = strings;

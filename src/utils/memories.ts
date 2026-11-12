@@ -1,6 +1,7 @@
 import { Trip } from '../stores/types';
 import { Reminder } from './planning';
 
+import { tmemories } from '../localization/screens/memories';
 type Lang = 'tr' | 'en';
 
 export const MEMORY_HOUR = 10;
@@ -45,9 +46,7 @@ export function buildMemoryReminders(
           ? `${yearsAgo} yıl önce bu ay: ${country} 🗺️`
           : `${yearsAgo} ${yearsAgo === 1 ? 'year' : 'years'} ago this month: ${country} 🗺️`,
       body:
-        lang === 'tr'
-          ? 'O geziyi hatırla, fotoğraflarına ve notlarına göz at.'
-          : 'Look back at that trip, your photos and your notes.',
+        tmemories('look_back_at_that_trip_your_photos', lang),
     });
   }
 

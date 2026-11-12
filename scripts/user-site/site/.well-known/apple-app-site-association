@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["WY64Y8233J.com.atlas.passport"],
+        "components": [
+          { "/": "/atls/c/*", "comment": "atls. passport clash invites" }
+        ]
+      },
+      {
+        "appID": "WY64Y8233J.com.atlas.passport",
+        "paths": ["/atls/c/*"]
+      }
+    ]
+  }
+}

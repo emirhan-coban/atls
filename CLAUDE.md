@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**atls.** — a React Native / Expo iOS app ("World Passport"): users mark countries as visited/lived/wishlist and see a passport-style profile, world map, and stats. Dark-theme, glassmorphism + gold-accent design. Turkish is the primary dev language in comments/docs/commits; UI supports TR/EN via inline `lang === 'tr' ?` checks (not i18n keys) plus `src/localization/translations.js`.
+**atls.** — a React Native / Expo iOS app ("World Passport"): users mark countries as visited/lived/wishlist and see a passport-style profile, world map, and stats. Dark-theme, glassmorphism + gold-accent design. Turkish is the primary dev language in comments/docs/commits; UI supports TR/EN. Older screens still use inline `lang === 'tr' ?` checks plus `src/localization/translations.js`; new text goes through the catalog helper `src/localization/i18n.ts` (`createT`; `en` is the fallback language). Most screens were moved to per-screen catalogs in `src/localization/screens/<Name>.ts` (keys are slugs of the English text; add a new catalog to `screens/index.ts`), `game.ts` and `compare.ts` hold the game and clash texts, and `i18n.test.ts` checks every catalog entry has both languages and matching placeholders. About 50 conditions that pick between non-literal values or are nested ternaries are still inline. Logic that merely selects on language (e.g. `nameTr`/`nameEn` field choice, `tr-TR` locale codes) is deliberately not a catalog entry.
 
 See `AGENTS.md` for Expo-specific rules (docs lookup, CNG, EAS commands) — read it too. `PLAN.md` is a (Turkish) audit of known issues/tech debt; treat it as background, not as current ground truth — verify against the code before relying on anything in it.
 
@@ -29,7 +29,7 @@ Run lint and typecheck before declaring any task done. Use `npx expo install <pk
 
 Despite using Expo Router for routing, the app is still structurally a single-screen app:
 - `src/app/index.tsx` just re-exports root `App.tsx`.
-- `App.tsx` (~17k chars) holds the real app shell: font loading, `ThemeProvider`, tab state, and every modal (`AddCountryModal`, `CountryDetailModal`, `CountryStatusModal`, `PassportShareModal`, `JourneyModal`, `PlannerModal`, etc.), wired directly to zustand stores.
+- `App.tsx` (~20k chars) holds the real app shell: font loading, `ThemeProvider`, tab state, and every modal (`AddCountryModal`, `CountryDetailModal`, `CountryStatusModal`, `PassportShareModal`, `JourneyModal`, `PlannerModal`, etc.), wired directly to zustand stores.
 - `src/app/_layout.tsx` is a bare `<Slot />`. Only a couple of real routes exist under `src/app/` (e.g. `country/[id].tsx`, a deep-link handler that sets store state and redirects back to `/`).
 - New routes should be added under `src/app/` per Expo Router convention, but most real UI composition still happens inside `App.tsx` and the three main screens (`HomeScreen`, `ExploreScreen`, `PassportScreen` in `src/components/`), which are kept mounted simultaneously and toggled with `display: none` rather than unmounted.
 
@@ -38,7 +38,7 @@ Despite using Expo Router for routing, the app is still structurally a single-sc
 Each store is a separate concern, re-exported from `src/stores/index.ts`:
 - `useAppStore` — app-level UI state (active tab, modals open/closed, language, onboarding flag).
 - `useCountryStore` — the core visited/lived/wishlist country records.
-- `useProfileStore`, `useTripStore`, `usePlanStore`, `useProgressStore`, `useCelebrationStore` — profile data, trips, trip planning, achievement progress, celebration/confetti triggers.
+- `useProfileStore`, `useTripStore`, `usePlanStore`, `useProgressStore`, `useCelebrationStore`, `useGameStore`, `useCompareStore` — profile data, trips, trip planning, achievement progress, celebration/confetti triggers, the daily game, passport clash.
 - Shared types live in `src/stores/types.ts` (e.g. `Country`).
 - Stores persist through `src/services/storageService.ts` (AsyncStorage) and sync opportunistically to Supabase (`src/services/supabase.ts`) when configured — `isSupabaseConfigured` gates cloud sync, since the app can run fully offline/local.
 
@@ -55,13 +55,37 @@ Static catalogs (countries, continents, climate, trivia, destinations, travel gu
 ### Engagement features
 
 - **Daily "Secret Country"** (`src/game/dailyCountry.ts`, pure and tested; state in `useGameStore`, persisted to AsyncStorage; UI in `DailyGameModal`/`DailyGameCard`). The country is a hash of the local date over the pool of countries that have facts, climate and trivia, so every device agrees without a backend. Clue text must never contain the country's name (the test enforces it).
+- **Game modes** (`src/game/modes.ts`, `silhouette.ts`, `silhouettePool.ts`, UI in `components/game/ModeStages.tsx` and `DailyGameModal`): besides the original clues game (labelled "Klasik/Classic") there are two bonus puzzles, Flag (4 guesses) and Silhouette (5 guesses, outline cut from `worldMapPaths` with overseas pieces dropped). Each mode has its own country of the day (salted shuffle; the clues sequence is unchanged), clue ladder, counters (`modeDays`/`modeStats` in `useGameStore`, no streak) and text-only share (`bonusShareText`, never names the country). Only the clues game feeds the streak and the widgets. The mode switch is hidden until the player finishes a classic puzzle once (`bonusUnlocked`), so new players see one puzzle. `SILHOUETTE_IDS` is a frozen list; `modes.test.ts` fails if the map data stops matching it. Design: `GAME_MODES_PLAN.md`.
 - **Journey story** (`JourneyStoryModal`, numbers from `utils/storyFacts.ts`): one 9:16 view whose elements animate in with Reanimated; sharing captures the finished frame as a PNG (there is no video export).
 - **Rarity** (`utils/rarity.ts`, `services/rarityService.ts`, shown in `globe/CountryPanel.tsx`): reads the `country_visit_stats()` Supabase function, which returns nothing until 50 travelers exist, so the badge stays hidden offline or early on. The SQL must be applied from `supabase/schema.sql` §12.
-- **Passport clash** (`utils/compareCode.ts`, `CompareModal`, `app/compare.tsx`): visited countries are encoded as a bitset over the id-sorted catalog (versioned prefix). Changing the catalog requires a new version prefix. Links use the `atls://` scheme, which chat apps often do not make tappable, so the modal also accepts a pasted message or code.
+- **Passport clash** (`utils/compareCode.ts`, `CompareModal`, `app/compare.tsx`): visited countries are encoded as a bitset over the id-sorted catalog (versioned prefix). Changing the catalog requires a new version prefix. The shared link is an https invite page (`public_docs/c/index.html`, `INVITE_URL` in `utils/links.ts`) that opens the app through a universal link (`associatedDomains` in `app.json`, `src/app/+native-intent.tsx` rewrites `/atls/c` to `/compare`) or offers the App Store. The AASA file must be served from the domain root, so it lives in the GitHub user-site repo `emirhan-coban/emirhan-coban.github.io`; its source is `scripts/user-site/` (published; `scripts/user-site/publish.sh` only adds the AASA files and never overwrites the repo's existing `index.html`). The modal also accepts a pasted message or code, and old `atls://compare` links still work.
+
+### Growth hooks
+
+Shared text carries `APP_STORE_URL` (`utils/links.ts`); the journey story PNG carries a "Free on the App Store" line because an image cannot hold a link. `services/reviewService.ts` asks for an App Store rating only after a Secret Country win or the third marked country (`utils/reviewPrompt.ts` keeps it to 3 asks, 90 days apart). The optional 20:00 Secret Country reminder (`services/gameReminder.ts`, `utils/gameReminder.ts`) is a single one-off notification rebuilt on app start, on foreground and after each game; tapping it opens the game (`useLastNotificationResponse` in `App.tsx`).
+
+
+### Crash reporting & OTA
+
+- `src/services/crashReporting.ts` wraps Sentry and is a no-op unless `EXPO_PUBLIC_SENTRY_DSN` is set and the build is not `__DEV__`; no PII, no breadcrumbs. `ErrorBoundary` reports through it. Turning the DSN on requires updating the privacy page (`public_docs/index.html` says "no analytics") and the App Store privacy label (crash data). Source-map upload is disabled in `eas.json` (`SENTRY_DISABLE_AUTO_UPLOAD`).
+- `expo-updates` is configured (`runtimeVersion` policy `appVersion`, channels `preview`/`production`). JS-only fixes ship with `eas update --channel production`; anything touching native modules or `app.json` needs a new build. `runtimeVersion` follows `version`, so two binaries with the same version but different native modules share one OTA stream: while 1.3.0 is unreleased, do **not** run `eas update` on the production channel until the build that contains expo-image, expo-document-picker and the widget extension is the only 1.3.0 binary in circulation (older TestFlight builds of 1.3.0 lack those modules). Bump `version` for the next native change after release.
+- `store/` (App Store screenshots, listing text) and `scripts/store-shots/` were removed from the repo on purpose; they live in git history only.
 
 ### Launch / splash
 
 `App.tsx` calls `SplashScreen.preventAutoHideAsync()` at module load and hides the native splash only once `appReady` (fonts, stores, map shapes) is true, with an 8 s failsafe. There is no JS skeleton boot screen; don't reintroduce one.
+
+### Widgets (`src/widgets/`, `expo-widgets`)
+
+Three iOS widgets: `PassportWidget` (small, medium), `GameWidget` (small plus lock screen circular, rectangular, inline) and `TripWidget` (small, medium). They run in an isolated runtime: no hooks, state, async or imports, and constants must live inside the `'widget'` function; Babel turns that function into source text the widget extension evaluates, with the SwiftUI components and modifiers as globals. So the widget files only draw props. **All logic is in `widgetData.ts`** (pure, tested): texts in the app language, state selection, and a timeline (7 days for the game incl. an 18:00 "streak at risk" entry, 30 days for the trip countdown) so widgets stay truthful without the app opening. `services/widgetSync.ts` pushes props on start, on foreground and (debounced) on store changes, iOS only, lazily requiring the widgets so an older binary without the native module does not crash. Taps open `atls://game` (`src/app/game.tsx`) and `atls://planner` (`src/app/planner.tsx`, flag `isPlannerOpen` in `useAppStore`) through the `widgetURL` modifier. `layouts.test.ts` evaluates each layout against stand-in globals. Fonts: the widget uses the system serif, not Instrument Serif. The App Group is `group.com.atlas.passport` and the extension target is `com.atlas.passport.ExpoWidgetsTarget` (both need to exist in the Apple developer account; EAS creates them on the first build).
+
+### Big screens
+
+`OnboardingScreen`, `AuthScreen`, `PassportScreen` and `HomeScreen` are thin shells. Each splits into a hook that owns the state and handlers (`onboarding/useOnboarding.tsx`, `auth/useAuthScreen.tsx`, `passport/usePassportScreen.tsx`, `home/useHomeScreen.tsx`), section components that take `{ ctx }` (the hook's return value, typed with `ReturnType<typeof useX>`), a `shared.tsx` with module-level helpers and prop types, and `<Name>.styles.ts`. To add UI to a screen, put it in a section component and read what it needs from `ctx`; if it needs new state, add it to the hook and return it. The split was done with an AST tool, so the code reads like the original (comments and all), not like hand-written modules.
+
+### Backup
+
+`utils/exportData.ts` writes the JSON/CSV export; `utils/importData.ts` (pure, tested) reads a JSON export back and `utils/importFiles.ts` runs the picker. Import only adds countries and trips missing on the phone and never overwrites; photos are not part of the backup.
 
 ### Theming (`src/theme/`)
 
@@ -77,4 +101,4 @@ Token-based: `colors.ts`, `spacing.ts`, `typography.ts`, `shadows.ts`, `passport
 
 ### Tests
 
-Jest (`jest-expo` preset) with `jest.setup.js` mocking AsyncStorage. Test files sit in `__tests__/` directories next to the code they cover, across `src/data`, `src/services`, `src/stores`, `src/theme`, `src/utils`. `web_prototype/` and `ios/` are excluded from the test path.
+Jest (`jest-expo` preset) with `jest.setup.js` mocking AsyncStorage. Test files sit in `__tests__/` directories next to the code they cover, across `src/data`, `src/services`, `src/stores`, `src/theme` (incl. WCAG contrast of the palette), `src/utils`, `src/game`, `src/localization`, `src/components`, `src/widgets`. Component tests use `@testing-library/react-native` v14, whose `render` and `fireEvent` are async (`await` them); `jest.setup.js` stubs `lucide-react-native` and `@sentry/react-native`. `ios/` is excluded from the test path.

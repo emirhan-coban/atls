@@ -28,6 +28,7 @@ import { idOfIso, isoOfId, labelOfIso } from './countryIndex';
 import { classifyOcean, oceanName } from './oceanName';
 import { PITCH_LIMIT, clamp, pixelIndex, screenToLocalDir, shortestDelta, solveFlyTo, toLocalUniform, dirToLonLat } from './globeMath';
 
+import { tGlobeView } from '../localization/screens/GlobeView';
 const AUTO_SPIN = 0.028; // rad/s
 const DRAG = 0.005; // rad/px
 const DECEL = 0.9963; // per ms, ≈ ×0.94 per 60 Hz frame
@@ -302,7 +303,15 @@ const GlobeView = forwardRef<GlobeHandle, Props>(function GlobeView(
   return (
     <View style={styles.fill} onLayout={onLayout}>
       <GestureDetector gesture={gesture}>
-        <View style={styles.fill}>
+        <View
+          style={styles.fill}
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel={tGlobeView('world_globe', lang)}
+          accessibilityHint={
+            tGlobeView('use_the_search_button_to_reach_a_c', lang)
+          }
+        >
           {ready ? (
             <Canvas style={styles.fill}>
               <Rect x={0} y={0} width={size.w} height={size.h}>

@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Reminder } from '../utils/planning';
 
 const MEMORY_IDS_KEY = '@atls_memory_notification_ids';
+const GAME_ID_KEY = '@atls_game_reminder_id';
 
 // How a notification looks while the app is open
 Notifications.setNotificationHandler({
@@ -74,6 +75,18 @@ export const notificationService = {
       await AsyncStorage.setItem(MEMORY_IDS_KEY, JSON.stringify(ids));
     } catch (err) {
       console.warn('[NotificationService] setMemoryReminders notice:', err);
+    }
+  },
+
+  /** Replaces the daily-game reminder with this one (null turns it off). Only one is ever scheduled. */
+  async setGameReminder(reminder: Reminder | null): Promise<void> {
+    try {
+      const old: string[] = JSON.parse((await AsyncStorage.getItem(GAME_ID_KEY)) || '[]');
+      await this.cancel(old);
+      const ids = reminder && (await this.hasPermission()) ? await this.scheduleReminders([reminder], { kind: 'game' }) : [];
+      await AsyncStorage.setItem(GAME_ID_KEY, JSON.stringify(ids));
+    } catch (err) {
+      console.warn('[NotificationService] setGameReminder notice:', err);
     }
   },
 

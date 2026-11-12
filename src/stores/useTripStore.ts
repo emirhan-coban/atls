@@ -25,6 +25,8 @@ interface TripState {
   setTrips: (trips: Trip[], seeded?: string[]) => void;
   /** Creates a trip, and marks the country as visited when it was not yet. */
   addTrip: (input: TripInput) => Promise<Trip>;
+  /** Adds trips from a backup as they are: no confetti and no changes to the countries. */
+  importTrips: (trips: Trip[]) => Promise<void>;
   updateTrip: (id: string, changes: Partial<TripInput>) => Promise<void>;
   removeTrip: (id: string) => Promise<void>;
   clearTrips: () => void;
@@ -76,6 +78,14 @@ export const useTripStore = create<TripState>((set, get) => ({
     await storageService.saveTrip(trip);
     useCelebrationStore.getState().burstConfetti();
     return trip;
+  },
+
+  importTrips: async (incoming) => {
+    const have = new Set(get().trips.map((t) => t.id));
+    const fresh = incoming.filter((t) => !have.has(t.id));
+    if (!fresh.length) return;
+    set((state) => ({ trips: [...fresh, ...state.trips] }));
+    for (const t of fresh) await storageService.saveTrip(t);
   },
 
   updateTrip: async (id, changes) => {

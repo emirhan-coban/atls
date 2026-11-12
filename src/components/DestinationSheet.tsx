@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -20,6 +20,7 @@ import { formatMonthList, goodMonthsFor } from '../utils/discover';
 import { openAppleMaps, openGoogleMaps } from '../utils/mapHelper';
 import { CountryStatus } from '../stores/types';
 
+import { Image } from 'expo-image';
 interface DestinationSheetProps {
   dest: CuratedDestination | null;
   visible: boolean;
@@ -102,7 +103,7 @@ export default function DestinationSheet({ dest, visible, onClose, currentLang, 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
           <View style={styles.hero}>
             {photo ? (
-              <Image source={{ uri: photo.url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              <Image source={{ uri: photo.url }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="disk" transition={150} />
             ) : (
               <LinearGradient colors={FALLBACK_GRADIENT} style={[StyleSheet.absoluteFill, styles.heroFallback]}>
                 <Text style={styles.heroFlag}>{dest.flag}</Text>
