@@ -28,6 +28,7 @@ import { idOfIso, isoOfId, labelOfIso } from './countryIndex';
 import { classifyOcean, oceanName } from './oceanName';
 import { PITCH_LIMIT, clamp, pixelIndex, screenToLocalDir, shortestDelta, solveFlyTo, toLocalUniform, dirToLonLat } from './globeMath';
 
+import { tGlobeView } from '../localization/screens/GlobeView';
 const AUTO_SPIN = 0.028; // rad/s
 const DRAG = 0.005; // rad/px
 const DECEL = 0.9963; // per ms, ≈ ×0.94 per 60 Hz frame
@@ -306,9 +307,9 @@ const GlobeView = forwardRef<GlobeHandle, Props>(function GlobeView(
           style={styles.fill}
           accessible
           accessibilityRole="image"
-          accessibilityLabel={lang === 'tr' ? 'Dünya küresi' : 'World globe'}
+          accessibilityLabel={tGlobeView('world_globe', lang)}
           accessibilityHint={
-            lang === 'tr' ? 'Bir ülkeye ulaşmak için “Ülke ara” düğmesini kullan.' : 'Use the “Search” button to reach a country.'
+            tGlobeView('use_the_search_button_to_reach_a_c', lang)
           }
         >
           {ready ? (

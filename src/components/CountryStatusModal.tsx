@@ -27,6 +27,7 @@ import {
 import { getLocalizedCountryName, MONTHS } from '../data/travelData';
 import { Country } from '../stores/types';
 
+import { tCountryStatusModal } from '../localization/screens/CountryStatusModal';
 interface CountryStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -104,7 +105,7 @@ export default function CountryStatusModal({
     if (isConverting) {
       setTimeout(() => {
         Alert.alert(
-          currentLang === 'tr' ? '🎉 Pasaportuna Eklendi!' : '🎉 Added to Your Passport!',
+          tCountryStatusModal('added_to_your_passport', currentLang),
           currentLang === 'tr'
             ? `Tebrikler! ${country.flag} ${countryName} hedeflerinden pasaportuna ${selectedStatus === 'lived' ? 'yaşadığın' : 'gittiğin'} ülke olarak işlendi!`
             : `Congratulations! ${country.flag} ${countryName} is now in your passport!`
@@ -116,12 +117,12 @@ export default function CountryStatusModal({
   const handleDelete = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      t.removeConfirmTitle || (currentLang === 'tr' ? 'Ülkeyi Kaldır' : 'Remove Country'),
+      t.removeConfirmTitle || (tCountryStatusModal('remove_country', currentLang)),
       (t.removeConfirmMsg || '{country} pasaportunuzdan silinsin mi?').replace('{country}', countryName),
       [
-        { text: t.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
+        { text: t.cancel || (tCountryStatusModal('cancel', currentLang)), style: 'cancel' },
         {
-          text: t.remove || (currentLang === 'tr' ? 'Kaldır' : 'Remove'),
+          text: t.remove || (tCountryStatusModal('remove', currentLang)),
           style: 'destructive',
           onPress: () => {
             onRemoveCountry(country.id);
@@ -166,10 +167,10 @@ export default function CountryStatusModal({
                       ]}
                     >
                       {country.status === 'lived'
-                        ? (currentLang === 'tr' ? 'YAŞANDI' : 'LIVED')
+                        ? (tCountryStatusModal('lived', currentLang))
                         : country.status === 'want'
-                          ? (currentLang === 'tr' ? 'HEDEFİNDE' : 'WISHLIST')
-                          : (currentLang === 'tr' ? 'GEZİLDİ' : 'VISITED')}
+                          ? (tCountryStatusModal('wishlist', currentLang))
+                          : (tCountryStatusModal('visited', currentLang))}
                     </Text>
                   </View>
                   <Text style={styles.countryContinent} numberOfLines={1} ellipsizeMode="tail">
@@ -179,7 +180,7 @@ export default function CountryStatusModal({
               </View>
             </View>
 
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'}
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={tCountryStatusModal('close', currentLang)}
               onPress={onClose}
               activeOpacity={0.7}
               style={styles.closeBtn}
@@ -199,15 +200,11 @@ export default function CountryStatusModal({
                 <View style={styles.convertBannerHeader}>
                   <Sparkles size={16} color={colors.gold.base} />
                   <Text style={styles.convertBannerTitle}>
-                    {currentLang === 'tr'
-                      ? 'Hedefini Gerçeğe Dönüştür'
-                      : 'Fulfill Your Dream Destination'}
+                    {tCountryStatusModal('fulfill_your_dream_destination', currentLang)}
                   </Text>
                 </View>
                 <Text style={styles.convertBannerDesc}>
-                  {currentLang === 'tr'
-                    ? `Bu ülkeyi ziyaret ettin mi veya oraya mı taşındın? Durumunu güncelleyerek pasaportuna ekleyebilirsin.`
-                    : `Have you visited or moved here? Update its status to add it to your passport.`}
+                  {tCountryStatusModal('have_you_visited_or_moved_here_upd', currentLang)}
                 </Text>
               </View>
             )}
@@ -215,7 +212,7 @@ export default function CountryStatusModal({
             {/* Status Selector Segment */}
             <View style={styles.inputGroup}>
               <Text style={styles.sectionLabel}>
-                {currentLang === 'tr' ? 'PASAPORT STATÜSÜ' : 'PASSPORT STATUS'}
+                {tCountryStatusModal('passport_status', currentLang)}
               </Text>
               <View style={styles.statusSegment}>
                 {/* Visited */}
@@ -240,7 +237,7 @@ export default function CountryStatusModal({
                     adjustsFontSizeToFit={true}
                     minimumFontScale={0.8}
                   >
-                    {t.visited || (currentLang === 'tr' ? 'Gezildi' : 'Visited')}
+                    {t.visited || (tCountryStatusModal('visited_2', currentLang))}
                   </Text>
                 </TouchableOpacity>
 
@@ -266,7 +263,7 @@ export default function CountryStatusModal({
                     adjustsFontSizeToFit={true}
                     minimumFontScale={0.8}
                   >
-                    {t.livedIn || (currentLang === 'tr' ? 'Yaşandı' : 'Lived')}
+                    {t.livedIn || (tCountryStatusModal('lived_2', currentLang))}
                   </Text>
                 </TouchableOpacity>
 
@@ -292,7 +289,7 @@ export default function CountryStatusModal({
                     adjustsFontSizeToFit={true}
                     minimumFontScale={0.8}
                   >
-                    {t.wishlist || (currentLang === 'tr' ? 'Hedef' : 'Wishlist')}
+                    {t.wishlist || (tCountryStatusModal('wishlist_2', currentLang))}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -304,7 +301,7 @@ export default function CountryStatusModal({
                 <View style={styles.labelRow}>
                   <Calendar size={12} color={colors.gold.base} />
                   <Text style={styles.sectionLabel}>
-                    {currentLang === 'tr' ? 'SEYAHAT TARİHİ (AY / YIL)' : 'TRAVEL DATE (MONTH / YEAR)'}
+                    {tCountryStatusModal('travel_date_month_year', currentLang)}
                   </Text>
                 </View>
 
@@ -327,20 +324,20 @@ export default function CountryStatusModal({
               <View style={styles.labelRow}>
                 <FileText size={12} color={colors.gold.base} />
                 <Text style={styles.sectionLabel}>
-                  {currentLang === 'tr' ? 'SEYAHAT ANISI / NOTUN' : 'TRAVEL MEMORY / NOTES'}
+                  {tCountryStatusModal('travel_memory_notes', currentLang)}
                 </Text>
               </View>
               <TextInput accessibilityLabel={
                   selectedStatus === 'want'
-                    ? (currentLang === 'tr' ? 'Örn: Kuzey ışıklarını izlemek istiyorum...' : 'e.g. Want to see the Northern Lights...')
-                    : (currentLang === 'tr' ? 'Örn: İlk kez Tokyo sokaklarında yürüdüm...' : 'e.g. First time walking Tokyo streets...')
+                    ? (tCountryStatusModal('e_g_want_to_see_the_northern_light', currentLang))
+                    : (tCountryStatusModal('e_g_first_time_walking_tokyo_stree', currentLang))
                 }
                 value={notes}
                 onChangeText={setNotes}
                 placeholder={
                   selectedStatus === 'want'
-                    ? (currentLang === 'tr' ? 'Örn: Kuzey ışıklarını izlemek istiyorum...' : 'e.g. Want to see the Northern Lights...')
-                    : (currentLang === 'tr' ? 'Örn: İlk kez Tokyo sokaklarında yürüdüm...' : 'e.g. First time walking Tokyo streets...')
+                    ? (tCountryStatusModal('e_g_want_to_see_the_northern_light', currentLang))
+                    : (tCountryStatusModal('e_g_first_time_walking_tokyo_stree', currentLang))
                 }
                 placeholderTextColor={colors.text.secondary}
                 multiline={true}
@@ -355,8 +352,8 @@ export default function CountryStatusModal({
                 onPress={handleSave}
                 label={
                   isConverting
-                    ? (currentLang === 'tr' ? 'Pasaporta İşle ✈️' : 'Add to Passport ✈️')
-                    : (t.saveChanges || (currentLang === 'tr' ? 'Değişiklikleri Kaydet' : 'Save Changes'))
+                    ? (tCountryStatusModal('add_to_passport', currentLang))
+                    : (t.saveChanges || (tCountryStatusModal('save_changes', currentLang)))
                 }
                 icon={(color) =>
                   isConverting ? <Sparkles size={16} color={color} /> : <Check size={16} color={color} strokeWidth={2.5} />
@@ -367,7 +364,7 @@ export default function CountryStatusModal({
                 onPress={handleDelete}
                 variant="danger"
                 size="md"
-                label={currentLang === 'tr' ? 'Pasaporttan Kaldır' : 'Remove from Passport'}
+                label={tCountryStatusModal('remove_from_passport', currentLang)}
                 icon={(color) => <Trash2 size={14} color={color} />}
                 style={styles.removeBtn}
               />

@@ -1,6 +1,7 @@
 import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { Country, Profile } from '../stores/types';
 
+import { tlocationHelper } from '../localization/screens/locationHelper';
 export function getDynamicLocation(profile: Profile, countries: Country[], currentLang: 'tr' | 'en' = 'tr') {
   // 1. Explicit country selection
   if (profile?.homeCountryId) {
@@ -51,7 +52,7 @@ export function getDynamicLocation(profile: Profile, countries: Country[], curre
     const locName = getLocalizedCountryName(lived, currentLang);
     return {
       flag: lived.flag || '📍',
-      text: `${locName} (${currentLang === 'tr' ? 'İkamet' : 'Home'})`,
+      text: `${locName} (${tlocationHelper('home', currentLang)})`,
     };
   }
 
@@ -61,7 +62,7 @@ export function getDynamicLocation(profile: Profile, countries: Country[], curre
     const locName = getLocalizedCountryName(visited, currentLang);
     return {
       flag: visited.flag || '📍',
-      text: `${locName} (${currentLang === 'tr' ? 'Son Durak' : 'Latest'})`,
+      text: `${locName} (${tlocationHelper('latest', currentLang)})`,
     };
   }
 

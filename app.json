@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.atlas.passport",
-      "buildNumber": "27",
+      "buildNumber": "28",
       "associatedDomains": [
         "applinks:emirhan-coban.github.io"
       ],

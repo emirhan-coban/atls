@@ -35,6 +35,7 @@ import type { CatalogCountry } from '../data/travelData';
 import { Country } from '../stores/types';
 import Heading from './ui/Heading';
 
+import { tAddCountryModal } from '../localization/screens/AddCountryModal';
 interface AddCountryModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -154,7 +155,7 @@ export default function AddCountryModal({
     if (isConverting) {
       setTimeout(() => {
         Alert.alert(
-          currentLang === 'tr' ? '🎉 Pasaportuna Eklendi!' : '🎉 Added to Your Passport!',
+          tAddCountryModal('added_to_your_passport', currentLang),
           currentLang === 'tr'
             ? `Tebrikler! ${selectedCountry.flag} ${countryNameTr} hedeflerinden pasaportuna ${selectedStatus === 'lived' ? 'yaşadığın' : 'gittiğin'} ülke olarak eklendi!`
             : `Congratulations! ${selectedCountry.flag} ${countryNameEn} is now in your passport!`
@@ -182,12 +183,12 @@ export default function AddCountryModal({
               </View>
               <Text style={styles.subtitle}>
                 {selectedCountry
-                  ? (currentLang === 'tr' ? 'Tarih ve seyahat durumunu belirle' : 'Set date and travel status')
+                  ? (tAddCountryModal('set_date_and_travel_status', currentLang))
                   : t.markCountrySubtitle}
               </Text>
             </View>
 
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'} onPress={handleCloseModal} style={styles.closeButton}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={tAddCountryModal('close', currentLang)} onPress={handleCloseModal} style={styles.closeButton}>
               <X size={16} color={colors.text.faint} />
             </TouchableOpacity>
           </View>
@@ -206,7 +207,7 @@ export default function AddCountryModal({
                   style={styles.searchInput}
                 />
                 {Boolean(searchTerm) && (
-                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Aramayı temizle' : 'Clear search'}
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={tAddCountryModal('clear_search', currentLang)}
                     onPress={() => setSearchTerm('')}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
@@ -255,7 +256,7 @@ export default function AddCountryModal({
                             {isWishlist && (
                               <View style={styles.wishlistTagBadge}>
                                 <Text style={styles.wishlistTagText}>
-                                  {t.inWishlistBadge || (currentLang === 'tr' ? 'HEDEFİNDE' : 'WISHLIST')}
+                                  {t.inWishlistBadge || (tAddCountryModal('wishlist', currentLang))}
                                 </Text>
                               </View>
                             )}
@@ -306,7 +307,7 @@ export default function AddCountryModal({
                 >
                   <RotateCcw size={11} color={colors.gold.base} />
                   <Text style={styles.changeCountryBtnText}>
-                    {t.changeCountry || (currentLang === 'tr' ? 'Değiştir' : 'Change')}
+                    {t.changeCountry || (tAddCountryModal('change', currentLang))}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -315,9 +316,7 @@ export default function AddCountryModal({
                 <View style={styles.convertNoticeBox}>
                   <Sparkles size={14} color={colors.gold.base} />
                   <Text style={styles.convertNoticeText}>
-                    {currentLang === 'tr'
-                      ? 'Bu ülke hedeflerinizde kayıtlı. Şimdi gittiğin ülke olarak işaretleyebilirsin!'
-                      : 'This country is in your wishlist. You can now mark it as visited!'}
+                    {tAddCountryModal('this_country_is_in_your_wishlist_y', currentLang)}
                   </Text>
                 </View>
               )}
@@ -413,7 +412,7 @@ export default function AddCountryModal({
                   <View style={styles.dateSectionHeaderRow}>
                     <Calendar size={13} color={colors.gold.base} />
                     <Text style={styles.sectionLabel}>
-                      {t.travelDate || (currentLang === 'tr' ? 'SEYAHAT TARİHİ (AY / YIL)' : 'TRAVEL DATE (MONTH / YEAR)')}
+                      {t.travelDate || (tAddCountryModal('travel_date_month_year', currentLang))}
                     </Text>
                   </View>
 

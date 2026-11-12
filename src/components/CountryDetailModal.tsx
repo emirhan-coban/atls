@@ -41,6 +41,7 @@ import { theme } from '../theme';
 import { layout } from '../theme/spacing';
 
 
+import { tCountryDetailModal } from '../localization/screens/CountryDetailModal';
 interface CountryDetailModalProps {
   isOpen: boolean;
   countryId: string | null;
@@ -157,7 +158,7 @@ export default function CountryDetailModal({
             end={{ x: 0.5, y: 1 }}
             style={styles.bannerHeader}
           >
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'}
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={tCountryDetailModal('close', currentLang)}
               onPress={() => {
                 Haptics.selectionAsync();
                 onClose();
@@ -180,12 +181,8 @@ export default function CountryDetailModal({
                   <View style={styles.statusPill}>
                     <Text style={styles.statusPillText}>
                       {isLived
-                        ? currentLang === 'tr'
-                          ? 'İKAMET EDİLDİ 🏡'
-                          : 'RESIDENCE 🏡'
-                        : currentLang === 'tr'
-                        ? 'ZİYARET EDİLDİ ✈️'
-                        : 'VISITED ✈️'}
+                        ? tCountryDetailModal('residence', currentLang)
+                        : tCountryDetailModal('visited', currentLang)}
                     </Text>
                   </View>
                 )}
@@ -193,7 +190,7 @@ export default function CountryDetailModal({
                 {isWant && (
                   <View style={[styles.statusPill, styles.wishlistPill]}>
                     <Text style={styles.statusPillText}>
-                      {currentLang === 'tr' ? 'HEDEFLERDE ❤️' : 'IN WISHLIST ❤️'}
+                      {tCountryDetailModal('in_wishlist', currentLang)}
                     </Text>
                   </View>
                 )}
@@ -222,7 +219,7 @@ export default function CountryDetailModal({
                   <View style={styles.metaItem}>
                     <Calendar size={14} color={colors.gold.base} />
                     <Text style={styles.metaLabel}>
-                      {currentLang === 'tr' ? 'Ziyaret Yılı' : 'Visited Year'}
+                      {tCountryDetailModal('visited_year', currentLang)}
                     </Text>
                     <Text style={styles.metaValue}>
                       {formatCountryDate(userCountry, currentLang) ||
@@ -237,7 +234,7 @@ export default function CountryDetailModal({
                   <View style={styles.metaItem}>
                     <MapPin size={14} color={colors.status.lived.color} />
                     <Text style={styles.metaLabel}>
-                      {currentLang === 'tr' ? 'Ülke Kodu' : 'Country code'}
+                      {tCountryDetailModal('country_code', currentLang)}
                     </Text>
                     <Text style={styles.metaValue}>{baseCountry.id}</Text>
                   </View>
@@ -314,7 +311,7 @@ export default function CountryDetailModal({
               <View style={styles.triviaHeader}>
                 <Sparkles size={14} color={colors.gold.base} />
                 <Text style={styles.triviaHeaderTitle}>
-                  {currentLang === 'tr' ? 'BUNU BİLİYOR MUYDUN?' : 'CULTURAL TRIVIA'}
+                  {tCountryDetailModal('cultural_trivia', currentLang)}
                 </Text>
               </View>
               <Text style={styles.triviaBody}>{trivia}</Text>
@@ -334,7 +331,7 @@ export default function CountryDetailModal({
                   >
                     <Plane size={18} color={colors.canvas.base} strokeWidth={2.5} />
                     <Text style={styles.primaryActionText}>
-                      {currentLang === 'tr' ? 'Pasaporta Ekle ✈️' : 'Add to Passport ✈️'}
+                      {tCountryDetailModal('add_to_passport', currentLang)}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -353,7 +350,7 @@ export default function CountryDetailModal({
                   >
                     <Edit3 size={16} color={colors.text.primary} />
                     <Text style={styles.secondaryBtnText}>
-                      {currentLang === 'tr' ? 'Düzenle' : 'Edit'}
+                      {tCountryDetailModal('edit', currentLang)}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -370,7 +367,7 @@ export default function CountryDetailModal({
                   >
                     <Share2 size={16} color={colors.gold.base} />
                     <Text style={[styles.secondaryBtnText, { color: colors.gold.base }]}>
-                      {currentLang === 'tr' ? 'Kartı Paylaş' : 'Share Card'}
+                      {tCountryDetailModal('share_card', currentLang)}
                     </Text>
                   </TouchableOpacity>
                 )}
