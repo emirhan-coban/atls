@@ -1,6 +1,7 @@
 import { BudgetItem, PlanItem, PlannedTrip } from '../stores/types';
 import { VisaStatus } from '../data/countryFacts';
 
+import { tplanning } from '../localization/screens/planning';
 type Lang = 'tr' | 'en';
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -243,8 +244,8 @@ export function buildReminders(
   out.push({
     at: at(7),
     kind: 'week',
-    title: lang === 'tr' ? `${countryName} yolculuğuna 1 hafta kaldı ✈️` : `One week to ${countryName} ✈️`,
-    body: lang === 'tr' ? 'Pasaportunu, biletlerini ve rezervasyonlarını bir kez daha kontrol et.' : 'Double-check your passport, tickets and bookings.',
+    title: tplanning('one_week_to', lang, { countryName }),
+    body: tplanning('double_check_your_passport_tickets', lang),
   });
 
   const open = plan.checklist.filter((i) => !i.done).length;
@@ -252,16 +253,16 @@ export function buildReminders(
     out.push({
       at: at(3),
       kind: 'checklist',
-      title: lang === 'tr' ? `${countryName} için ${open} madde kaldı` : `${open} items left for ${countryName}`,
-      body: lang === 'tr' ? 'Hazırlık listeni tamamlamak için biraz vakit ayır.' : 'Take a moment to finish your preparation list.',
+      title: tplanning('items_left_for', lang, { countryName, open }),
+      body: tplanning('take_a_moment_to_finish_your_prepa', lang),
     });
   }
 
   out.push({
     at: at(1),
     kind: 'day',
-    title: lang === 'tr' ? `Yarın ${countryName}'e yola çıkıyorsun 🎒` : `You leave for ${countryName} tomorrow 🎒`,
-    body: lang === 'tr' ? 'İyi yolculuklar! Çantanı ve belgelerini hazırla.' : 'Have a great trip! Pack your bag and documents.',
+    title: tplanning('you_leave_for_tomorrow', lang, { countryName }),
+    body: tplanning('have_a_great_trip_pack_your_bag_an', lang),
   });
 
   return out.filter((r) => r.at.getTime() > now.getTime());

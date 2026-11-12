@@ -8,6 +8,7 @@ import { Achievement } from '../data/achievements';
 import { Country, Profile, Trip } from '../stores/types';
 import { theme } from '../theme';
 
+import { tAchievementBadge } from '../localization/screens/AchievementBadge';
 interface AchievementBadgeProps {
   achievement: Achievement;
   countries: Country[];
@@ -75,7 +76,7 @@ export default function AchievementBadge({
             {title}
           </Text>
           <Text style={[styles.progressRatio, isUnlocked && styles.progressRatioUnlocked]}>
-            {isUnlocked ? (lang === 'tr' ? 'Açıldı' : 'Done') : `${progress.current}/${progress.target}`}
+            {isUnlocked ? (tAchievementBadge('done', lang)) : `${progress.current}/${progress.target}`}
           </Text>
         </View>
 

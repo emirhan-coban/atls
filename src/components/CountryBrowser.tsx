@@ -12,6 +12,7 @@ import { pt } from '../localization/profile';
 import { Country } from '../stores/types';
 import { CONTINENT_FILTERS, ContinentFilter, inContinent } from '../data/continents';
 
+import { tCountryBrowser } from '../localization/screens/CountryBrowser';
 type VisaFilter = 'all' | VisaGroup;
 
 
@@ -194,7 +195,7 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
           type="search"
           title={pt('noMatch', currentLang)}
           description={pt('noMatchDesc', currentLang)}
-          actionLabel={currentLang === 'tr' ? 'Filtreleri temizle' : 'Clear filters'}
+          actionLabel={tCountryBrowser('clear_filters', currentLang)}
           onAction={resetFilters}
         />
       ) : (
@@ -241,7 +242,7 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
             <Button
               variant="secondary"
               size="md"
-              label={currentLang === 'tr' ? `Daha fazla göster (${results.length - limit})` : `Show more (${results.length - limit})`}
+              label={tCountryBrowser('show_more', currentLang, { limit: results.length - limit })}
               onPress={() => setLimit((l) => l + PAGE)}
               style={styles.more}
             />

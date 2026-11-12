@@ -30,6 +30,7 @@ import { Profile } from '../stores/types';
 import { generateHandle } from '../services/storageService';
 import Heading from './ui/Heading';
 
+import { tEditProfileModal } from '../localization/screens/EditProfileModal';
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -120,7 +121,7 @@ export default function EditProfileModal({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     const cleanName =
-      name.trim() || profile?.name || (currentLang === 'tr' ? 'Dünya Gezgini' : 'Global Citizen');
+      name.trim() || profile?.name || (tEditProfileModal('global_citizen', currentLang));
     const cleanCity = homeCity.trim() || null;
 
     // Generate initials from cleanName
@@ -185,7 +186,7 @@ export default function EditProfileModal({
               </Text>
             </View>
 
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'}
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={tEditProfileModal('close', currentLang)}
               onPress={onClose}
               activeOpacity={0.7}
               style={styles.closeBtn}
@@ -204,13 +205,13 @@ export default function EditProfileModal({
               <View style={styles.labelRow}>
                 <User size={12} color={colors.gold.base} />
                 <Text style={styles.label}>
-                  {currentLang === 'tr' ? 'AD SOYAD' : 'FULL NAME'}
+                  {tEditProfileModal('full_name', currentLang)}
                 </Text>
               </View>
-              <TextInput accessibilityLabel={currentLang === 'tr' ? 'Adın Soyadın' : 'Your Name'}
+              <TextInput accessibilityLabel={tEditProfileModal('your_name', currentLang)}
                 value={name}
                 onChangeText={setName}
-                placeholder={currentLang === 'tr' ? 'Adın Soyadın' : 'Your Name'}
+                placeholder={tEditProfileModal('your_name', currentLang)}
                 placeholderTextColor={colors.text.secondary}
                 style={styles.input}
               />
@@ -257,7 +258,7 @@ export default function EditProfileModal({
                       </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Ülkeyi kaldır' : 'Remove country'}
+                    <TouchableOpacity accessibilityRole="button" accessibilityLabel={tEditProfileModal('remove_country', currentLang)}
                       onPress={handleClearCountry}
                       activeOpacity={0.7}
                       style={styles.clearCountryBtn}
@@ -299,7 +300,7 @@ export default function EditProfileModal({
                       autoFocus={true}
                     />
                     {Boolean(countrySearch) && (
-                      <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Aramayı temizle' : 'Clear search'} onPress={() => setCountrySearch('')}>
+                      <TouchableOpacity accessibilityRole="button" accessibilityLabel={tEditProfileModal('clear_search', currentLang)} onPress={() => setCountrySearch('')}>
                         <X size={14} color={colors.text.secondary} />
                       </TouchableOpacity>
                     )}
@@ -396,15 +397,13 @@ export default function EditProfileModal({
                 onPress={() => {
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
                   Alert.alert(
-                    t?.deleteAccountConfirmTitle || (currentLang === 'tr' ? 'Hesabı Kalıcı Olarak Sil' : 'Permanently Delete Account'),
+                    t?.deleteAccountConfirmTitle || (tEditProfileModal('permanently_delete_account', currentLang)),
                     t?.deleteAccountConfirmMsg ||
-                      (currentLang === 'tr'
-                        ? 'Hesabınızı silmek istediğinize emin misiniz? Tüm seyahatleriniz, pasaportunuz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.'
-                        : 'Are you sure you want to delete your account? All your travels, passport, and profile data will be permanently wiped. This action cannot be undone.'),
+                      (tEditProfileModal('are_you_sure_you_want_to_delete_yo', currentLang)),
                     [
-                      { text: t?.cancel || (currentLang === 'tr' ? 'Vazgeç' : 'Cancel'), style: 'cancel' },
+                      { text: t?.cancel || (tEditProfileModal('cancel', currentLang)), style: 'cancel' },
                       {
-                        text: t?.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account'),
+                        text: t?.deleteAccount || (tEditProfileModal('delete_account', currentLang)),
                         style: 'destructive',
                         onPress: () => {
                           onClose();
@@ -419,7 +418,7 @@ export default function EditProfileModal({
               >
                 <Trash2 size={13} color={colors.dangerDeep} />
                 <Text style={styles.modalDeleteAccountText}>
-                  {t?.deleteAccount || (currentLang === 'tr' ? 'Hesabı Sil' : 'Delete Account')}
+                  {t?.deleteAccount || (tEditProfileModal('delete_account', currentLang))}
                 </Text>
               </TouchableOpacity>
             )}

@@ -41,6 +41,7 @@ import { clearVault } from './src/utils/vault';
 import { initCrashReporting } from './src/services/crashReporting';
 import { startWidgetSync } from './src/services/widgetSync';
 
+import { tApp } from './src/localization/screens/App';
 initCrashReporting();
 
 // Silence on-screen warning popups/banners only for screen recordings and demos
@@ -251,10 +252,8 @@ function AppContent() {
     } catch (e) {
       console.warn('[App] deleteAccount failed:', e);
       Alert.alert(
-        currentLang === 'tr' ? 'Hesap silinemedi' : 'Could not delete account',
-        currentLang === 'tr'
-          ? 'Hesabınız silinemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.'
-          : 'Your account could not be deleted. Check your connection and try again.'
+        tApp('could_not_delete_account', currentLang),
+        tApp('your_account_could_not_be_deleted', currentLang)
       );
     }
   }, [clearCountries, currentLang, deleteAccount, t]);

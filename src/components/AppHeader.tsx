@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { Languages, User } from 'lucide-react-native';
 import { layout } from '../theme/spacing';
 
+import { tAppHeader } from '../localization/screens/AppHeader';
 interface AppHeaderProps {
   currentLang: 'tr' | 'en';
   onToggleLang?: () => void;
@@ -50,7 +51,7 @@ function AppHeader({ currentLang, onToggleLang, onOpenProfile }: AppHeaderProps)
           >
             <Languages size={13} color={colors.gold.base} />
             <Text style={styles.langPillText}>
-              {currentLang === 'tr' ? 'EN' : 'TR'}
+              {tAppHeader('tr', currentLang)}
             </Text>
           </TouchableOpacity>
         )}

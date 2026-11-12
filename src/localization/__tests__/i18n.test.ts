@@ -2,6 +2,7 @@
 import { createT, Entry, SUPPORTED_LANGS } from '../i18n';
 import { gameStrings } from '../game';
 import { compareStrings } from '../compare';
+import { screenCatalogs } from '../screens';
 
 const placeholders = (text: string) => (text.match(/\{\w+\}/g) ?? []).sort().join(',');
 
@@ -32,6 +33,22 @@ describe.each([
       for (const lang of SUPPORTED_LANGS) {
         expect(`${key}.${lang}:${Boolean(entry[lang])}`).toBe(`${key}.${lang}:true`);
       }
+      expect(`${key}:${placeholders(entry.tr ?? '')}`).toBe(`${key}:${placeholders(entry.en)}`);
+    }
+  });
+});
+
+describe('screen catalogs', () => {
+  const entries = Object.entries(screenCatalogs) as [string, Record<string, Entry>][];
+
+  it('exist for the moved screens', () => {
+    expect(entries.length).toBeGreaterThan(10);
+  });
+
+  it.each(entries)('%s has every language, matching placeholders and no empty text', (_name, strings) => {
+    expect(Object.keys(strings).length).toBeGreaterThan(0);
+    for (const [key, entry] of Object.entries(strings)) {
+      for (const lang of SUPPORTED_LANGS) expect(`${key}.${lang}:${Boolean(entry[lang]?.length)}`).toBe(`${key}.${lang}:true`);
       expect(`${key}:${placeholders(entry.tr ?? '')}`).toBe(`${key}:${placeholders(entry.en)}`);
     }
   });

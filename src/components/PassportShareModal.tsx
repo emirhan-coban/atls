@@ -34,6 +34,7 @@ import Heading from './ui/Heading';
 import { fonts } from '../theme/typography';
 import { layout } from '../theme/spacing';
 
+import { tPassportShareModal } from '../localization/screens/PassportShareModal';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(width - 44, 350);
 
@@ -105,22 +106,22 @@ export default function PassportShareModal({
       if (isAvailable) {
         await Sharing.shareAsync(uri, {
           mimeType: 'image/png',
-          dialogTitle: currentLang === 'tr' ? 'atls. Pasaport Kartı' : 'atls. Passport Card',
+          dialogTitle: tPassportShareModal('atls_passport_card', currentLang),
           UTI: 'public.png',
         });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
         Alert.alert(
-          currentLang === 'tr' ? 'Bilgi' : 'Notice',
-          currentLang === 'tr' ? 'Paylaşım bu cihazda desteklenmiyor.' : 'Sharing is not available on this device.'
+          tPassportShareModal('notice', currentLang),
+          tPassportShareModal('sharing_is_not_available_on_this_d', currentLang)
         );
       }
     } catch (err) {
       console.warn('[PassportShareModal] Capture error:', err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
-        currentLang === 'tr' ? 'Hata' : 'Error',
-        currentLang === 'tr' ? 'Kart fotoğrafı oluşturulurken bir sorun oluştu.' : 'Failed to capture passport card photo.'
+        tPassportShareModal('error', currentLang),
+        tPassportShareModal('failed_to_capture_passport_card_ph', currentLang)
       );
     } finally {
       setIsCapturing(false);
@@ -150,15 +151,13 @@ export default function PassportShareModal({
           <View style={styles.topBar}>
             <View>
               <Heading style={styles.sheetTitle}>
-                {currentLang === 'tr' ? 'Pasaport Kartı' : 'Passport Card'}
+                {tPassportShareModal('passport_card', currentLang)}
               </Heading>
               <Text style={styles.sheetSubtitle}>
-                {currentLang === 'tr'
-                  ? 'Kartını yüksek çözünürlüklü 4:3 fotoğraf olarak paylaş'
-                  : 'Share your card as a high-resolution 4:3 photo'}
+                {tPassportShareModal('share_your_card_as_a_high_resoluti', currentLang)}
               </Text>
             </View>
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'} onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={tPassportShareModal('close', currentLang)} onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
               <X size={18} color={colors.text.muted} />
             </TouchableOpacity>
           </View>
@@ -174,7 +173,7 @@ export default function PassportShareModal({
               activeOpacity={0.8}
             >
               <Text style={[styles.formatToggleText, shareFormat === 'card' && styles.formatToggleTextActive]}>
-                {currentLang === 'tr' ? '💳 4:3 Kart' : '💳 4:3 Card'}
+                {tPassportShareModal('k_4_3_card', currentLang)}
               </Text>
             </TouchableOpacity>
 
@@ -187,7 +186,7 @@ export default function PassportShareModal({
               activeOpacity={0.8}
             >
               <Text style={[styles.formatToggleText, shareFormat === 'story' && styles.formatToggleTextActive]}>
-                {currentLang === 'tr' ? '📱 9:16 Story' : '📱 9:16 Story'}
+                {tPassportShareModal('k_9_16_story', currentLang)}
               </Text>
             </TouchableOpacity>
           </View>
@@ -225,7 +224,7 @@ export default function PassportShareModal({
                 <View style={styles.passportBadge}>
                   <ShieldCheck size={11} color={colors.gold.base} />
                   <Text style={styles.passportBadgeText}>
-                    {currentLang === 'tr' ? 'BİYOMETRİK PASAPORT' : 'BIOMETRIC PASSPORT'}
+                    {tPassportShareModal('biometric_passport', currentLang)}
                   </Text>
                 </View>
               </View>
@@ -274,7 +273,7 @@ export default function PassportShareModal({
                 <View style={styles.mapPill}>
                   <Plane size={9} color={colors.status.visited.bright} style={{ transform: [{ rotate: '45deg' }] }} />
                   <Text style={styles.mapPillText}>
-                    {currentLang === 'tr' ? `%${earthPercent} DÜNYA KEŞFİ` : `%${earthPercent} EXPLORED`}
+                    {tPassportShareModal('explored', currentLang, { earthPercent })}
                   </Text>
                 </View>
               </View>
@@ -311,7 +310,7 @@ export default function PassportShareModal({
               <View style={styles.cardFooter}>
                 <View style={styles.footerLeft}>
                   <Text style={styles.tagline}>
-                    {currentLang === 'tr' ? 'Biraz Buralı, Çokça Meraklı.' : 'Partly local, mostly curious.'}
+                    {tPassportShareModal('partly_local_mostly_curious', currentLang)}
                   </Text>
                   <Text style={styles.passportIdText}>
                     {`PASAPORT NO: ${profile?.passportNo || 'AT-849201-X'}`}
@@ -336,14 +335,14 @@ export default function PassportShareModal({
                 <>
                   <ActivityIndicator color={colors.canvas.base} size="small" />
                   <Text style={styles.primaryActionBtnText}>
-                    {currentLang === 'tr' ? 'Fotoğraf Hazırlanıyor...' : 'Generating Photo...'}
+                    {tPassportShareModal('generating_photo', currentLang)}
                   </Text>
                 </>
               ) : (
                 <>
                   <ImageIcon size={18} color={colors.canvas.base} />
                   <Text style={styles.primaryActionBtnText}>
-                    {currentLang === 'tr' ? 'Fotoğraf Olarak Paylaş / Kaydet' : 'Share / Save Photo'}
+                    {tPassportShareModal('share_save_photo', currentLang)}
                   </Text>
                 </>
               )}
@@ -358,7 +357,7 @@ export default function PassportShareModal({
                 style={[styles.primaryActionBtn, { marginTop: 10, backgroundColor: colors.glass.fillStrong }]}
               >
                 <Text style={[styles.primaryActionBtnText, { color: colors.text.primary }]}>
-                  {currentLang === 'tr' ? '✨ Animasyonlu hikâyeni oluştur' : '✨ Create your animated story'}
+                  {tPassportShareModal('create_your_animated_story', currentLang)}
                 </Text>
               </TouchableOpacity>
             )}
@@ -372,7 +371,7 @@ export default function PassportShareModal({
                 style={[styles.primaryActionBtn, { marginTop: 10, backgroundColor: colors.glass.fillStrong }]}
               >
                 <Text style={[styles.primaryActionBtnText, { color: colors.text.primary }]}>
-                  {currentLang === 'tr' ? '🤝 Pasaportları çarpıştır' : '🤝 Clash passports'}
+                  {tPassportShareModal('clash_passports', currentLang)}
                 </Text>
               </TouchableOpacity>
             )}
