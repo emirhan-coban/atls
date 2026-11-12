@@ -7,6 +7,7 @@ import { fonts } from '../theme/typography';
 import { dayKeyOf, liveStreak, puzzleNumber } from '../game/dailyCountry';
 import { useGameStore } from '../stores/useGameStore';
 
+import { gt } from '../localization/game';
 interface DailyGameCardProps {
   currentLang: 'tr' | 'en';
   onPress: () => void;
@@ -16,7 +17,6 @@ interface DailyGameCardProps {
 export default function DailyGameCard({ currentLang, onPress }: DailyGameCardProps) {
   const { colors } = useTheme();
   const styles = useStyles();
-  const tr = currentLang === 'tr';
   const today = dayKeyOf();
   const record = useGameStore((s) => s.days[today]);
   const stats = useGameStore((s) => s.stats);
@@ -24,12 +24,10 @@ export default function DailyGameCard({ currentLang, onPress }: DailyGameCardPro
 
   const headline = record?.done
     ? record.won
-      ? tr ? 'Bugünkü ülkeyi buldun ✓' : "Today's country found ✓"
-      : tr ? 'Bugün olmadı, yarın yeni ülke' : 'Not today, new country tomorrow'
-    : tr ? 'Bugünün gizli ülkesi hangisi?' : "What's today's secret country?";
-  const sub = streak > 0
-    ? tr ? `🔥 ${streak} günlük seri` : `🔥 ${streak}-day streak`
-    : tr ? 'Her gün yeni bir ülke, 6 ipucu' : 'A new country every day, 6 clues';
+      ? gt('card_win', currentLang)
+      : gt('card_loss', currentLang)
+    : gt('card_invite', currentLang);
+  const sub = streak > 0 ? gt('card_streak', currentLang, { n: streak }) : gt('card_pitch', currentLang);
 
   return (
     <TouchableOpacity
@@ -46,7 +44,7 @@ export default function DailyGameCard({ currentLang, onPress }: DailyGameCardPro
         <HelpCircle size={22} color={colors.gold.base} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.eyebrow}>{(tr ? 'GİZLİ ÜLKE' : 'SECRET COUNTRY') + ` · #${puzzleNumber(today)}`}</Text>
+        <Text style={styles.eyebrow}>{`${gt('eyebrow', currentLang)} · #${puzzleNumber(today)}`}</Text>
         <Text style={styles.headline}>{headline}</Text>
         <Text style={styles.sub}>{sub}</Text>
       </View>

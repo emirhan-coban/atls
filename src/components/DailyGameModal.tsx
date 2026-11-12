@@ -39,6 +39,7 @@ import { refreshGameReminder } from '../services/gameReminder';
 import { maybeAskForReview } from '../services/reviewService';
 import { APP_STORE_URL } from '../utils/links';
 
+import { gt } from '../localization/game';
 interface DailyGameModalProps {
   visible: boolean;
   onClose: () => void;
@@ -48,7 +49,6 @@ interface DailyGameModalProps {
 export default function DailyGameModal({ visible, onClose, currentLang }: DailyGameModalProps) {
   const { colors } = useTheme();
   const styles = useStyles();
-  const tr = currentLang === 'tr';
   const [query, setQuery] = useState('');
   const insets = useSafeAreaInsets();
   // KeyboardAvoidingView measures from its parent, not the screen, so inside a page sheet (which starts ~60pt down) it
@@ -116,8 +116,8 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
     const ok = await setReminder(on);
     if (!ok) {
       Alert.alert(
-        tr ? 'Bildirim izni kapalı' : 'Notifications are off',
-        tr ? 'Hatırlatma için Ayarlar > atls. > Bildirimler\'den izin verebilirsin.' : 'You can allow them in Settings > atls. > Notifications.'
+        gt('notif_off_title', currentLang),
+        gt('notif_off_body', currentLang)
       );
       return;
     }
@@ -131,9 +131,9 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
           <View style={styles.header}>
             <View style={styles.flex}>
               <Text style={styles.eyebrow}>
-                {(tr ? 'GİZLİ ÜLKE' : 'SECRET COUNTRY') + ` · #${puzzleNumber(today)}`}
+                {`${gt('eyebrow', currentLang)} · #${puzzleNumber(today)}`}
               </Text>
-              <Heading style={styles.title}>{tr ? 'Bugünün gizli ülkesi' : "Today's secret country"}</Heading>
+              <Heading style={styles.title}>{gt('title', currentLang)}</Heading>
             </View>
             <View style={styles.streak}>
               <Flame size={14} color={colors.gold.base} />
@@ -157,7 +157,7 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
                 <View key={i} style={[styles.clue, styles.clueLocked]}>
                   <Lock size={14} color={colors.text.faint} />
                   <Text style={styles.lockedText}>
-                    {tr ? `${i + 1}. ipucu yanlış tahminle açılır` : `Clue ${i + 1} opens after a wrong guess`}
+                    {gt('clue_locked', currentLang, { n: i + 1 })}
                   </Text>
                 </View>
               );
@@ -184,10 +184,10 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
                       <Text style={styles.guessName}>{getLocalizedCountryName(c, currentLang)}</Text>
                       <Text style={styles.guessNote}>
                         {fb === 'correct'
-                          ? tr ? 'Doğru!' : 'Correct!'
+                          ? gt('fb_correct', currentLang)
                           : fb === 'continent'
-                            ? tr ? 'Aynı kıta' : 'Same continent'
-                            : tr ? 'Farklı kıta' : 'Other continent'}
+                            ? gt('fb_continent', currentLang)
+                            : gt('fb_wrong', currentLang)}
                       </Text>
                     </View>
                   );
@@ -200,33 +200,37 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
                 <Text style={styles.resultFlag}>{secret.flag}</Text>
                 <Heading style={styles.resultTitle}>
                   {record.won
-                    ? tr ? `${record.guesses.length}. tahminde buldun!` : `Found in ${record.guesses.length}!`
-                    : tr ? 'Bugün olmadı' : 'Not today'}
+                    ? gt('found_in', currentLang, { n: record.guesses.length })
+                    : gt('not_today', currentLang)}
                 </Heading>
                 <Text style={styles.resultName}>{getLocalizedCountryName(secret, currentLang)}</Text>
                 <Text style={styles.resultSub}>
-                  {tr
-                    ? `Seri: ${streak} · En iyi: ${stats.best} · Kazanma: ${stats.won}/${stats.played}`
-                    : `Streak ${streak} · Best ${stats.best} · Won ${stats.won}/${stats.played}`}
+                  {gt('stats_line', currentLang, { streak, best: stats.best, won: stats.won, played: stats.played })}
                 </Text>
+                <GuessDistribution
+                  dist={stats.dist}
+                  highlight={record.won ? record.guesses.length - 1 : -1}
+                  losses={Math.max(0, stats.played - stats.won)}
+                  lang={currentLang}
+                />
                 <Button
-                  label={tr ? 'Sonucu paylaş' : 'Share result'}
+                  label={gt('share', currentLang)}
                   onPress={onShare}
                   icon={(color) => <Share2 size={16} color={color} />}
                 />
                 <View style={styles.reminderRow}>
                   <Text style={styles.reminderText}>
-                    {tr ? 'Akşam 20:00 hatırlatması' : 'Evening reminder at 20:00'}
+                    {gt('reminder', currentLang)}
                   </Text>
                   <Switch
                     value={reminder}
                     onValueChange={toggleReminder}
                     trackColor={{ true: colors.gold.base }}
-                    accessibilityLabel={tr ? 'Akşam hatırlatması' : 'Evening reminder'}
+                    accessibilityLabel={gt('reminder_a11y', currentLang)}
                   />
                 </View>
                 <Text style={styles.resultNext}>
-                  {tr ? 'Yeni ülke gece yarısı geliyor.' : 'A new country arrives at midnight.'}
+                  {gt('next_country', currentLang)}
                 </Text>
               </Animated.View>
             )}
@@ -244,10 +248,10 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
                   ))}
                 </View>
               )}
-              <TextInput
+              <TextInput accessibilityLabel={gt('search', currentLang)}
                 value={query}
                 onChangeText={setQuery}
-                placeholder={tr ? 'Ülke ara…' : 'Search a country…'}
+                placeholder={gt('search', currentLang)}
                 placeholderTextColor={colors.text.faint}
                 style={styles.input}
                 autoCorrect={false}
@@ -256,15 +260,39 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
                 onSubmitEditing={() => suggestions[0] && submit(suggestions[0].id)}
               />
               <Text style={styles.remaining}>
-                {tr
-                  ? `${MAX_GUESSES - guessed.length} tahmin hakkın kaldı`
-                  : `${MAX_GUESSES - guessed.length} guesses left`}
+                {gt('guesses_left', currentLang, { n: MAX_GUESSES - guessed.length })}
               </Text>
             </View>
           )}
         </View>
       </SafeAreaView>
     </Modal>
+  );
+}
+
+/** Wordle-style bars: how many wins took 1..6 guesses. Wins from before this was tracked are not counted. */
+function GuessDistribution({ dist, highlight, losses, lang }: { dist: number[]; highlight: number; losses: number; lang: 'tr' | 'en' }) {
+  const styles = useStyles();
+  const max = Math.max(1, ...dist);
+  const summary = dist.map((n, i) => `${i + 1}: ${n}`).join(', ');
+  return (
+    <View
+      style={styles.dist}
+      accessible
+      accessibilityLabel={`${gt('dist_a11y', lang)}. ${summary}. ${gt('dist_lost', lang)}: ${losses}`}
+    >
+      <Text style={styles.distTitle}>{gt('dist_title', lang)}</Text>
+      {dist.map((n, i) => (
+        <View key={i} style={styles.distRow}>
+          <Text style={styles.distIndex}>{i + 1}</Text>
+          <View style={styles.distTrack}>
+            <View style={[styles.distBar, i === highlight && styles.distBarNow, { width: `${Math.max(n ? 8 : 0, (n / max) * 100)}%` }]} />
+          </View>
+          <Text style={styles.distCount}>{n}</Text>
+        </View>
+      ))}
+      <Text style={styles.distLost}>{gt('dist_missed', lang, { n: losses })}</Text>
+    </View>
   );
 }
 
@@ -310,6 +338,15 @@ const useStyles = makeStyles((colors) =>
     resultTitle: { fontSize: 24, color: colors.text.primary, fontFamily: fonts.display, textAlign: 'center' },
     resultName: { fontSize: 16, fontWeight: '700', color: colors.gold.base },
     resultSub: { fontSize: 12, color: colors.text.secondary, marginBottom: 6 },
+    dist: { alignSelf: 'stretch', gap: 4, paddingVertical: 6 },
+    distTitle: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: colors.text.muted, marginBottom: 2 },
+    distRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    distIndex: { width: 12, fontSize: 12, fontWeight: '700', color: colors.text.secondary },
+    distTrack: { flex: 1, height: 14, borderRadius: 4, backgroundColor: colors.glass.fill, overflow: 'hidden' },
+    distBar: { height: 14, borderRadius: 4, backgroundColor: colors.text.faint },
+    distBarNow: { backgroundColor: colors.gold.base },
+    distCount: { width: 24, fontSize: 12, color: colors.text.secondary, textAlign: 'right' },
+    distLost: { fontSize: 11, color: colors.text.muted, marginTop: 2 },
     resultNext: { fontSize: 12, color: colors.text.muted },
     reminderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch', paddingTop: 6 },
     reminderText: { fontSize: 13, color: colors.text.secondary },
