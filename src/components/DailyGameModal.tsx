@@ -24,9 +24,7 @@ import Button from './ui/Button';
 import { availableCatalog, getLocalizedCountryName } from '../data/travelData';
 import { searchCountries } from '../globe/countryNames';
 import {
-  MAX_GUESSES,
   buildClues,
-  dailyCountryId,
   dayKeyOf,
   feedbackFor,
   liveStreak,
@@ -34,6 +32,17 @@ import {
   puzzleNumber,
   shareText,
 } from '../game/dailyCountry';
+import {
+  BonusMode,
+  GameMode,
+  MODE_GUESSES,
+  bonusShareText,
+  bonusUnlocked,
+  buildModeClues,
+  modeCountryId,
+  openModeClueCount,
+} from '../game/modes';
+import { FlagStage, GuessPips, ModeSegment, ShapeStage } from './game/ModeStages';
 import { useGameStore } from '../stores/useGameStore';
 import { refreshGameReminder } from '../services/gameReminder';
 import { maybeAskForReview } from '../services/reviewService';
@@ -66,18 +75,35 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
 
   const days = useGameStore((s) => s.days);
   const stats = useGameStore((s) => s.stats);
+  const modeDays = useGameStore((s) => s.modeDays);
+  const modeStats = useGameStore((s) => s.modeStats);
   const guess = useGameStore((s) => s.guess);
   const reminder = useGameStore((s) => s.reminder);
   const setReminder = useGameStore((s) => s.setReminder);
 
+  // The bonus modes appear after the first finished classic puzzle, so a new player only ever sees one puzzle
+  const unlocked = bonusUnlocked(stats);
+  const [chosenMode, setMode] = useState<GameMode>('clues');
+  const mode: GameMode = unlocked ? chosenMode : 'clues';
+  const bonus = mode === 'clues' ? null : (mode as BonusMode);
+  const maxGuesses = MODE_GUESSES[mode];
+
   // Read on every render so a modal left alive past midnight shows the new puzzle
   const today = dayKeyOf();
-  const secretId = useMemo(() => dailyCountryId(today), [today]);
-  const record = days[today];
+  const secretId = useMemo(() => modeCountryId(mode, today), [mode, today]);
+  const record = bonus ? modeDays[bonus][today] : days[today];
   const done = Boolean(record?.done);
-  const clues = useMemo(() => buildClues(secretId, currentLang), [secretId, currentLang]);
+  const clues = useMemo(
+    () => (bonus ? buildModeClues(bonus, secretId, currentLang) : buildClues(secretId, currentLang)),
+    [bonus, secretId, currentLang]
+  );
   const secret = availableCatalog.find((c) => c.id === secretId)!;
-  const open = openClueCount(record);
+  const open = bonus ? openModeClueCount(bonus, record, clues.length) : openClueCount(record);
+  const doneByMode: Record<GameMode, boolean> = {
+    clues: Boolean(days[today]?.done),
+    flag: Boolean(modeDays.flag[today]?.done),
+    shape: Boolean(modeDays.shape[today]?.done),
+  };
 
   const close = () => {
     setQuery('');
@@ -91,15 +117,17 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
   );
 
   const submit = (id: string) => {
-    const after = guess(id);
+    const after = guess(id, mode);
     setQuery('');
     if (after.done) {
       Haptics.notificationAsync(
         after.won ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning
       );
-      // played today: the evening reminder moves to tomorrow, and a win is a good moment to ask for a rating
-      refreshGameReminder();
-      if (after.won) setTimeout(() => maybeAskForReview(), 2500);
+      // the classic puzzle moves the evening reminder to tomorrow, and a win is a good moment to ask for a rating
+      if (!bonus) {
+        refreshGameReminder();
+        if (after.won) setTimeout(() => maybeAskForReview(), 2500);
+      }
     } else {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -107,7 +135,8 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
 
   const onShare = () => {
     if (!record) return;
-    Share.share({ message: `${shareText(today, record, secretId, currentLang)}\n${APP_STORE_URL}` }).catch(() => {});
+    const text = bonus ? bonusShareText(bonus, today, record, secretId, currentLang) : shareText(today, record, secretId, currentLang);
+    Share.share({ message: `${text}\n${APP_STORE_URL}` }).catch(() => {});
   };
 
   const streak = liveStreak(stats, today);
@@ -131,7 +160,7 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
           <View style={styles.header}>
             <View style={styles.flex}>
               <Text style={styles.eyebrow}>
-                {`${gt('eyebrow', currentLang)} · #${puzzleNumber(today)}`}
+                {`${bonus ? gt('eyebrow_bonus', currentLang, { mode: gt(`mode_${bonus}` as 'mode_flag', currentLang).toUpperCase() }) : gt('eyebrow', currentLang)} · #${puzzleNumber(today)}`}
               </Text>
               <Heading style={styles.title}>{gt('title', currentLang)}</Heading>
             </View>
@@ -144,9 +173,16 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
             </TouchableOpacity>
           </View>
 
+          {unlocked ? <ModeSegment mode={mode} onChange={(m) => { setMode(m); setQuery(''); }} done={doneByMode} lang={currentLang} /> : null}
+
           <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+            {bonus === 'flag' ? <FlagStage flag={secret.flag} lang={currentLang} /> : null}
+            {bonus === 'shape' ? <ShapeStage id={secretId} lang={currentLang} /> : null}
+            {bonus ? <GuessPips used={guessed.length} total={maxGuesses} lang={currentLang} /> : null}
             {clues.map((clue, i) => {
               const isOpen = i < open;
+              // the bonus modes only hint at the next locked clue; the classic game shows the whole ladder
+              if (bonus && !isOpen && i > open) return null;
               return isOpen ? (
                 <Animated.View key={i} entering={FadeInDown.duration(320)} style={styles.clue}>
                   <Text style={styles.clueLabel}>{`${i + 1} · ${clue.label.toUpperCase()}`}</Text>
@@ -205,12 +241,20 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
                 </Heading>
                 <Text style={styles.resultName}>{getLocalizedCountryName(secret, currentLang)}</Text>
                 <Text style={styles.resultSub}>
-                  {gt('stats_line', currentLang, { streak, best: stats.best, won: stats.won, played: stats.played })}
+                  {bonus
+                    ? gt('bonus_result_note', currentLang)
+                    : gt('stats_line', currentLang, { streak, best: stats.best, won: stats.won, played: stats.played })}
                 </Text>
+                {!bonus && stats.played === 1 ? (
+                  <View style={styles.unlock} accessible accessibilityLabel={`${gt('unlock_title', currentLang)}. ${gt('unlock_body', currentLang)}`}>
+                    <Text style={styles.unlockTitle}>{gt('unlock_title', currentLang)}</Text>
+                    <Text style={styles.unlockBody}>{gt('unlock_body', currentLang)}</Text>
+                  </View>
+                ) : null}
                 <GuessDistribution
-                  dist={stats.dist}
+                  dist={bonus ? modeStats[bonus].dist : stats.dist}
                   highlight={record.won ? record.guesses.length - 1 : -1}
-                  losses={Math.max(0, stats.played - stats.won)}
+                  losses={bonus ? Math.max(0, modeStats[bonus].played - modeStats[bonus].won) : Math.max(0, stats.played - stats.won)}
                   lang={currentLang}
                 />
                 <Button
@@ -218,17 +262,19 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
                   onPress={onShare}
                   icon={(color) => <Share2 size={16} color={color} />}
                 />
-                <View style={styles.reminderRow}>
-                  <Text style={styles.reminderText}>
-                    {gt('reminder', currentLang)}
-                  </Text>
-                  <Switch
-                    value={reminder}
-                    onValueChange={toggleReminder}
-                    trackColor={{ true: colors.gold.base }}
-                    accessibilityLabel={gt('reminder_a11y', currentLang)}
-                  />
-                </View>
+                {bonus ? null : (
+                  <View style={styles.reminderRow}>
+                    <Text style={styles.reminderText}>
+                      {gt('reminder', currentLang)}
+                    </Text>
+                    <Switch
+                      value={reminder}
+                      onValueChange={toggleReminder}
+                      trackColor={{ true: colors.gold.base }}
+                      accessibilityLabel={gt('reminder_a11y', currentLang)}
+                    />
+                  </View>
+                )}
                 <Text style={styles.resultNext}>
                   {gt('next_country', currentLang)}
                 </Text>
@@ -259,9 +305,11 @@ export default function DailyGameModal({ visible, onClose, currentLang }: DailyG
                 returnKeyType="done"
                 onSubmitEditing={() => suggestions[0] && submit(suggestions[0].id)}
               />
-              <Text style={styles.remaining}>
-                {gt('guesses_left', currentLang, { n: MAX_GUESSES - guessed.length })}
-              </Text>
+              {bonus ? null : (
+                <Text style={styles.remaining}>
+                  {gt('guesses_left', currentLang, { n: maxGuesses - guessed.length })}
+                </Text>
+              )}
             </View>
           )}
         </View>
@@ -347,6 +395,12 @@ const useStyles = makeStyles((colors) =>
     distBarNow: { backgroundColor: colors.gold.base },
     distCount: { width: 24, fontSize: 12, color: colors.text.secondary, textAlign: 'right' },
     distLost: { fontSize: 11, color: colors.text.muted, marginTop: 2 },
+    unlock: {
+      alignSelf: 'stretch', padding: 12, borderRadius: 16, gap: 2, backgroundColor: colors.gold.tint,
+      borderWidth: 1, borderColor: colors.gold.border,
+    },
+    unlockTitle: { fontSize: 14, fontWeight: '700', color: colors.gold.base },
+    unlockBody: { fontSize: 12, color: colors.text.secondary },
     resultNext: { fontSize: 12, color: colors.text.muted },
     reminderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch', paddingTop: 6 },
     reminderText: { fontSize: 13, color: colors.text.secondary },

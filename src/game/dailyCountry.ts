@@ -84,9 +84,9 @@ export function playablePool(): CatalogCountry[] {
 const ROTATION_START = '2026-11-20';
 
 /** Deterministic shuffle (Fisher-Yates over an xorshift stream seeded by the cycle). */
-function shuffled(ids: string[], seed: number): string[] {
+function shuffled(ids: string[], seed: number, salt = ''): string[] {
   const out = [...ids];
-  let x = hash(`atls-cycle-${seed}`) || 1;
+  let x = hash(`atls-cycle-${salt}${seed}`) || 1;
   for (let i = out.length - 1; i > 0; i--) {
     x ^= x << 13; x >>>= 0;
     x ^= x >>> 17;
@@ -98,20 +98,21 @@ function shuffled(ids: string[], seed: number): string[] {
 }
 
 /** Order of one cycle; the first country never equals the last one of the cycle before. */
-function cycleOrder(ids: string[], cycle: number): string[] {
-  const order = shuffled(ids, cycle);
+function cycleOrder(ids: string[], cycle: number, salt = ''): string[] {
+  const order = shuffled(ids, cycle, salt);
   if (cycle > 0 && ids.length > 1) {
-    const previousLast = shuffled(ids, cycle - 1)[ids.length - 1];
+    const previousLast = shuffled(ids, cycle - 1, salt)[ids.length - 1];
     if (order[0] === previousLast) [order[0], order[1]] = [order[1], order[0]];
   }
   return order;
 }
 
-export function dailyCountryId(key: string, pool: CatalogCountry[] = playablePool()): string {
-  if (key < ROTATION_START || !pool.length) return pool[hash(`atls-secret-${key}`) % pool.length].id;
+/** `salt` gives each game mode its own sequence (empty for the original clues game, so its picks never change). */
+export function dailyCountryId(key: string, pool: CatalogCountry[] = playablePool(), salt = ''): string {
+  if (key < ROTATION_START || !pool.length) return pool[hash(`atls-secret-${salt}${key}`) % pool.length].id;
   const n = dayNumberOf(key) - dayNumberOf(ROTATION_START);
   const ids = pool.map((c) => c.id);
-  return cycleOrder(ids, Math.floor(n / ids.length))[n % ids.length];
+  return cycleOrder(ids, Math.floor(n / ids.length), salt)[n % ids.length];
 }
 
 export function feedbackFor(guessId: string, secretId: string, catalog: CatalogCountry[] = availableCatalog): GuessFeedback {
@@ -129,7 +130,7 @@ export interface Clue {
 }
 
 /** Hide the country's own name when a clue happens to contain it. */
-function maskName(text: string, country: CatalogCountry): string {
+export function maskName(text: string, country: CatalogCountry): string {
   let out = text;
   for (const name of [country.name, country.nameTr]) {
     if (name) out = out.split(name).join('▒▒▒');
@@ -201,12 +202,12 @@ export function openClueCount(record: DayRecord | undefined): number {
 }
 
 /** Applies a guess; guesses after the game ended and repeated guesses are ignored. */
-export function applyGuess(record: DayRecord | undefined, guessId: string, secretId: string): DayRecord {
+export function applyGuess(record: DayRecord | undefined, guessId: string, secretId: string, maxGuesses = MAX_GUESSES): DayRecord {
   const current = record ?? { guesses: [], done: false, won: false };
   if (current.done || current.guesses.includes(guessId)) return current;
   const guesses = [...current.guesses, guessId];
   const won = guessId === secretId;
-  return { guesses, won, done: won || guesses.length >= MAX_GUESSES };
+  return { guesses, won, done: won || guesses.length >= maxGuesses };
 }
 
 /** Streak survives a missed day only if yesterday was won; finishing the same day twice changes nothing. */

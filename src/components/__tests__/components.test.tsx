@@ -63,7 +63,7 @@ describe('ErrorBoundary', () => {
 });
 
 describe('DailyGameCard', () => {
-  beforeEach(() => useGameStore.setState({ days: {}, stats: EMPTY_STATS }));
+  beforeEach(() => useGameStore.setState({ days: {}, stats: EMPTY_STATS, modeDays: { flag: {}, shape: {} } }));
 
   it('invites you to play before today is done', async () => {
     const onPress = jest.fn();
@@ -79,11 +79,29 @@ describe('DailyGameCard', () => {
     });
     await wrap(<DailyGameCard currentLang="en" onPress={() => {}} />);
     expect(screen.getByText("Today's country found ✓")).toBeTruthy();
-    expect(screen.getByText('🔥 3-day streak')).toBeTruthy();
+    expect(screen.getByText('🔥 3-day streak · 2 bonus puzzles waiting for you')).toBeTruthy();
   });
 
   it('speaks Turkish when asked', async () => {
     await wrap(<DailyGameCard currentLang="tr" onPress={() => {}} />);
     expect(screen.getByText('Bugünün gizli ülkesi hangisi?')).toBeTruthy();
+  });
+
+  it('does not mention the bonus puzzles before the first classic one is finished', async () => {
+    await wrap(<DailyGameCard currentLang="en" onPress={() => {}} />);
+    expect(screen.queryByText(/bonus/i)).toBeNull();
+    expect(screen.queryByText(/puzzles today/)).toBeNull();
+  });
+
+  it('celebrates when all three puzzles are done', async () => {
+    const today = dayKeyOf();
+    const done = { guesses: ['x'], done: true, won: true };
+    useGameStore.setState({
+      days: { [today]: done },
+      modeDays: { flag: { [today]: done }, shape: { [today]: done } },
+      stats: { ...EMPTY_STATS, played: 1, won: 1, streak: 1, best: 1, lastWonDay: today },
+    });
+    await wrap(<DailyGameCard currentLang="en" onPress={() => {}} />);
+    expect(screen.getByText("All 3 of today's puzzles are done")).toBeTruthy();
   });
 });
