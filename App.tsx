@@ -38,6 +38,9 @@ import { storageService } from './src/services/storageService';
 import { warmMapShapes } from './src/utils/mapShapes';
 import { refreshMemoryReminders } from './src/services/memoryReminders';
 import { clearVault } from './src/utils/vault';
+import { initCrashReporting } from './src/services/crashReporting';
+
+initCrashReporting();
 
 // Silence on-screen warning popups/banners only for screen recordings and demos
 // (set EXPO_PUBLIC_DEMO_MODE=1); normal builds keep warnings visible.
