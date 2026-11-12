@@ -239,7 +239,7 @@ export default function PlannerModal({ visible, onClose, currentLang }: PlannerM
             </TouchableOpacity>
           ))}
           <View style={styles.addRow}>
-            <TextInput
+            <TextInput accessibilityLabel={lt('addItem', currentLang)}
               value={newItem}
               onChangeText={setNewItem}
               onSubmitEditing={addChecklistItem}
@@ -280,8 +280,8 @@ export default function PlannerModal({ visible, onClose, currentLang }: PlannerM
             </View>
           ))}
           <View style={styles.addRow}>
-            <TextInput value={budgetLabel} onChangeText={setBudgetLabel} placeholder={lt('budgetLabel', currentLang)} placeholderTextColor={colors.text.muted} style={[styles.addInput, { flex: 2 }]} />
-            <TextInput
+            <TextInput accessibilityLabel={lt('budgetLabel', currentLang)} value={budgetLabel} onChangeText={setBudgetLabel} placeholder={lt('budgetLabel', currentLang)} placeholderTextColor={colors.text.muted} style={[styles.addInput, { flex: 2 }]} />
+            <TextInput accessibilityLabel={lt('budgetAmount', currentLang)}
               value={budgetAmount}
               onChangeText={setBudgetAmount}
               placeholder={lt('budgetAmount', currentLang)}

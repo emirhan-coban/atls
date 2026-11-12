@@ -169,7 +169,7 @@ export default function TripEditorSheet({ visible, onClose, currentLang, country
           <View style={styles.section}>
             <View style={styles.searchBox}>
               <Search size={16} color={colors.text.muted} />
-              <TextInput
+              <TextInput accessibilityLabel={jt('searchCountry', currentLang)}
                 value={search}
                 onChangeText={setSearch}
                 placeholder={jt('searchCountry', currentLang)}
@@ -215,7 +215,7 @@ export default function TripEditorSheet({ visible, onClose, currentLang, country
 
             <View style={styles.section}>
               <Text style={styles.label}>{jt('days', currentLang)}</Text>
-              <TextInput
+              <TextInput accessibilityLabel={jt('daysPlaceholder', currentLang)}
                 value={days}
                 onChangeText={(v) => setDays(v.replace(/[^0-9]/g, '').slice(0, 3))}
                 placeholder={jt('daysPlaceholder', currentLang)}
@@ -227,7 +227,7 @@ export default function TripEditorSheet({ visible, onClose, currentLang, country
 
             <View style={styles.section}>
               <Text style={styles.label}>{jt('cities', currentLang)}</Text>
-              <TextInput
+              <TextInput accessibilityLabel={jt('citiesPlaceholder', currentLang)}
                 value={cities}
                 onChangeText={setCities}
                 placeholder={jt('citiesPlaceholder', currentLang)}
@@ -298,7 +298,7 @@ export default function TripEditorSheet({ visible, onClose, currentLang, country
 
             <View style={styles.section}>
               <Text style={styles.label}>{jt('notes', currentLang)}</Text>
-              <TextInput
+              <TextInput accessibilityLabel={jt('notesPlaceholder', currentLang)}
                 value={notes}
                 onChangeText={setNotes}
                 placeholder={jt('notesPlaceholder', currentLang)}

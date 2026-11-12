@@ -45,7 +45,7 @@ export default function GlobeOverlay({ markedCount, lang, show, hideStat, onPick
         {open ? (
           <Animated.View entering={FadeIn.duration(200)} style={styles.field}>
             <Search size={16} color={colors.text.secondary} />
-            <TextInput
+            <TextInput accessibilityLabel={lang === 'tr' ? 'Ülke ara' : 'Search a country'}
               autoFocus
               value={query}
               onChangeText={setQuery}
@@ -57,7 +57,7 @@ export default function GlobeOverlay({ markedCount, lang, show, hideStat, onPick
               returnKeyType="search"
               autoCorrect={false}
             />
-            <TouchableOpacity onPress={close} hitSlop={10}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={lang === 'tr' ? 'Aramayı kapat' : 'Close search'} onPress={close} hitSlop={10}>
               <X size={16} color={colors.text.secondary} />
             </TouchableOpacity>
             <View style={[styles.hairline, focused && styles.hairlineOn]} />

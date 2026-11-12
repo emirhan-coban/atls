@@ -302,7 +302,15 @@ const GlobeView = forwardRef<GlobeHandle, Props>(function GlobeView(
   return (
     <View style={styles.fill} onLayout={onLayout}>
       <GestureDetector gesture={gesture}>
-        <View style={styles.fill}>
+        <View
+          style={styles.fill}
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel={lang === 'tr' ? 'Dünya küresi' : 'World globe'}
+          accessibilityHint={
+            lang === 'tr' ? 'Bir ülkeye ulaşmak için “Ülke ara” düğmesini kullan.' : 'Use the “Search” button to reach a country.'
+          }
+        >
           {ready ? (
             <Canvas style={styles.fill}>
               <Rect x={0} y={0} width={size.w} height={size.h}>

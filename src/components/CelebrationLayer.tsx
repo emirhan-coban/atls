@@ -4,6 +4,7 @@ import AchievementToast from './AchievementToast';
 import ConfettiCannon from './ConfettiCannon';
 import { useCelebrationStore } from '../stores/useCelebrationStore';
 import { useProgressStore } from '../stores/useProgressStore';
+import { useReduceMotion } from '../utils/useReduceMotion';
 
 interface CelebrationLayerProps {
   /** Unique host id: the app root and each modal that wants to show celebrations on top of itself. */
@@ -31,12 +32,13 @@ export default function CelebrationLayer({ hostId, active = true, currentLang }:
     return () => popHost(hostId);
   }, [active, hostId, pushHost, popHost]);
 
+  const reduceMotion = useReduceMotion();
   const [confettiOn, setConfettiOn] = React.useState(false);
   const lastKey = useRef(confettiKey);
   useEffect(() => {
-    if (isTop && confettiKey !== lastKey.current) setConfettiOn(true);
+    if (isTop && !reduceMotion && confettiKey !== lastKey.current) setConfettiOn(true);
     lastKey.current = confettiKey;
-  }, [confettiKey, isTop]);
+  }, [confettiKey, isTop, reduceMotion]);
 
   if (!active || !isTop) return null;
 

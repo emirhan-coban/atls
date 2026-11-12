@@ -1,10 +1,8 @@
-import { fonts } from '../theme/typography';
-import { makeStyles, useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/ThemeContext';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -36,6 +34,7 @@ import { authService } from '../services/authService';
 import { generateHandle } from '../services/storageService';
 import Heading from './ui/Heading';
 
+import { useStyles } from './AuthScreen.styles';
 const GoogleIcon = () => (
   <Svg width={18} height={18} viewBox="0 0 24 24">
     <Path
@@ -475,7 +474,7 @@ export default function AuthScreen({
                 <View style={styles.emailBadge}>
                   <Mail size={14} color={colors.gold.base} />
                   <Text style={styles.emailBadgeText} numberOfLines={1}>{email}</Text>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'E-postayı düzenle' : 'Edit email'}
                     onPress={() => setIsOtpStep(false)}
                     style={styles.editEmailBtn}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -497,6 +496,7 @@ export default function AuthScreen({
                     ]}
                   >
                     <TextInput
+                      accessibilityLabel={currentLang === 'tr' ? `Doğrulama kodu, ${idx + 1}. hane` : `Verification code, digit ${idx + 1}`}
                       ref={(el) => {
                         otpInputsRef.current[idx] = el;
                       }}
@@ -672,7 +672,7 @@ export default function AuthScreen({
           {/* Form */}
           <View style={styles.form}>
             {tab === 'register' && (
-              <TouchableOpacity
+              <TouchableOpacity accessible={false}
                 activeOpacity={1}
                 onPress={() => nameInputRef.current?.focus()}
                 style={[
@@ -681,7 +681,7 @@ export default function AuthScreen({
                 ]}
               >
                 <User size={18} color={focusedField === 'name' ? colors.gold.base : colors.text.muted} />
-                <TextInput
+                <TextInput accessibilityLabel={t?.fullName || 'Ad Soyad'}
                   ref={nameInputRef}
                   value={name}
                   onChangeText={setName}
@@ -696,7 +696,7 @@ export default function AuthScreen({
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity
+            <TouchableOpacity accessible={false}
               activeOpacity={1}
               onPress={() => emailInputRef.current?.focus()}
               style={[
@@ -705,7 +705,7 @@ export default function AuthScreen({
               ]}
             >
               <Mail size={18} color={focusedField === 'email' ? colors.gold.base : colors.text.muted} />
-              <TextInput
+              <TextInput accessibilityLabel={t?.email || 'E-posta adresi'}
                 ref={emailInputRef}
                 value={email}
                 onChangeText={setEmail}
@@ -721,7 +721,7 @@ export default function AuthScreen({
               />
             </TouchableOpacity>
 
-            <TouchableOpacity
+            <TouchableOpacity accessible={false}
               activeOpacity={1}
               onPress={() => passwordInputRef.current?.focus()}
               style={[
@@ -730,7 +730,7 @@ export default function AuthScreen({
               ]}
             >
               <Lock size={18} color={focusedField === 'password' ? colors.gold.base : colors.text.muted} />
-              <TextInput
+              <TextInput accessibilityLabel={tab === 'register' ? (t?.password || 'Şifre (en az 8 karakter)') : (t?.password || 'Şifre')}
                 ref={passwordInputRef}
                 value={password}
                 onChangeText={setPassword}
@@ -744,7 +744,7 @@ export default function AuthScreen({
                 textContentType="password"
                 style={styles.input}
               />
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={showPassword ? (currentLang === 'tr' ? 'Şifreyi gizle' : 'Hide password') : (currentLang === 'tr' ? 'Şifreyi göster' : 'Show password')}
                 onPress={() => setShowPassword((prev) => !prev)}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               >
@@ -915,384 +915,3 @@ export default function AuthScreen({
   );
 }
 
-const useStyles = makeStyles((colors) => StyleSheet.create({
-  outerWrapper: {
-    flex: 1,
-    backgroundColor: colors.canvas.base,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 14,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  logoText: {
-    fontSize: 35,
-    color: colors.text.primary,
-    letterSpacing: -0.8,
-    fontFamily: fonts.displayHeavy,
-  },
-  logoDot: {
-    fontSize: 35,
-    color: colors.gold.base,
-    fontFamily: fonts.displayHeavy,
-  },
-  langPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.glass.borderSoft,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    paddingHorizontal: 12,
-    height: 36,
-    borderRadius: 18,
-  },
-  langPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.gold.base,
-  },
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 40,
-  },
-  headerTextCol: {
-    marginBottom: 24,
-  },
-  mainTitle: {
-    fontSize: 40,
-    lineHeight: 44,
-    fontFamily: fonts.display,
-    color: colors.text.primary,
-    letterSpacing: -0.6,
-    marginBottom: 8,
-  },
-  subTitle: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    lineHeight: 21,
-    fontWeight: '400',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: colors.glass.fill,
-    borderRadius: 16,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-  },
-  tabItem: {
-    flex: 1,
-    paddingVertical: 11,
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  tabItemActive: {
-    backgroundColor: colors.glass.hairline,
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text.muted,
-  },
-  tabTextActive: {
-    color: colors.text.primary,
-    fontWeight: '800',
-  },
-  form: {
-    gap: 13,
-  },
-  inputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.panel.base,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    height: 54,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-  },
-  inputBoxFocused: {
-    borderColor: colors.gold.base,
-    backgroundColor: colors.panel.raised,
-  },
-  input: {
-    flex: 1,
-    height: '100%',
-    fontSize: 14,
-    color: colors.text.primary,
-    fontWeight: '600',
-    paddingVertical: 0,
-  },
-  strengthCard: {
-    backgroundColor: colors.panel.base,
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    gap: 8,
-    marginTop: -4,
-  },
-  strengthHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  strengthTitle: {
-    fontSize: 11,
-    color: colors.text.secondary,
-    fontWeight: '600',
-  },
-  strengthBarRow: {
-    flexDirection: 'row',
-    gap: 6,
-    height: 4,
-  },
-  strengthBarSegment: {
-    flex: 1,
-    height: '100%',
-    borderRadius: 2,
-  },
-  criteriaList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    paddingTop: 4,
-  },
-  criteriaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  criteriaText: {
-    fontSize: 11,
-    color: colors.text.muted,
-    fontWeight: '600',
-  },
-  criteriaTextMet: {
-    color: colors.text.primary,
-    fontWeight: '700',
-  },
-  primaryBtn: {
-    height: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.gold.base,
-    borderRadius: 22,
-    marginTop: 8,
-    shadowColor: colors.gold.base,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  primaryBtnText: {
-    color: colors.canvas.base,
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  securityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: colors.status.visited.light,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    marginTop: 32,
-    borderWidth: 1,
-    borderColor: colors.status.visited.border,
-  },
-  securityText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.gold.light,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 10,
-    marginBottom: 6,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.glass.hairline,
-  },
-  dividerText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.text.muted,
-    letterSpacing: 0.5,
-  },
-  socialCol: {
-    gap: 10,
-  },
-  socialBtn: {
-    height: 52,
-    borderRadius: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  appleBtn: {
-    backgroundColor: colors.canvas.surface,
-    borderWidth: 1,
-    borderColor: colors.glass.fillActive,
-  },
-  appleBtnText: {
-    color: colors.text.primary,
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  googleBtn: {
-    backgroundColor: colors.glass.fillStrong,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-  },
-  guestBtn: {
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  guestBtnText: {
-    color: colors.gold.light,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  guestHint: {
-    color: colors.text.muted,
-    fontSize: 11,
-    lineHeight: 16,
-    textAlign: 'center',
-    paddingHorizontal: 12,
-  },
-  googleBtnText: {
-    color: colors.text.primary,
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-
-  // OTP Styles
-  otpIconBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.gold.tint,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: colors.gold.glow,
-  },
-  emailBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.glass.fill,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    marginTop: 12,
-    alignSelf: 'flex-start',
-  },
-  emailBadgeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  editEmailBtn: {
-    padding: 2,
-  },
-  otpBoxesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 24,
-    gap: 8,
-  },
-  otpBox: {
-    flex: 1,
-    height: 58,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: colors.glass.hairline,
-    backgroundColor: colors.panel.base,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  otpBoxFilled: {
-    borderColor: colors.gold.base,
-    backgroundColor: colors.panel.raised,
-  },
-  otpBoxFocused: {
-    borderColor: colors.gold.base,
-    backgroundColor: colors.panel.raised,
-  },
-  otpInput: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: colors.text.primary,
-    textAlign: 'center',
-    width: '100%',
-    height: '100%',
-  },
-  resendRow: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  resendBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  resendBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.gold.base,
-  },
-  timerText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    fontWeight: '600',
-  },
-  backBtn: {
-    alignItems: 'center',
-    marginTop: 12,
-    paddingVertical: 8,
-  },
-  backBtnText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    fontWeight: '600',
-  },
-}));

@@ -1,23 +1,21 @@
 import Sheet from './ui/Sheet';
 import Button from './ui/Button';
 import EmptyState from './EmptyState';
-import { fonts } from '../theme/typography';
-import { makeStyles, useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/ThemeContext';
 import { useAppStore } from '../stores/useAppStore';
 import { useTripStore } from '../stores/useTripStore';
 import { exportAndShare } from '../utils/exportFiles';
+import { pickAndImportBackup } from '../utils/importFiles';
 import { PRIVACY_URL } from '../utils/links';
 import { jt } from '../localization/journey';
 import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
-  Platform,
-} from 'react-native';
+  } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
@@ -37,6 +35,7 @@ import {
   ChevronRight,
   Cloud,
   Download,
+  Upload,
   FileText,
   CalendarClock,
   BookOpen,
@@ -51,8 +50,8 @@ import EditProfileModal from './EditProfileModal';
 import CountryStatusModal from './CountryStatusModal';
 import AnimatedCounter from './AnimatedCounter';
 import { getDynamicLocation } from '../utils/locationHelper';
-import { layout } from '../theme/spacing';
 
+import { useStyles } from './PassportScreen.styles';
 interface PassportScreenProps {
   profile: Profile;
   countries: Country[];
@@ -112,6 +111,29 @@ function PassportScreen({
     Alert.alert(jt('exportData', currentLang), jt('exportChoose', currentLang), [
       { text: 'JSON', onPress: () => run('json') },
       { text: 'CSV', onPress: () => run('csv') },
+      { text: jt('cancel', currentLang), style: 'cancel' },
+    ]);
+  };
+
+  const handleImport = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const run = async () => {
+      try {
+        const result = await pickAndImportBackup();
+        if (result.kind === 'cancelled') return;
+        if (result.kind === 'invalid') return Alert.alert(jt('importInvalid', currentLang));
+        Alert.alert(
+          result.countries + result.trips === 0
+            ? jt('importNothing', currentLang)
+            : jt('importDone', currentLang, { countries: result.countries, trips: result.trips })
+        );
+      } catch (err) {
+        console.warn('[Passport] import failed:', err);
+        Alert.alert(jt('importFailed', currentLang));
+      }
+    };
+    Alert.alert(jt('importConfirmTitle', currentLang), jt('importConfirmMsg', currentLang), [
+      { text: jt('importChoose', currentLang), onPress: run },
       { text: jt('cancel', currentLang), style: 'cancel' },
     ]);
   };
@@ -314,7 +336,7 @@ function PassportScreen({
       {/* STATS TILES (Interactive Filter) */}
       <View style={styles.statsRow}>
         {/* Visited */}
-        <TouchableOpacity
+        <TouchableOpacity accessibilityState={{ selected: activeTab === 'visited' }}
           onPress={() => handleTabPress('visited')}
           activeOpacity={0.7}
           style={[
@@ -352,7 +374,7 @@ function PassportScreen({
         </TouchableOpacity>
 
         {/* Lived In */}
-        <TouchableOpacity
+        <TouchableOpacity accessibilityState={{ selected: activeTab === 'lived' }}
           onPress={() => handleTabPress('lived')}
           activeOpacity={0.7}
           style={[
@@ -390,7 +412,7 @@ function PassportScreen({
         </TouchableOpacity>
 
         {/* Wishlist */}
-        <TouchableOpacity
+        <TouchableOpacity accessibilityState={{ selected: activeTab === 'want' }}
           onPress={() => handleTabPress('want')}
           activeOpacity={0.7}
           style={[
@@ -560,7 +582,7 @@ function PassportScreen({
                   )}
 
                   {isEditing && (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Ülkeyi sil' : 'Remove country'}
                       onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                         Alert.alert(
@@ -636,7 +658,7 @@ function PassportScreen({
                 {currentLang === 'tr' ? 'Profil ve oturum ayarlarınız' : 'Your profile and session settings'}
               </Text>
             </View>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'}
               onPress={() => setIsAccountModalOpen(false)}
               style={styles.sheetCloseBtn}
               activeOpacity={0.7}
@@ -756,6 +778,17 @@ function PassportScreen({
                   <Download size={17} color={colors.gold.base} />
                 </View>
                 <Text style={styles.accountListItemLabel}>{jt('exportData', currentLang)}</Text>
+              </View>
+              <ChevronRight size={17} color={colors.text.secondary} />
+            </TouchableOpacity>
+
+            {/* Restore: merges an earlier JSON export, adding only what is missing */}
+            <TouchableOpacity onPress={handleImport} activeOpacity={0.7} style={styles.accountListItem}>
+              <View style={styles.accountListItemLeft}>
+                <View style={[styles.accountActionIconBox, { backgroundColor: colors.glass.fillStrong }]}>
+                  <Upload size={17} color={colors.gold.base} />
+                </View>
+                <Text style={styles.accountListItemLabel}>{jt('importData', currentLang)}</Text>
               </View>
               <ChevronRight size={17} color={colors.text.secondary} />
             </TouchableOpacity>
@@ -897,747 +930,5 @@ function PassportScreen({
   );
 }
 
-const useStyles = makeStyles((colors) => StyleSheet.create({
-  outerWrapper: {
-    flex: 1,
-    backgroundColor: colors.canvas.base,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  contentContainer: {
-    paddingHorizontal: layout.screen,
-    paddingTop: 6,
-    paddingBottom: layout.tabBarClearance,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: '900',
-    color: colors.text.primary,
-    letterSpacing: -0.8,
-  },
-  logoDot: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.text.primary,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  langPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.glass.borderSoft,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    paddingHorizontal: 12,
-    height: 38,
-    borderRadius: 19,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  langPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.text.primary,
-  },
-  headerAccountBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.glass.borderSoft,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  passportCard: {
-    backgroundColor: colors.panel.base,
-    borderRadius: 30,
-    paddingVertical: 20,
-    paddingHorizontal: layout.screen,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: colors.glass.fillActive,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.5,
-    shadowRadius: 28,
-    elevation: 6,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  verifiedText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: colors.text.primary,
-    letterSpacing: 1,
-  },
-  cardTopRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  cardEditBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 5,
-    paddingHorizontal: 9,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.glass.fillActive,
-  },
-  cardEditBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  chipContainer: {
-    width: 34,
-    height: 25,
-    borderRadius: 6,
-    backgroundColor: 'rgba(245, 236, 205, 0.2)',
-    borderWidth: 1,
-    borderColor: colors.gold.base,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chipInner: {
-    width: 22,
-    height: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.6)',
-    borderRadius: 3,
-    justifyContent: 'center',
-  },
-  chipLine: {
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.6)',
-    height: 5,
-  },
-  profileRow: {
-    flexDirection: 'row',
-    gap: 16,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  avatarBox: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  avatarText: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: colors.text.primary,
-  },
-  verifiedDot: {
-    position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.status.lived.color,
-    borderWidth: 2.5,
-    borderColor: colors.canvas.base,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileDetails: {
-    flex: 1,
-  },
-  nameTouchable: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  profileName: {
-    fontSize: 28,
-    color: colors.text.primary,
-    letterSpacing: -0.5,
-    fontFamily: fonts.display,
-  },
-  profileHandle: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 5,
-  },
-  locationFlag: {
-    fontSize: 13.5,
-    lineHeight: 16,
-  },
-  locationText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text.soft,
-  },
-  metadataStrip: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-    borderRadius: 16,
-    paddingVertical: 11,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-    marginBottom: 14,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  metaCol: {
-    flex: 1.25,
-    alignItems: 'flex-start',
-  },
-  metaColMiddle: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  metaColEnd: {
-    flex: 0.85,
-    alignItems: 'flex-end',
-  },
-  metaLabel: {
-    fontSize: 8.5,
-    fontWeight: '800',
-    color: colors.text.secondary,
-    letterSpacing: 0.5,
-  },
-  metaValue: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: colors.text.primary,
-    marginTop: 2,
-  },
-  mrzRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: colors.glass.hairline,
-    paddingTop: 12,
-  },
-  mrzCode: {
-    fontSize: 9,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    color: colors.text.secondary,
-    letterSpacing: 1.5,
-    flex: 1,
-    marginRight: 10,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 18,
-  },
-  statTile: {
-    flex: 1,
-    backgroundColor: colors.panel.base,
-    borderRadius: 20,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statTileActiveVisited: {
-    backgroundColor: colors.status.visited.light,
-    borderColor: colors.status.visited.color,
-    borderWidth: 1.5,
-  },
-  statTileActiveLived: {
-    backgroundColor: colors.status.lived.light,
-    borderColor: colors.status.lived.color,
-    borderWidth: 1.5,
-  },
-  statTileActiveWant: {
-    backgroundColor: colors.gold.tint,
-    borderColor: colors.gold.base,
-    borderWidth: 1.5,
-  },
-  statNumber: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: colors.text.primary,
-  },
-  statNumberActive: {
-    color: colors.text.primary,
-  },
-  statLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 3,
-  },
-  statDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.text.secondary,
-  },
-  statLabelActive: {
-    color: colors.text.primary,
-    fontWeight: '800',
-  },
-  countryListCard: {
-    backgroundColor: colors.panel.base,
-    borderRadius: 24,
-    padding: 18,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  listTitle: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.text.secondary,
-    letterSpacing: 0.8,
-  },
-  listActionGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  editPillButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.glass.borderSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-  },
-  editPillButtonActive: {
-    backgroundColor: colors.status.visited.light,
-    borderColor: colors.status.visited.color,
-  },
-  editPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.text.secondary,
-  },
-  editPillTextActive: {
-    color: colors.gold.light,
-    fontWeight: '800',
-  },
-  addPillButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.gold.tint,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.gold.glow,
-  },
-  addPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.gold.base,
-  },
-  countryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.glass.borderSoft,
-  },
-  countryLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-    minWidth: 0,
-    marginRight: 8,
-  },
-  countryFlag: {
-    fontSize: 24,
-  },
-  countryNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-    flexShrink: 1,
-  },
-  countryName: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.text.primary,
-    flexShrink: 1,
-  },
-  yearBadge: {
-    backgroundColor: colors.glass.fillStrong,
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: 6,
-    flexShrink: 0,
-  },
-  countryYear: {
-    fontSize: 10,
-    color: colors.text.secondary,
-    fontWeight: '700',
-  },
-  statusTagPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: 6,
-    backgroundColor: colors.status.visited.light,
-    flexShrink: 0,
-  },
-  statusTagPillVisited: {
-    backgroundColor: colors.status.visited.light,
-  },
-  statusTagPillLived: {
-    backgroundColor: colors.status.lived.light,
-  },
-  statusTagPillWant: {
-    backgroundColor: colors.gold.tint,
-  },
-  statusTagText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: colors.status.visited.bright,
-    letterSpacing: 0.2,
-  },
-  statusTagTextVisited: {
-    color: colors.status.visited.bright,
-  },
-  statusTagTextLived: {
-    color: colors.status.lived.bright,
-  },
-  statusTagTextWant: {
-    color: colors.gold.light,
-  },
-  countryNotes: {
-    fontSize: 11,
-    color: colors.text.muted,
-    marginTop: 2,
-  },
-  countryRightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexShrink: 0,
-  },
-  stampNowBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.gold.tint,
-    paddingVertical: 5,
-    paddingHorizontal: 9,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.gold.glow,
-  },
-  stampNowText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.gold.base,
-  },
-  deleteButton: {
-    padding: 6,
-  },
-  shareButton: {
-    marginTop: 20,
-  },
-  // Account Modal / Bottom Sheet
-  accountSheetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  accountSheetTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.text.primary,
-    letterSpacing: -0.4,
-  },
-  accountSheetSubtitle: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  sheetCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.glass.fillStrong,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  accountModalCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: colors.glass.fill,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-    marginBottom: 16,
-  },
-  accountAvatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: colors.status.visited.light,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.status.visited.color,
-  },
-  accountAvatarText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.gold.light,
-  },
-  accountInfoText: {
-    flex: 1,
-  },
-  accountNameText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.text.primary,
-  },
-  accountHandleText: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  accountDocBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.glass.fillStrong,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginTop: 5,
-  },
-  accountDocText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.text.secondary,
-    letterSpacing: 0.5,
-  },
-  themePickerSection: {
-    backgroundColor: colors.glass.fill,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-    marginBottom: 16,
-  },
-  themePickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
-  },
-  themePickerTitle: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: colors.gold.light,
-    letterSpacing: 0.8,
-  },
-  themePickerRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  appearanceRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  appearanceChip: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 11,
-    borderRadius: 14,
-    backgroundColor: colors.glass.fill,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-  },
-  appearanceChipActive: {
-    backgroundColor: colors.gold.tint,
-    borderColor: colors.gold.border,
-  },
-  appearanceChipText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text.secondary,
-  },
-  appearanceChipTextActive: {
-    color: colors.gold.base,
-  },
-  themeChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  themeChipActive: {
-    borderColor: colors.gold.base,
-  },
-  themeChipText: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  accountActionsList: {
-    backgroundColor: colors.glass.fill,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  accountListItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.glass.borderSoft,
-  },
-  accountListItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  accountActionIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.glass.fillStrong,
-  },
-  accountListItemLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  dangerZoneBox: {
-    backgroundColor: colors.dangerTint,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.dangerBorder,
-    gap: 10,
-  },
-  dangerZoneHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dangerZoneTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.danger,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  dangerZoneDesc: {
-    fontSize: 12,
-    color: colors.danger,
-    lineHeight: 17,
-    fontWeight: '500',
-  },
-  modalDeleteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.dangerTint,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: 14,
-    paddingVertical: 11,
-    marginTop: 2,
-  },
-  modalDeleteBtnText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.danger,
-  },
-}));
 
 export default React.memo(PassportScreen);

@@ -145,7 +145,7 @@ export default function CountryBrowser({ countries, currentLang, onSelectCountry
     <View>
       <View style={styles.searchBox}>
         <Search size={17} color={colors.text.muted} />
-        <TextInput
+        <TextInput accessibilityLabel={pt('searchCountries', currentLang)}
           style={styles.searchInput}
           placeholder={pt('searchCountries', currentLang)}
           placeholderTextColor={colors.text.muted}
