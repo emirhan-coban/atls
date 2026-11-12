@@ -39,6 +39,7 @@ import { warmMapShapes } from './src/utils/mapShapes';
 import { refreshMemoryReminders } from './src/services/memoryReminders';
 import { clearVault } from './src/utils/vault';
 import { initCrashReporting } from './src/services/crashReporting';
+import { startWidgetSync } from './src/services/widgetSync';
 
 initCrashReporting();
 
@@ -88,7 +89,8 @@ function AppContent() {
   const [countryToEdit, setCountryToEdit] = useState<Country | null>(null);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false);
   const [isJourneyOpen, setIsJourneyOpen] = useState<boolean>(false);
-  const [isPlannerOpen, setIsPlannerOpen] = useState<boolean>(false);
+  const isPlannerOpen = useAppStore((s) => s.isPlannerOpen);
+  const setIsPlannerOpen = useAppStore((s) => s.setPlannerOpen);
   const [isStoryOpen, setIsStoryOpen] = useState<boolean>(false);
   const isCompareOpen = useCompareStore((s) => s.isOpen);
   const isGameOpen = useGameStore((s) => s.isOpen);
@@ -259,7 +261,7 @@ function AppContent() {
 
   // Stable callbacks: the three screens are memoised, and inline arrows would re-render all of them on every tab change
   const openJourney = useCallback(() => setIsJourneyOpen(true), []);
-  const openPlanner = useCallback(() => setIsPlannerOpen(true), []);
+  const openPlanner = useCallback(() => setIsPlannerOpen(true), [setIsPlannerOpen]);
   const openGame = useCallback(() => setGameOpen(true), [setGameOpen]);
   const closeAccountModal = useCallback(() => setIsAccountModalOpen(false), []);
 
@@ -273,6 +275,9 @@ function AppContent() {
     const t = setTimeout(() => SplashScreen.hide(), 8000);
     return () => clearTimeout(t);
   }, []);
+  // Keeps the home and lock screen widgets in step with the stores once everything is loaded
+  useEffect(() => (appReady ? startWidgetSync() : undefined), [appReady]);
+
   if (!appReady) return null;
 
   // 1. If user hasn't completed onboarding, show onboarding
