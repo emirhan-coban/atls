@@ -206,3 +206,17 @@ Etiketler: **[doğrulandı]** komutla veya EAS/App Store Connect çıktısıyla 
 
 ### 13 Kasım: widget'lar
 Üç widget (Pasaport, Gizli Ülke + kilit ekranı, Sonraki gezi) kodlandı; ayrıntı ve sapmalar `WIDGET_PLAN.md` §10'da. Sürüm 1.3.0'da kaldı (henüz yayınlanmadı). Cihazda denenmedi: yeni derleme ve TestFlight gerekir.
+
+
+### 13 Kasım (ikinci gün): borç turu
+| Madde | Durum |
+|---|---|
+| Çeviri taşıma | ~245 satır içi `lang === 'tr'` koşulu ekran başına kataloglara taşındı (`localization/screens/`); anahtar başına TR/EN ve placeholder uyumu testli. ~50 koşul (iç içe, sabit olmayan) hâlâ satır içi. |
+| Büyük ekranlar | Onboarding 1282→36, Auth 918→251, Passport 902→112, Home 671→182 satır (ana dosya). Durum ve işleyiciler `use*` kancalarında, görünümler bölüm bileşenlerinde. |
+| Bileşen testleri | `CompareModal`, `DailyGameModal`, geri yükleme akışı eklendi (toplam 272 test). |
+| Erişilebilirlik 3. tur | Palette WCAG AA testi; `text.faint`, açık tema `onGold`/`danger` AA'ya çekildi; `Button` sabit yükseklik yerine `minHeight` (büyük yazı boyutunda kırpılmaz). Dynamic Type'ı genel olarak sınırlamadım. |
+| Gizli Ülke 2. mod | Plan: `GAME_MODES_PLAN.md` (bayrak + siluet; veri ölçüldü: 193 oynanabilir, 151'i siluet için yeterince büyük). Tasarım onayı bekliyor. |
+
+
+### 13 Kasım: Gizli Ülke modları
+Bayrak ve Siluet bonus modları kodlandı (`GAME_MODES_PLAN.md` §10). Çekirdek (`game/modes.ts`) 17, depo 4, bileşen 6 yeni test. Kademeli açılış: mod seçici ilk Klasik bulmacadan sonra görünür. JS-only değişiklik: yeni native modül yok. Cihazda denenmedi; siluetlerin tanınırlığı ve ilk açılışın anlaşılırlığı TestFlight'ta bakılacak.

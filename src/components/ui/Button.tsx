@@ -89,9 +89,9 @@ const useStyles = makeStyles((colors) =>
       borderWidth: 1,
       borderColor: 'transparent',
     },
-    sm: { height: 36, paddingHorizontal: 14, borderRadius: 18 },
-    md: { height: 44, paddingHorizontal: 18, borderRadius: 22 },
-    lg: { height: 54, paddingHorizontal: 22, borderRadius: 24 },
+    sm: { minHeight: 36, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 18 },
+    md: { minHeight: 44, paddingVertical: 6, paddingHorizontal: 18, borderRadius: 22 },
+    lg: { minHeight: 54, paddingVertical: 6, paddingHorizontal: 22, borderRadius: 24 },
     primary: {
       backgroundColor: colors.gold.base,
       shadowColor: colors.gold.base,

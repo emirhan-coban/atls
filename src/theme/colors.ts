@@ -46,8 +46,8 @@ export const darkColors = {
     primary: '#FFFFFF',
     soft: '#E2E8F0',
     secondary: '#94A3B8',
-    muted: '#7D8BA1',
-    faint: '#5E6E85',
+    muted: '#8794AA',
+    faint: '#7A889E',     // placeholders and hints: kept at WCAG AA (4.5:1) on every dark surface
   },
 
   // Dark translucent panels that sit above content without blur
@@ -193,7 +193,7 @@ export const lightColors: ColorsType = {
     glow: 'rgba(183, 121, 31, 0.22)',
     tint: 'rgba(183, 121, 31, 0.12)',
     border: 'rgba(183, 121, 31, 0.40)',
-    onGold: '#FFFFFF',
+    onGold: '#14181F',   // dark ink on amber: white on this gold is only 3.6:1
   },
 
   text: {
@@ -201,7 +201,7 @@ export const lightColors: ColorsType = {
     soft: '#2A3140',
     secondary: '#454D5E',
     muted: '#5A6275',
-    faint: '#7A8292',
+    faint: '#656D7F',     // AA (4.5:1) on every light surface
   },
 
   panel: {
@@ -230,7 +230,7 @@ export const lightColors: ColorsType = {
     },
   },
 
-  danger: '#DC2626',
+  danger: '#C81E1E',   // AA on the paper canvas (#DC2626 was 4.3:1)
   dangerDeep: '#B91C1C',
   dangerTint: 'rgba(220, 38, 38, 0.10)',
   dangerBorder: 'rgba(220, 38, 38, 0.30)',
