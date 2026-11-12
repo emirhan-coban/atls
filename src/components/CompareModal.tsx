@@ -12,8 +12,9 @@ import AnimatedCounter from './AnimatedCounter';
 import { availableCatalog } from '../data/travelData';
 import { Country, Profile } from '../stores/types';
 import { useCompareStore } from '../stores/useCompareStore';
-import { buildCompareLink, compareVisited, decodeVisited, parseInvite } from '../utils/compareCode';
+import { buildCompareLink, compareVisited, decodeVisited, inviteProblem, parseInvite } from '../utils/compareCode';
 
+import { ct } from '../localization/compare';
 interface CompareModalProps {
   visible: boolean;
   onClose: () => void;
@@ -28,11 +29,10 @@ const flagsOf = (ids: string[]) => ids.map((id) => availableCatalog.find((c) => 
 export default function CompareModal({ visible, onClose, countries, profile, currentLang }: CompareModalProps) {
   const { colors } = useTheme();
   const styles = useStyles();
-  const tr = currentLang === 'tr';
   const invite = useCompareStore((s) => s.invite);
   const setInvite = useCompareStore((s) => s.setInvite);
   const [pasted, setPasted] = useState('');
-  const [invalid, setInvalid] = useState(false);
+  const [problem, setProblem] = useState<'invalid' | 'newer' | null>(null);
   const [copied, setCopied] = useState(false);
 
   const mine = useMemo(
@@ -46,9 +46,7 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
 
   const inviteMessage = () => {
     const link = buildCompareLink(mine, profile.name || '');
-    const intro = tr
-      ? `Pasaportlarımızı çarpıştıralım! Bağlantıya dokun (atls. yüklü değilse App Store'a götürür):`
-      : `Let's clash our passports! Tap the link (it takes you to the App Store if you don't have atls.):`;
+    const intro = ct('intro', currentLang);
     return `${intro}\n${link}`;
   };
 
@@ -66,7 +64,7 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
 
   const compare = () => {
     const parsed = parseInvite(pasted);
-    setInvalid(!parsed);
+    setProblem(parsed ? null : inviteProblem(pasted));
     if (parsed) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setInvite(parsed);
@@ -74,13 +72,13 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
     }
   };
 
-  const who = invite?.name || (tr ? 'Arkadaşın' : 'Your friend');
+  const who = invite?.name || ct('friend', currentLang);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.screen} edges={['bottom']}>
         <View style={styles.header}>
-          <Heading style={styles.title}>{tr ? 'Pasaport çarpıştır' : 'Passport clash'}</Heading>
+          <Heading style={styles.title}>{ct('title', currentLang)}</Heading>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close">
             <X size={18} color={colors.text.muted} />
           </TouchableOpacity>
@@ -92,73 +90,71 @@ export default function CompareModal({ visible, onClose, countries, profile, cur
               <View style={styles.hero}>
                 <AnimatedCounter
                   value={result.overlap}
-                  formatter={(v) => (tr ? `%${Math.round(v)}` : `${Math.round(v)}%`)}
+                  formatter={(v) => (currentLang === 'tr' ? `%${Math.round(v)}` : `${Math.round(v)}%`)}
                   style={styles.overlap}
                 />
                 <Text style={styles.heroSub}>
-                  {tr ? `${who} ile pasaport uyumu` : `Passport match with ${who}`}
+                  {ct('match', currentLang, { who })}
                 </Text>
               </View>
 
               <Section
                 styles={styles}
-                title={tr ? `İkiniz de gittiniz · ${result.both.length}` : `You both went · ${result.both.length}`}
+                title={ct('both', currentLang, { n: result.both.length })}
                 flags={flagsOf(result.both)}
-                empty={tr ? 'Henüz ortak ülke yok.' : 'No shared countries yet.'}
+                empty={ct('both_empty', currentLang)}
               />
               <Section
                 styles={styles}
-                title={tr ? `Sadece sen · ${result.onlyMine.length}` : `Only you · ${result.onlyMine.length}`}
+                title={ct('only_me', currentLang, { n: result.onlyMine.length })}
                 flags={flagsOf(result.onlyMine)}
                 empty="—"
               />
               <Section
                 styles={styles}
-                title={tr ? `Sadece ${who} · ${result.onlyTheirs.length}` : `Only ${who} · ${result.onlyTheirs.length}`}
+                title={ct('only_them', currentLang, { who, n: result.onlyTheirs.length })}
                 flags={flagsOf(result.onlyTheirs)}
                 empty="—"
               />
-              <Button label={tr ? 'Başka biriyle karşılaştır' : 'Compare with someone else'} variant="secondary" onPress={() => setInvite(null)} />
+              <Button label={ct('again', currentLang)} variant="secondary" onPress={() => setInvite(null)} />
             </>
           ) : (
             <>
               <Text style={styles.lead}>
-                {tr
-                  ? 'Pasaportunu bir arkadaşına gönder; ikinizin ortak ve farklı ülkelerini yan yana gör. Sadece ziyaret ettiğin ülkelerin listesi paylaşılır.'
-                  : "Send your passport to a friend and see the countries you share and the ones you don't. Only your visited-country list is shared."}
+                {ct('lead', currentLang)}
               </Text>
               <Button
-                label={tr ? 'Pasaportumu gönder' : 'Send my passport'}
+                label={ct('send', currentLang)}
                 onPress={send}
                 icon={(color) => <Share2 size={16} color={color} />}
               />
               <Button
-                label={copied ? (tr ? 'Kopyalandı' : 'Copied') : tr ? 'Mesajı kopyala' : 'Copy message'}
+                label={copied ? ct('copied', currentLang) : ct('copy', currentLang)}
                 variant="secondary"
                 onPress={copy}
                 icon={(color) => (copied ? <Check size={16} color={color} /> : <Copy size={16} color={color} />)}
               />
 
-              <Text style={styles.sectionTitle}>{tr ? 'ARKADAŞINDAN GELDİ Mİ?' : 'GOT ONE FROM A FRIEND?'}</Text>
-              <TextInput
+              <Text style={styles.sectionTitle}>{ct('from_friend', currentLang)}</Text>
+              <TextInput accessibilityLabel={ct('paste', currentLang)}
                 value={pasted}
                 onChangeText={(v) => {
                   setPasted(v);
-                  setInvalid(false);
+                  setProblem(null);
                 }}
-                placeholder={tr ? 'Mesajı, bağlantıyı ya da kodu buraya yapıştır' : 'Paste the message, link or code here'}
+                placeholder={ct('paste', currentLang)}
                 placeholderTextColor={colors.text.faint}
-                style={[styles.input, invalid && { borderColor: colors.danger }]}
+                style={[styles.input, problem && { borderColor: colors.danger }]}
                 multiline
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              {invalid && (
+              {problem && (
                 <Text style={styles.error}>
-                  {tr ? 'Bu bir atls. pasaport kodu gibi görünmüyor.' : "That doesn't look like an atls. passport code."}
+                  {problem === 'newer' ? ct('newer', currentLang) : ct('invalid', currentLang)}
                 </Text>
               )}
-              <Button label={tr ? 'Karşılaştır' : 'Compare'} variant="secondary" onPress={compare} disabled={!pasted.trim()} />
+              <Button label={ct('compare', currentLang)} variant="secondary" onPress={compare} disabled={!pasted.trim()} />
             </>
           )}
         </ScrollView>

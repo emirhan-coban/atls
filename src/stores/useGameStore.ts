@@ -6,6 +6,7 @@ import {
   EMPTY_STATS,
   GameStats,
   applyGuess,
+  normalizeStats,
   dailyCountryId,
   dayKeyOf,
   recordResult,
@@ -46,7 +47,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     try {
       const raw = await AsyncStorage.getItem(KEY);
       const saved = raw ? (JSON.parse(raw) as Partial<Persisted>) : {};
-      set({ days: saved.days ?? {}, stats: { ...EMPTY_STATS, ...saved.stats }, reminder: Boolean(saved.reminder), hydrated: true });
+      set({ days: saved.days ?? {}, stats: normalizeStats(saved.stats), reminder: Boolean(saved.reminder), hydrated: true });
     } catch {
       set({ hydrated: true });
     }
@@ -69,7 +70,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const after = applyGuess(before, guessId, dailyCountryId(today));
     if (after === before) return after;
 
-    const nextStats = after.done && !before?.done ? recordResult(stats, today, after.won) : stats;
+    const nextStats = after.done && !before?.done ? recordResult(stats, today, after.won, after.guesses.length) : stats;
     const kept = Object.keys(days)
       .sort()
       .slice(-KEEP_DAYS + 1);

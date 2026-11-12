@@ -26,9 +26,17 @@ export interface GameStats {
   streak: number;
   best: number;
   lastWonDay: string | null;
+  /** Wins by number of guesses used: index 0 is "solved with 1 guess". Wins before this was tracked are not in here. */
+  dist: number[];
 }
 
-export const EMPTY_STATS: GameStats = { played: 0, won: 0, streak: 0, best: 0, lastWonDay: null };
+export const EMPTY_STATS: GameStats = { played: 0, won: 0, streak: 0, best: 0, lastWonDay: null, dist: [0, 0, 0, 0, 0, 0] };
+
+/** Stats saved by older builds have no distribution; pad or default so the UI can always index it. */
+export function normalizeStats(saved?: Partial<GameStats>): GameStats {
+  const dist = Array.from({ length: MAX_GUESSES }, (_, i) => Math.max(0, Number(saved?.dist?.[i]) || 0));
+  return { ...EMPTY_STATS, ...saved, dist };
+}
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -69,8 +77,41 @@ export function playablePool(): CatalogCountry[] {
     .sort((a, b) => a.id.localeCompare(b.id));
 }
 
+/**
+ * From this day on the pick walks a shuffled copy of the pool, so every country comes up once per cycle
+ * and no country repeats back to back. Earlier days keep the original hash, so past results stay valid.
+ */
+const ROTATION_START = '2026-11-20';
+
+/** Deterministic shuffle (Fisher-Yates over an xorshift stream seeded by the cycle). */
+function shuffled(ids: string[], seed: number): string[] {
+  const out = [...ids];
+  let x = hash(`atls-cycle-${seed}`) || 1;
+  for (let i = out.length - 1; i > 0; i--) {
+    x ^= x << 13; x >>>= 0;
+    x ^= x >>> 17;
+    x ^= x << 5; x >>>= 0;
+    const j = x % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Order of one cycle; the first country never equals the last one of the cycle before. */
+function cycleOrder(ids: string[], cycle: number): string[] {
+  const order = shuffled(ids, cycle);
+  if (cycle > 0 && ids.length > 1) {
+    const previousLast = shuffled(ids, cycle - 1)[ids.length - 1];
+    if (order[0] === previousLast) [order[0], order[1]] = [order[1], order[0]];
+  }
+  return order;
+}
+
 export function dailyCountryId(key: string, pool: CatalogCountry[] = playablePool()): string {
-  return pool[hash(`atls-secret-${key}`) % pool.length].id;
+  if (key < ROTATION_START || !pool.length) return pool[hash(`atls-secret-${key}`) % pool.length].id;
+  const n = dayNumberOf(key) - dayNumberOf(ROTATION_START);
+  const ids = pool.map((c) => c.id);
+  return cycleOrder(ids, Math.floor(n / ids.length))[n % ids.length];
 }
 
 export function feedbackFor(guessId: string, secretId: string, catalog: CatalogCountry[] = availableCatalog): GuessFeedback {
@@ -169,9 +210,10 @@ export function applyGuess(record: DayRecord | undefined, guessId: string, secre
 }
 
 /** Streak survives a missed day only if yesterday was won; finishing the same day twice changes nothing. */
-export function recordResult(stats: GameStats, dayKey: string, won: boolean): GameStats {
-  const next: GameStats = { ...stats, played: stats.played + 1 };
+export function recordResult(stats: GameStats, dayKey: string, won: boolean, guessCount = 0): GameStats {
+  const next: GameStats = { ...stats, dist: [...normalizeStats(stats).dist], played: stats.played + 1 };
   if (won) {
+    if (guessCount >= 1 && guessCount <= MAX_GUESSES) next.dist[guessCount - 1] += 1;
     const continues = stats.lastWonDay === previousDayKey(dayKey);
     next.won = stats.won + 1;
     next.streak = continues ? stats.streak + 1 : 1;

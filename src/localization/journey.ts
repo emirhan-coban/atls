@@ -73,6 +73,17 @@ const strings = {
   shareFailed: { tr: 'Paylaşım şu an kullanılamıyor.', en: 'Sharing is not available right now.' },
   exportData: { tr: 'Verilerimi dışa aktar', en: 'Export my data' },
   exportChoose: { tr: 'Hangi biçimde?', en: 'Which format?' },
+  importData: { tr: 'Yedekten geri yükle', en: 'Restore from backup' },
+  importConfirmTitle: { tr: 'Yedekten geri yükle', en: 'Restore from backup' },
+  importConfirmMsg: {
+    tr: 'Daha önce dışa aktardığın bir atls. JSON dosyasını seç. Yalnızca bu telefonda olmayan ülkeler ve geziler eklenir; mevcut verilerin değişmez. Fotoğraflar yedeğe dahil değildir.',
+    en: 'Pick an atls. JSON file you exported earlier. Only countries and trips missing on this phone are added; your current data stays as it is. Photos are not part of the backup.',
+  },
+  importChoose: { tr: 'Dosya seç', en: 'Choose file' },
+  importDone: { tr: '{countries} ülke ve {trips} gezi eklendi.', en: 'Added {countries} countries and {trips} trips.' },
+  importNothing: { tr: 'Eklenecek yeni bir şey yok, her şey zaten bu telefonda.', en: 'Nothing new to add, everything is already on this phone.' },
+  importInvalid: { tr: 'Bu dosya bir atls. yedeği gibi görünmüyor.', en: "This file doesn't look like an atls. backup." },
+  importFailed: { tr: 'Geri yükleme başarısız oldu.', en: 'Restore failed.' },
   exportFailed: { tr: 'Dışa aktarma başarısız oldu.', en: 'Export failed.' },
 } as const;
 

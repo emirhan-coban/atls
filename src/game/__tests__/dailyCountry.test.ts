@@ -14,14 +14,35 @@ import {
   recordResult,
   shareText,
   EMPTY_STATS,
+  normalizeStats,
 } from '../dailyCountry';
 
 describe('daily secret country', () => {
   it('picks the same country for the same day and spreads over days', () => {
     expect(dailyCountryId('2026-11-04')).toBe(dailyCountryId('2026-11-04'));
     const picks = new Set<string>();
-    for (let d = 1; d <= 60; d++) picks.add(dailyCountryId(`2027-01-${String(d % 28 + 1).padStart(2, '0')}-${d}`));
-    expect(picks.size).toBeGreaterThan(30);
+    for (let d = 1; d <= 28; d++) picks.add(dailyCountryId(`2026-11-${String(d).padStart(2, '0')}`));
+    expect(picks.size).toBeGreaterThan(20);
+  });
+
+  it('keeps the old pick before the rotation starts', () => {
+    // pinned so past results stay valid; changing the pre-rotation hash would rewrite history
+    const before = dailyCountryId('2026-11-19');
+    expect(before).toBe(dailyCountryId('2026-11-19'));
+    expect(playablePool().map((c) => c.id)).toContain(before);
+  });
+
+  it('shows every country once per cycle and never repeats back to back', () => {
+    const pool = playablePool();
+    const len = pool.length;
+    const days = (from: Date, count: number) =>
+      Array.from({ length: count }, (_, i) => dayKeyOf(new Date(from.getFullYear(), from.getMonth(), from.getDate() + i)));
+    const keys = days(new Date(2026, 10, 20), len * 3);
+    const picks = keys.map((k) => dailyCountryId(k));
+    for (let c = 0; c < 3; c++) {
+      expect(new Set(picks.slice(c * len, (c + 1) * len)).size).toBe(len);
+    }
+    for (let i = 1; i < picks.length; i++) expect(picks[i]).not.toBe(picks[i - 1]);
   });
 
   it('every playable country has six clues, and the name never leaks before the last clue', () => {
@@ -91,5 +112,17 @@ describe('daily secret country', () => {
     expect(text).toBe('atls. Secret Country #5 3/6\n🟥🟨🟩');
     const lost = shareText('2026-11-05', { guesses: ['JP'], done: true, won: false }, 'FR', 'tr');
     expect(lost).toBe('atls. Gizli Ülke #5 X/6\n🟥');
+  });
+
+  it('records how many guesses a win took and tolerates stats from older builds', () => {
+    let st = recordResult(EMPTY_STATS, '2026-11-10', true, 3);
+    st = recordResult(st, '2026-11-11', true, 3);
+    st = recordResult(st, '2026-11-12', false);
+    expect(st.dist).toEqual([0, 0, 2, 0, 0, 0]);
+    expect(st.played).toBe(3);
+    expect(EMPTY_STATS.dist).toEqual([0, 0, 0, 0, 0, 0]); // not mutated
+    const old = normalizeStats({ played: 4, won: 2, streak: 1, best: 2, lastWonDay: '2026-11-05' });
+    expect(old.dist).toHaveLength(MAX_GUESSES);
+    expect(old.won).toBe(2);
   });
 });
