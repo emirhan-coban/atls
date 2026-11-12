@@ -3,6 +3,7 @@ import {
   MAX_GUESSES,
   applyGuess,
   buildClues,
+  maskName,
   dailyCountryId,
   dayKeyOf,
   feedbackFor,
@@ -54,10 +55,17 @@ describe('daily secret country', () => {
           expect(clue.text.length).toBeGreaterThan(0);
           expect(clue.text).not.toContain(c.name);
           expect(clue.text).not.toContain(c.nameTr);
+          expect(clue.text).not.toContain('▒');
           expect(Boolean(clue.flag)).toBe(i === MAX_GUESSES - 1);
         });
       }
     }
+  });
+
+  it('masks whole words that contain the name', () => {
+    const cz = { name: 'Czechia', nameTr: 'Çek' } as Parameters<typeof maskName>[1];
+    expect(maskName('Çekçe · trafik sağdan', cz)).toBe('••• · trafik sağdan');
+    expect(maskName('Czechia koruna', cz)).toBe('••• koruna');
   });
 
   it('day keys and puzzle numbers', () => {

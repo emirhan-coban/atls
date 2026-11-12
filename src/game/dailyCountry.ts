@@ -129,11 +129,13 @@ export interface Clue {
   flag?: string;
 }
 
-/** Hide the country's own name when a clue happens to contain it. */
+/** Hide the country's own name when a clue happens to contain it. Whole words are masked, so "Çekçe" does not leave "ce" behind. */
 export function maskName(text: string, country: CatalogCountry): string {
   let out = text;
   for (const name of [country.name, country.nameTr]) {
-    if (name) out = out.split(name).join('▒▒▒');
+    if (!name) continue;
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(`[\\p{L}]*${escaped}[\\p{L}]*`, 'giu'), '•••');
   }
   return out;
 }

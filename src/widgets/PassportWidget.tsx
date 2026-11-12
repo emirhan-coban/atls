@@ -67,8 +67,8 @@ const PassportWidget = (props: PassportProps, environment: WidgetEnvironment) =>
       <Text
         key={key}
         modifiers={[
-          font({ size: 27 }),
-          frame({ width: 52, height: 46 }),
+          font({ size: 23 }),
+          frame({ width: 48, height: 34 }),
           background(tile, shapes.roundedRectangle({ cornerRadius: 12 })),
         ]}
       >
@@ -77,7 +77,7 @@ const PassportWidget = (props: PassportProps, environment: WidgetEnvironment) =>
     );
     const flags = props.flags;
     return (
-      <HStack spacing={18} modifiers={root}>
+      <HStack spacing={16} modifiers={[...root, padding({ vertical: 4 })]}>
         <VStack alignment="leading" spacing={0} modifiers={[frame({ width: 132 })]}>
           {brand}
           <Spacer />
@@ -85,11 +85,11 @@ const PassportWidget = (props: PassportProps, environment: WidgetEnvironment) =>
           <Spacer minLength={6} />
           {progress}
         </VStack>
-        <VStack alignment="leading" spacing={8}>
+        <VStack alignment="leading" spacing={6}>
           <Text modifiers={[font({ size: 9, weight: 'bold' }), kerning(1.2), foregroundStyle(gold)]}>{props.recentLabel}</Text>
           <HStack spacing={6}>{flags.slice(0, 3).map((f, i) => flagCell(f, `a${i}`))}</HStack>
           <HStack spacing={6}>{flags.slice(3, 6).map((f, i) => flagCell(f, `b${i}`))}</HStack>
-          <Spacer />
+          <Spacer minLength={4} />
           <Text modifiers={[font({ size: 12, weight: 'semibold' }), foregroundStyle(muted), lineLimit(1), padding({ top: 0 })]}>
             {props.metaLine}
           </Text>
