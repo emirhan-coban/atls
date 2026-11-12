@@ -32,6 +32,5 @@ ios/build/
 /store
 /public_docs
 /scripts/user-site
-/web_prototype
 *.md
 !README.md

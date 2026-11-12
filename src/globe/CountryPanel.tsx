@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, FlatList, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -16,6 +16,7 @@ import { getHighlights } from './highlights';
 import { useRarityMap } from '../services/rarityService';
 import { formatPercent, rarityOf, type RarityTier } from '../utils/rarity';
 
+import { Image } from 'expo-image';
 type Lang = 'tr' | 'en';
 
 const TIER_TEXT: Record<RarityTier, { en: string; tr: string; emoji: string }> = {
@@ -229,8 +230,8 @@ function HighlightsBlock({ iso, name, lang }: { iso: string; name: string; lang:
         decelerationRate="fast"
         onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / CARD_W))}
         renderItem={({ item }) => (
-          <Pressable onPress={() => setViewer(page)} style={styles.card}>
-            <Image source={{ uri: item.url }} style={styles.cardImg} resizeMode="cover" />
+          <Pressable accessibilityRole="button" accessibilityLabel={lang === 'tr' ? 'Fotoğrafı büyüt' : 'Enlarge photo'} onPress={() => setViewer(page)} style={styles.card}>
+            <Image source={{ uri: item.url }} style={styles.cardImg} contentFit="cover" cachePolicy="disk" transition={150} />
           </Pressable>
         )}
       />
@@ -245,6 +246,7 @@ function HighlightsBlock({ iso, name, lang }: { iso: string; name: string; lang:
         <HighlightRow key={p.title} index={i} active={i === Math.min(page, h.places.length - 1)} title={p.title} city={p.city} />
       ))}
       <Viewer
+        lang={lang}
         visible={viewer !== null}
         photo={h.photos[viewer ?? 0]}
         place={h.places[Math.min(viewer ?? 0, Math.max(h.places.length - 1, 0))]}
@@ -270,7 +272,9 @@ function HighlightRow({ index, active, title, city }: { index: number; active: b
   );
 }
 
-function Viewer({ visible, photo, place, country, onClose }: { visible: boolean; photo?: { url: string; credit?: string }; place?: { title: string; city: string; blurb: string }; country: string; onClose: () => void }) {
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+
+function Viewer({ visible, photo, place, country, lang, onClose }: { lang: Lang; visible: boolean; photo?: { url: string; credit?: string }; place?: { title: string; city: string; blurb: string }; country: string; onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const zoom = useSharedValue(1.15);
   const fade = useSharedValue(0);
@@ -290,9 +294,9 @@ function Viewer({ visible, photo, place, country, onClose }: { visible: boolean;
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={close}>
       <View style={styles.viewer}>
-        {photo ? <Animated.Image source={{ uri: photo.url }} style={[StyleSheet.absoluteFill, img]} resizeMode="cover" /> : null}
+        {photo ? <AnimatedImage source={{ uri: photo.url }} style={[StyleSheet.absoluteFill, img]} contentFit="cover" cachePolicy="disk" /> : null}
         <View style={[StyleSheet.absoluteFill, styles.viewerShade]} />
-        <TouchableOpacity style={[styles.viewerClose, { top: insets.top + 12 }]} onPress={close} hitSlop={12}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={lang === 'tr' ? 'Kapat' : 'Close'} style={[styles.viewerClose, { top: insets.top + 12 }]} onPress={close} hitSlop={12}>
           <X size={20} color="#fff" />
         </TouchableOpacity>
         <View style={[styles.viewerText, { paddingBottom: insets.bottom + 36 }]}>

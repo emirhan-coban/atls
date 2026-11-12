@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Dimensions, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Search } from 'lucide-react-native';
@@ -20,6 +20,7 @@ import { isGoodIn, monthPicks } from '../utils/discover';
 import { Country } from '../stores/types';
 import { CONTINENT_FILTERS, ContinentFilter, inContinent } from '../data/continents';
 
+import { Image } from 'expo-image';
 const ALL_DESTINATIONS = [...CURATED_DESTINATIONS, ...MORE_DESTINATIONS];
 const BY_ID = new Map(ALL_DESTINATIONS.map((d) => [d.id, d]));
 const PAGE = 8;
@@ -111,7 +112,7 @@ export default function RoutesExplorer({ countries, currentLang, onAddToWishlist
             return (
               <TouchableOpacity key={p.id} style={styles.pick} activeOpacity={0.85} onPress={() => openCountry(p.id)} accessibilityRole="button" accessibilityLabel={getLocalizedCountryName(entry, currentLang)}>
                 {photo ? (
-                  <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="disk" transition={150} />
                 ) : (
                   <LinearGradient colors={FALLBACK_GRADIENT} style={[StyleSheet.absoluteFill, styles.center]}>
                     <Text style={styles.pickFlagBg}>{entry.flag}</Text>
@@ -135,7 +136,7 @@ export default function RoutesExplorer({ countries, currentLang, onAddToWishlist
 
       <View style={styles.searchBox}>
         <Search size={17} color={colors.text.muted} />
-        <TextInput
+        <TextInput accessibilityLabel={rt('search', currentLang)}
           style={styles.searchInput}
           placeholder={rt('search', currentLang)}
           placeholderTextColor={colors.text.muted}
@@ -170,7 +171,7 @@ export default function RoutesExplorer({ countries, currentLang, onAddToWishlist
             return (
               <TouchableOpacity key={d.id} style={styles.card} activeOpacity={0.88} onPress={() => openCountry(d.id)} accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? d.nameTr : d.name}>
                 {photo ? (
-                  <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="disk" transition={150} />
                 ) : (
                   <LinearGradient colors={FALLBACK_GRADIENT} style={[StyleSheet.absoluteFill, styles.center]}>
                     <Text style={styles.cardFlagBg}>{d.flag}</Text>

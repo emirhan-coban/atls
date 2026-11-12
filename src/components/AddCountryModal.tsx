@@ -187,7 +187,7 @@ export default function AddCountryModal({
               </Text>
             </View>
 
-            <TouchableOpacity onPress={handleCloseModal} style={styles.closeButton}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'} onPress={handleCloseModal} style={styles.closeButton}>
               <X size={16} color={colors.text.faint} />
             </TouchableOpacity>
           </View>
@@ -198,7 +198,7 @@ export default function AddCountryModal({
               {/* Search Box */}
               <View style={styles.searchBox}>
                 <Search size={16} color={colors.text.secondary} />
-                <TextInput
+                <TextInput accessibilityLabel={t.searchPlaceholder}
                   value={searchTerm}
                   onChangeText={setSearchTerm}
                   placeholder={t.searchPlaceholder}
@@ -206,7 +206,7 @@ export default function AddCountryModal({
                   style={styles.searchInput}
                 />
                 {Boolean(searchTerm) && (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Aramayı temizle' : 'Clear search'}
                     onPress={() => setSearchTerm('')}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
@@ -432,7 +432,7 @@ export default function AddCountryModal({
               )}
 
               {/* Note input */}
-              <TextInput
+              <TextInput accessibilityLabel={t.notesPlaceholder}
                 value={notes}
                 onChangeText={setNotes}
                 placeholder={t.notesPlaceholder}

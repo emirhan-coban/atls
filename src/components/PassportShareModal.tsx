@@ -158,14 +158,14 @@ export default function PassportShareModal({
                   : 'Share your card as a high-resolution 4:3 photo'}
               </Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'} onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
               <X size={18} color={colors.text.muted} />
             </TouchableOpacity>
           </View>
 
           {/* Format Toggle: 4:3 Card vs 9:16 Story */}
           <View style={styles.formatToggleContainer}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityState={{ selected: shareFormat === 'card' }}
               style={[styles.formatToggleBtn, shareFormat === 'card' && styles.formatToggleBtnActive]}
               onPress={() => {
                 Haptics.selectionAsync();
@@ -178,7 +178,7 @@ export default function PassportShareModal({
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityState={{ selected: shareFormat === 'story' }}
               style={[styles.formatToggleBtn, shareFormat === 'story' && styles.formatToggleBtnActive]}
               onPress={() => {
                 Haptics.selectionAsync();

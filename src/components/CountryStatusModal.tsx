@@ -179,7 +179,7 @@ export default function CountryStatusModal({
               </View>
             </View>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'}
               onPress={onClose}
               activeOpacity={0.7}
               style={styles.closeBtn}
@@ -330,7 +330,11 @@ export default function CountryStatusModal({
                   {currentLang === 'tr' ? 'SEYAHAT ANISI / NOTUN' : 'TRAVEL MEMORY / NOTES'}
                 </Text>
               </View>
-              <TextInput
+              <TextInput accessibilityLabel={
+                  selectedStatus === 'want'
+                    ? (currentLang === 'tr' ? 'Örn: Kuzey ışıklarını izlemek istiyorum...' : 'e.g. Want to see the Northern Lights...')
+                    : (currentLang === 'tr' ? 'Örn: İlk kez Tokyo sokaklarında yürüdüm...' : 'e.g. First time walking Tokyo streets...')
+                }
                 value={notes}
                 onChangeText={setNotes}
                 placeholder={

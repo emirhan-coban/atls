@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**atls.** — a React Native / Expo iOS app ("World Passport"): users mark countries as visited/lived/wishlist and see a passport-style profile, world map, and stats. Dark-theme, glassmorphism + gold-accent design. Turkish is the primary dev language in comments/docs/commits; UI supports TR/EN via inline `lang === 'tr' ?` checks (not i18n keys) plus `src/localization/translations.js`.
+**atls.** — a React Native / Expo iOS app ("World Passport"): users mark countries as visited/lived/wishlist and see a passport-style profile, world map, and stats. Dark-theme, glassmorphism + gold-accent design. Turkish is the primary dev language in comments/docs/commits; UI supports TR/EN. Older screens still use inline `lang === 'tr' ?` checks plus `src/localization/translations.js`; new text goes through the catalog helper `src/localization/i18n.ts` (`createT`, see `game.ts`/`compare.ts`; `en` is the fallback language, `i18n.test.ts` checks every entry has both languages and matching placeholders).
 
 See `AGENTS.md` for Expo-specific rules (docs lookup, CNG, EAS commands) — read it too. `PLAN.md` is a (Turkish) audit of known issues/tech debt; treat it as background, not as current ground truth — verify against the code before relying on anything in it.
 
@@ -67,12 +67,24 @@ Shared text carries `APP_STORE_URL` (`utils/links.ts`); the journey story PNG ca
 ### Crash reporting & OTA
 
 - `src/services/crashReporting.ts` wraps Sentry and is a no-op unless `EXPO_PUBLIC_SENTRY_DSN` is set and the build is not `__DEV__`; no PII, no breadcrumbs. `ErrorBoundary` reports through it. Turning the DSN on requires updating the privacy page (`public_docs/index.html` says "no analytics") and the App Store privacy label (crash data). Source-map upload is disabled in `eas.json` (`SENTRY_DISABLE_AUTO_UPLOAD`).
-- `expo-updates` is configured (`runtimeVersion` policy `appVersion`, channels `preview`/`production`). JS-only fixes ship with `eas update --channel production`; anything touching native modules or `app.json` needs a new build. Bump `version` whenever native code changes, or an OTA update can reach a binary that lacks the module.
+- `expo-updates` is configured (`runtimeVersion` policy `appVersion`, channels `preview`/`production`). JS-only fixes ship with `eas update --channel production`; anything touching native modules or `app.json` needs a new build. `runtimeVersion` follows `version`, so two binaries with the same version but different native modules share one OTA stream: while 1.3.0 is unreleased, do **not** run `eas update` on the production channel until the build that contains expo-image, expo-document-picker and the widget extension is the only 1.3.0 binary in circulation (older TestFlight builds of 1.3.0 lack those modules). Bump `version` for the next native change after release.
 - `store/` (App Store screenshots, listing text) and `scripts/store-shots/` were removed from the repo on purpose; they live in git history only.
 
 ### Launch / splash
 
 `App.tsx` calls `SplashScreen.preventAutoHideAsync()` at module load and hides the native splash only once `appReady` (fonts, stores, map shapes) is true, with an 8 s failsafe. There is no JS skeleton boot screen; don't reintroduce one.
+
+### Widgets (`src/widgets/`, `expo-widgets`)
+
+Three iOS widgets: `PassportWidget` (small, medium), `GameWidget` (small plus lock screen circular, rectangular, inline) and `TripWidget` (small, medium). They run in an isolated runtime: no hooks, state, async or imports, and constants must live inside the `'widget'` function; Babel turns that function into source text the widget extension evaluates, with the SwiftUI components and modifiers as globals. So the widget files only draw props. **All logic is in `widgetData.ts`** (pure, tested): texts in the app language, state selection, and a timeline (7 days for the game incl. an 18:00 "streak at risk" entry, 30 days for the trip countdown) so widgets stay truthful without the app opening. `services/widgetSync.ts` pushes props on start, on foreground and (debounced) on store changes, iOS only, lazily requiring the widgets so an older binary without the native module does not crash. Taps open `atls://game` (`src/app/game.tsx`) and `atls://planner` (`src/app/planner.tsx`, flag `isPlannerOpen` in `useAppStore`) through the `widgetURL` modifier. `layouts.test.ts` evaluates each layout against stand-in globals. Fonts: the widget uses the system serif, not Instrument Serif. The App Group is `group.com.atlas.passport` and the extension target is `com.atlas.passport.ExpoWidgetsTarget` (both need to exist in the Apple developer account; EAS creates them on the first build).
+
+### Big screens
+
+`OnboardingScreen`, `AuthScreen`, `PassportScreen` and `HomeScreen` keep their `useStyles` in a sibling `<Name>.styles.ts`. They are still single large components with shared state; split further by extracting render sections that take props, not by moving state.
+
+### Backup
+
+`utils/exportData.ts` writes the JSON/CSV export; `utils/importData.ts` (pure, tested) reads a JSON export back and `utils/importFiles.ts` runs the picker. Import only adds countries and trips missing on the phone and never overwrites; photos are not part of the backup.
 
 ### Theming (`src/theme/`)
 
@@ -88,4 +100,4 @@ Token-based: `colors.ts`, `spacing.ts`, `typography.ts`, `shadows.ts`, `passport
 
 ### Tests
 
-Jest (`jest-expo` preset) with `jest.setup.js` mocking AsyncStorage. Test files sit in `__tests__/` directories next to the code they cover, across `src/data`, `src/services`, `src/stores`, `src/theme`, `src/utils`. `web_prototype/` and `ios/` are excluded from the test path.
+Jest (`jest-expo` preset) with `jest.setup.js` mocking AsyncStorage. Test files sit in `__tests__/` directories next to the code they cover, across `src/data`, `src/services`, `src/stores`, `src/theme`, `src/utils`, `src/game`, `src/localization`, `src/components`. Component tests use `@testing-library/react-native` v14, whose `render` and `fireEvent` are async (`await` them); `jest.setup.js` stubs `lucide-react-native` and `@sentry/react-native`. `ios/` is excluded from the test path.

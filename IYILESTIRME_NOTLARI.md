@@ -165,3 +165,44 @@ Etiketler: **[doğrulandı]** komutla veya EAS/App Store Connect çıktısıyla 
 10. Kök temizliği: `ATLAS_GLOBE_PROMPT.md`, `atls.png`, `web_prototype/`.
 11. Bileşen testleri (şu an yalnızca saf mantık ve store).
 12. Mağaza görsellerini gerekirse yeniden üret; artık depoda değil.
+
+
+### 12 Kasım (ikinci tur): "sonrasında" listesinden yapılanlar
+| Madde | Durum |
+|---|---|
+| Oyun tahmin dağılımı + istatistik | Yapıldı. `GameStats.dist` kaydediliyor, sonuç kartında çubuklar var. Eski kazanımların dağılımı yok (o zaman tutulmuyordu). |
+| Oyun havuzu devri | Yapıldı. 20 Kasım 2026'dan itibaren her ülke döngüde bir kez gelir, üst üste tekrar etmez; öncesi eski hash'le aynı. Eski sürümlü cihazlar 20 Kasım'dan sonra farklı ülke görür. |
+| Çarpıştırma sürüm öneki | Yapıldı. Her sürümün dondurulmuş id listesi `compareCatalogs.ts`'de; katalog değişince test kırılır ve yeni sürüm eklemeyi hatırlatır. Bilinmeyen yeni sürüm kodu için "uygulamayı güncelle" mesajı var. |
+| Erişilebilirlik (ilk tur) | 26 ikon düğmesine etiket, giriş kutularını saran dokunma alanları VoiceOver'dan gizlenmeden alt öğeleri okunur hâle getirildi, küre için etiket + ipucu (aramaya yönlendirir), hareket azaltma tercihi (küre otomatik dönüşü ve konfeti). |
+
+**Hâlâ açık (erişilebilirlik):** büyük ekranların (Onboarding, Auth, Explore) tam VoiceOver turu cihazda denenmedi; Dynamic Type ve kontrast kontrol edilmedi.
+
+
+### 12 Kasım (üçüncü tur): altyapı ve borç, ardından 4-5-6-7
+
+**Altyapı ve borç**
+| Madde | Durum |
+|---|---|
+| 11. Kök temizliği | `web_prototype/`, `atls.png`, `ATLAS_GLOBE_PROMPT.md` silindi (git geçmişinde duruyor); jest, eslint, `.easignore` ayarlarından kaldırıldı. |
+| 10. Bileşen testleri | `@testing-library/react-native` kuruldu; `Button`, `ErrorBoundary`, `DailyGameCard` için 7 test. Yeni bileşenler artık aynı kalıpla test edilebilir. Kapsam hâlâ dar. |
+| 9. Büyük dosyalar | Dört büyük ekranın stilleri `*.styles.ts` dosyalarına taşındı (Onboarding 2220→1290, Auth 1298→918, Passport 1643→902, Home 1230→671 satır). **Bileşen gövdeleri bölünmedi**: durum paylaştıkları için props plumbing gerekir, cihazda denemeden riskli. |
+| 8. Çeviri sistemi | `localization/i18n.ts` (`createT`, `en` yedek dil) eklendi; Gizli Ülke ve Çarpıştırma ekranları buna taşındı, katalog testli. **Eski ekranlardaki ~270 satır içi `lang === 'tr'` koşulu olduğu gibi duruyor**; DE/ES eklemeden önce ekran ekran taşınmalı. |
+
+**4-5-6-7**
+| Madde | Durum |
+|---|---|
+| 4. Sentry | Kod hazır, bilerek **kapalı**. Açmak için aşağıdaki adımlar şart. |
+| 5. `expo-image` | Uzak görseller (rota, hedef, ülke paneli) diskte önbelleğe alınıyor. Yerel gezi fotoğrafları RN `Image`'da kaldı (önbellek anlamsız). Yeni native modül: yeni derleme gerekir, bu yüzden `version` **1.4.0**'a çıkarıldı (runtimeVersion `appVersion`). |
+| 6. Geri yükleme | Hesap Yönetimi'nde "Yedekten geri yükle": JSON dışa aktarmayı okur, yalnızca eksik ülke ve gezileri ekler, mevcut veriye dokunmaz. Fotoğraflar yedekte yok. `expo-document-picker` eklendi (native). |
+| 7. Erişilebilirlik 2. tur | 29 metin alanına etiket (yer tutucudan), OTP hanelerine etiket, `Heading` artık `header` rolünde (VoiceOver başlık gezintisi), seçili durumlar (stat kutuları, paylaşım formatı), hatırlatma anahtarına etiket. VoiceOver ile cihazda denenmedi. |
+
+**Sentry'yi açarken (sırayla):**
+1. Sentry hesabı aç, DSN al, `eas env:create --name EXPO_PUBLIC_SENTRY_DSN --value <dsn> --environment production`.
+2. `public_docs/index.html` gizlilik metnine (TR ve EN bölümlerine) şu cümleyi ekle ve "analitik yok" cümlesini bununla uyumlu tut: *"Uygulama çöktüğünde, hatanın kaydı (hata iletisi, uygulama ve iOS sürümü, cihaz modeli) hata izleme servisimiz Sentry'ye gönderilir. Bu kayıtta adın, e-postan, ülke listen ya da konumun yer almaz."*
+3. App Store Connect > Uygulama Gizliliği: "Crash Data" ekle (Uygulama İşlevselliği, kullanıcıya bağlı değil, takip için kullanılmıyor).
+4. Yeni derleme al.
+
+**Widget:** ayrıntılı plan `WIDGET_PLAN.md`'de.
+
+### 13 Kasım: widget'lar
+Üç widget (Pasaport, Gizli Ülke + kilit ekranı, Sonraki gezi) kodlandı; ayrıntı ve sapmalar `WIDGET_PLAN.md` §10'da. Sürüm 1.3.0'da kaldı (henüz yayınlanmadı). Cihazda denenmedi: yeni derleme ve TestFlight gerekir.

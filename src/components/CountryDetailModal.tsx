@@ -157,7 +157,7 @@ export default function CountryDetailModal({
             end={{ x: 0.5, y: 1 }}
             style={styles.bannerHeader}
           >
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'}
               onPress={() => {
                 Haptics.selectionAsync();
                 onClose();

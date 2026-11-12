@@ -185,7 +185,7 @@ export default function EditProfileModal({
               </Text>
             </View>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Kapat' : 'Close'}
               onPress={onClose}
               activeOpacity={0.7}
               style={styles.closeBtn}
@@ -207,7 +207,7 @@ export default function EditProfileModal({
                   {currentLang === 'tr' ? 'AD SOYAD' : 'FULL NAME'}
                 </Text>
               </View>
-              <TextInput
+              <TextInput accessibilityLabel={currentLang === 'tr' ? 'Adın Soyadın' : 'Your Name'}
                 value={name}
                 onChangeText={setName}
                 placeholder={currentLang === 'tr' ? 'Adın Soyadın' : 'Your Name'}
@@ -257,7 +257,7 @@ export default function EditProfileModal({
                       </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Ülkeyi kaldır' : 'Remove country'}
                       onPress={handleClearCountry}
                       activeOpacity={0.7}
                       style={styles.clearCountryBtn}
@@ -290,7 +290,7 @@ export default function EditProfileModal({
                 <View style={styles.pickerContainer}>
                   <View style={styles.searchRow}>
                     <Search size={14} color={colors.text.secondary} />
-                    <TextInput
+                    <TextInput accessibilityLabel={t.searchCountry || 'Ülke ara...'}
                       value={countrySearch}
                       onChangeText={setCountrySearch}
                       placeholder={t.searchCountry || 'Ülke ara...'}
@@ -299,7 +299,7 @@ export default function EditProfileModal({
                       autoFocus={true}
                     />
                     {Boolean(countrySearch) && (
-                      <TouchableOpacity onPress={() => setCountrySearch('')}>
+                      <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Aramayı temizle' : 'Clear search'} onPress={() => setCountrySearch('')}>
                         <X size={14} color={colors.text.secondary} />
                       </TouchableOpacity>
                     )}
@@ -347,7 +347,7 @@ export default function EditProfileModal({
                   {t.homeCityLabel || 'ŞEHİR / BÖLGE (İSTEĞE BAĞLI)'}
                 </Text>
               </View>
-              <TextInput
+              <TextInput accessibilityLabel={t.homeCityPlaceholder || 'Örn: Kadıköy, İstanbul'}
                 value={homeCity}
                 onChangeText={setHomeCity}
                 placeholder={t.homeCityPlaceholder || 'Örn: Kadıköy, İstanbul'}

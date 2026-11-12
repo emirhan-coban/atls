@@ -2,13 +2,12 @@ import Button from './ui/Button';
 import JourneyCard from './JourneyCard';
 import PlanCard from './PlanCard';
 import DailyGameCard from './DailyGameCard';
-import { fonts } from '../theme/typography';
-import { ForceDarkTheme, makeStyles, useTheme } from '../theme/ThemeContext';
+import { useReduceMotion } from '../utils/useReduceMotion';
+import { ForceDarkTheme, useTheme } from '../theme/ThemeContext';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   AppState,
 } from 'react-native';
@@ -40,6 +39,7 @@ import { getCountryTrivia } from '../data/countryTrivia';
 import { Country, Profile } from '../stores/types';
 import Heading from './ui/Heading';
 
+import { useStyles } from './HomeScreen.styles';
 type StatusFilter = Country['status'] | 'all';
 
 interface HomeScreenProps {
@@ -100,6 +100,7 @@ function HomeScreen({
   onEditCountry,
 }: HomeScreenProps) {
   const { colors } = useTheme();
+  const reduceMotion = useReduceMotion();
   const styles = useStyles();
   const [countryCardIndex, setCountryCardIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
@@ -267,7 +268,7 @@ function HomeScreen({
             selectedIso={selectedIso}
             lang={currentLang}
             running={running}
-            autoSpin={!selectedIso && sheetName === 'peek'}
+            autoSpin={!reduceMotion && !selectedIso && sheetName === 'peek'}
             bottomInset={peekH + DOCK}
             extraLift={extraLift}
             home={homeTarget}
@@ -402,7 +403,7 @@ function HomeScreen({
 
               {markedCountries.length > 1 && (
                 <View style={styles.carouselControls}>
-                  <TouchableOpacity onPress={handlePrevCountry} style={styles.arrowButton}>
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Önceki ülke' : 'Previous country'} onPress={handlePrevCountry} style={styles.arrowButton}>
                     <ChevronLeft size={15} color={colors.text.primary} />
                   </TouchableOpacity>
                   <View style={styles.dotsRow}>
@@ -418,7 +419,7 @@ function HomeScreen({
                       />
                     ))}
                   </View>
-                  <TouchableOpacity onPress={handleNextCountry} style={styles.arrowButton}>
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={currentLang === 'tr' ? 'Sonraki ülke' : 'Next country'} onPress={handleNextCountry} style={styles.arrowButton}>
                     <ChevronRight size={15} color={colors.text.primary} />
                   </TouchableOpacity>
                 </View>
@@ -448,7 +449,7 @@ function HomeScreen({
         {/* Stats Row - Playful Candy Tiles */}
         <View style={styles.statsRow}>
           {/* Visited */}
-          <TouchableOpacity
+          <TouchableOpacity accessibilityState={{ selected: activeFilter === 'visited' }}
             onPress={() => handleFilterPress('visited')}
             activeOpacity={0.7}
             style={[
@@ -474,7 +475,7 @@ function HomeScreen({
           </TouchableOpacity>
 
           {/* Lived in */}
-          <TouchableOpacity
+          <TouchableOpacity accessibilityState={{ selected: activeFilter === 'lived' }}
             onPress={() => handleFilterPress('lived')}
             activeOpacity={0.7}
             style={[
@@ -500,7 +501,7 @@ function HomeScreen({
           </TouchableOpacity>
 
           {/* Want to visit */}
-          <TouchableOpacity
+          <TouchableOpacity accessibilityState={{ selected: activeFilter === 'want' }}
             onPress={() => handleFilterPress('want')}
             activeOpacity={0.7}
             style={[
@@ -655,566 +656,6 @@ function HomeScreen({
   );
 }
 
-const useStyles = makeStyles((colors) => StyleSheet.create({
-  outerWrapper: {
-    flex: 1,
-    backgroundColor: colors.canvas.base,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  sheetArea: { position: 'absolute', left: 0, right: 0, top: 0, overflow: 'hidden' },
-  peekRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
-  peekItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  peekText: { color: colors.text.soft, fontSize: 14, fontWeight: '600' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  logoText: {
-    fontSize: 30,
-    fontWeight: '900',
-    color: colors.text.primary,
-    letterSpacing: -0.8,
-  },
-  logoDot: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.text.primary,
-  },
-  explorerGreetingRow: {
-  },
-  explorerGreetingText: {
-    fontSize: 36,
-    lineHeight: 40,
-    color: colors.text.primary,
-    fontFamily: fonts.display,
-  },
-  explorerGreetingSub: {
-    fontSize: 19,
-    lineHeight: 24,
-    color: colors.text.secondary,
-    marginTop: 2,
-    fontFamily: fonts.displayItalic,
-  },
-  subtitleText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.text.secondary,
-    letterSpacing: 0.8,
-    marginTop: 2,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  langPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.glass.borderSoft,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    paddingHorizontal: 12,
-    height: 38,
-    borderRadius: 19,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  langPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.text.primary,
-  },
-  biometricButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.glass.borderSoft,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 2,
-    position: 'relative',
-  },
-  biometricDot: {
-    position: 'absolute',
-    top: 3,
-    right: 3,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.gold.base,
-    borderWidth: 1.5,
-    borderColor: colors.canvas.base,
-  },
-  // Empty State Card
-  emptyHeroCard: {
-    backgroundColor: colors.glass.fill,
-    borderRadius: 24,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  emptyBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  emptyIconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.status.visited.light,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.status.visited.border,
-  },
-  emptyPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.gold.tint,
-    borderWidth: 1,
-    borderColor: colors.gold.glow,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-  },
-  emptyPillText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: colors.gold.base,
-    letterSpacing: 0.6,
-  },
-  emptyTextContent: {
-    marginBottom: 18,
-  },
-  emptyHeroTitle: {
-    fontSize: 28,
-    color: colors.text.primary,
-    letterSpacing: -0.5,
-    marginBottom: 6,
-    fontFamily: fonts.display,
-  },
-  emptyHeroDesc: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    lineHeight: 20,
-    fontWeight: '400',
-  },
-
-  // Populated Country Highlight Card
-  countryHeroCard: {
-    backgroundColor: colors.glass.fill,
-    borderRadius: 24,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 4,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  countryHeroTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 14,
-    gap: 10,
-  },
-  countryHeroBadges: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    flex: 1,
-  },
-  countryStatusPill: {
-    backgroundColor: colors.status.visited.light,
-    borderWidth: 1,
-    borderColor: colors.status.visited.border,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    flexShrink: 0,
-  },
-  countryStatusPillText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: colors.status.visited.bright,
-    letterSpacing: 0.5,
-  },
-  countryYearPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.glass.borderSoft,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 14,
-    flexShrink: 0,
-  },
-  countryYearPillText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.text.soft,
-  },
-  countryHeroFlag: {
-    fontSize: 28,
-    flexShrink: 0,
-    marginTop: -2,
-  },
-  countryHeroTextContent: {
-    marginBottom: 16,
-  },
-  countryHeroTitle: {
-    fontSize: 30,
-    color: colors.text.primary,
-    letterSpacing: -0.6,
-    marginBottom: 6,
-    flexShrink: 1,
-    fontFamily: fonts.display,
-  },
-  countryHeroDesc: {
-    fontSize: 12.5,
-    color: colors.text.secondary,
-    lineHeight: 19,
-    fontWeight: '400',
-  },
-  countryHeroFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.glass.fillStrong,
-  },
-  countryCounterText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.text.muted,
-  },
-  carouselControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  arrowButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.glass.fillStrong,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    gap: 4,
-    alignItems: 'center',
-  },
-  dot: {
-    height: 4,
-    borderRadius: 2,
-  },
-  dotActive: {
-    width: 14,
-    backgroundColor: colors.gold.base,
-  },
-  dotInactive: {
-    width: 4,
-    backgroundColor: colors.glass.borderStrong,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 2,
-  },
-  sectionTitle: {
-    fontSize: 21,
-    color: colors.text.primary,
-    letterSpacing: -0.3,
-    fontFamily: fonts.display,
-  },
-  reachBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.status.visited.light,
-    borderWidth: 1,
-    borderColor: colors.status.visited.border,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  reachBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.status.visited.bright,
-    letterSpacing: 0.5,
-  },
-  mapCard: {
-    backgroundColor: colors.panel.base,
-    borderRadius: 28,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    elevation: 3,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  statBox: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 18,
-    borderWidth: 1,
-  },
-  statBoxVisited: {
-    backgroundColor: colors.status.visited.light,
-    borderColor: colors.status.visited.border,
-  },
-  statBoxLived: {
-    backgroundColor: colors.status.lived.light,
-    borderColor: colors.status.lived.border,
-  },
-  statBoxWant: {
-    backgroundColor: colors.gold.tint,
-    borderColor: colors.gold.glow,
-  },
-  statBoxActiveVisited: {
-    borderWidth: 1.5,
-    borderColor: colors.status.visited.color,
-  },
-  statBoxActiveLived: {
-    borderWidth: 1.5,
-    borderColor: colors.status.lived.color,
-  },
-  statBoxActiveWant: {
-    borderWidth: 1.5,
-    borderColor: colors.gold.base,
-  },
-  statNumber: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: colors.text.primary,
-    fontVariant: ['tabular-nums'],
-  },
-  statLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 2,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.text.secondary,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.panel.base,
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  searchLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  searchPlaceholder: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text.muted,
-  },
-  plusButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: colors.gold.base,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stampsTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.text.muted,
-    letterSpacing: 0.8,
-  },
-  viewAllText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.gold.base,
-  },
-  recentList: {
-    gap: 0,
-    borderRadius: 20,
-    backgroundColor: colors.panel.base,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    overflow: 'hidden',
-  },
-  recentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.glass.border,
-  },
-  recentFlag: { fontSize: 30 },
-  recentBody: { flex: 1, gap: 1 },
-  recentName: { fontSize: 24, lineHeight: 28, color: colors.text.primary, fontFamily: fonts.display },
-  recentMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  recentDot: { width: 7, height: 7, borderRadius: 4 },
-  recentDate: { fontSize: 13, fontWeight: '600', color: colors.text.secondary },
-  emptyRecentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.panel.base,
-    borderRadius: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    borderWidth: 1,
-    borderColor: colors.glass.hairline,
-    borderStyle: 'dashed',
-    marginTop: 6,
-  },
-  emptyRecentLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-    marginRight: 10,
-  },
-  emptyCompassBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.gold.tint,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.gold.glow,
-  },
-  emptyRecentText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text.secondary,
-    flex: 1,
-  },
-  emptyRecentAddBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.gold.base,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  milestoneCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.glass.fill,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.glass.fillStrong,
-  },
-  milestoneLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-    marginRight: 8,
-  },
-  milestoneIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.gold.tint,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.gold.glow,
-  },
-  milestoneTextContainer: {
-    flex: 1,
-  },
-  milestoneTitleRow: {
-    marginBottom: 2,
-  },
-  milestoneBadgeLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.gold.base,
-    letterSpacing: 0.8,
-  },
-  milestoneTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.text.primary,
-    marginTop: 2,
-    marginBottom: 2,
-  },
-  milestoneSubtitle: {
-    fontSize: 12,
-    color: colors.text.secondary,
-  },
-}));
 
 // Home is drawn on an always-dark stage, so its own styles must resolve against the dark palette
 function DarkHomeScreen(props: HomeScreenProps) {
