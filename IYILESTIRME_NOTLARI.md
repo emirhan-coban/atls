@@ -122,3 +122,46 @@ Etiketler: **[doğrulandı]** komutla veya EAS/App Store Connect çıktısıyla 
 | Mağaza sayfası | 3 yeni ekran görüntüsü (oyun, çarpıştırma, hikâye) TR ve EN, 24 sn önizleme videosu, yükleme sırası ve anahtar kelimeler `store/app-store-listing.md`'de. |
 
 **Doğrulanmadı / dikkat:** puanlama penceresi (simülatör derlemesinde modül yok), evrensel bağlantının cihazda uygulamayı açması, `associatedDomains` ile ilk EAS derlemesinin provisioning'i (EAS capability'yi kendisi açmalı; açmazsa derleme imza adımında hata verir).
+
+> **8 Kasım:** mağaza görselleri, önizleme videosu, listing ve App Store rehberi (`store/` içinde yalnızca uygulama ikonu kaldı) ile `scripts/store-shots/` depodan silindi; git geçmişinde duruyor. Yukarıdaki mağaza maddeleri (§2.1-5 ve büyüme turundaki "Mağaza sayfası" satırı) bu yüzden artık geçerli değil.
+
+
+---
+
+## 12 Kasım güncellemesi: durum ve sıradaki işler
+
+### Tamamlandı
+| Madde | Durum |
+|---|---|
+| Gizlilik politikası bağlantısı (§2.1-1) | Yapıldı, uygulama içinde ve sayfa yayında. |
+| Fotoğraf izni metni (§2.1-4) | Yapıldı (`expo-image-picker` eklentisi). |
+| Ölü kod ve bağımlılıklar (§3.1-3.2) | `SkeletonLoader`, `travelGuides` silindi; `expo-clipboard` bağlandı; `typescript` dev'e taşındı. |
+| `warmMapShapes` (§3.3) | Yalnızca onboarding'de. |
+| README (§3.4) | Düzeltildi. |
+| Büyüme turu | Paylaşım bağlantıları, puanlama isteği, 20:00 hatırlatma, davet sayfası. |
+| **Evrensel bağlantı dosyası** | `emirhan-coban.github.io/.well-known/apple-app-site-association` yayında (HTTP 200). Kullanıcı sitesi deposunda zaten `index.html` vardı; `publish.sh` artık var olan depoyu ezmiyor, yalnızca AASA dosyalarını ekliyor. |
+| **Çökme izleme (§2.1-2)** | `@sentry/react-native` + `crashReporting.ts`. **DSN girilene kadar kapalı**, hiçbir şey göndermez. |
+| **OTA (§2.1-3)** | `expo-updates` kuruldu; `runtimeVersion: appVersion`, `preview`/`production` kanalları. Yeni derleme gerekir. |
+| Mağaza dosyaları | `store/` ve `scripts/store-shots/` bilerek silindi. |
+
+### Senin yapman gerekenler (ben yapamıyorum)
+1. Sentry hesabı aç, DSN'i EAS ortam değişkeni olarak ekle: `eas env:create --name EXPO_PUBLIC_SENTRY_DSN --value <dsn> --environment production`.
+2. **DSN'i açmadan önce** `public_docs/index.html` gizlilik metnini güncelle ("analytics yok" cümlesi çökme raporlarını kapsamıyor) ve App Store Connect'te Gizlilik Etiketi'ne "Crash Data" ekle.
+3. App Store Connect'te Gizlilik Politikası URL'sini `https://emirhan-coban.github.io/atls/` yap.
+4. `eas build -p ios --profile production` (hem `associatedDomains` hem `expo-updates` hem Sentry native modül için tek derleme yeter). İlk derlemede EAS'ın Associated Domains capability'sini açmasına izin ver.
+5. Cihazda doğrula: davet bağlantısına dokununca uygulama açılıyor mu, 20:00 bildirimi çalıyor mu, puanlama penceresi çıkıyor mu.
+6. Derleme çıktıktan sonra bir deneme OTA: `eas update --channel production --message test`.
+
+### Sonrasında yapılabilecekler (önerilen sıra)
+1. **Oyun istatistiği:** tahmin dağılımını (1/6…6/6) `useGameStore`'a kaydet, sonra istatistik ekranı. Ne kadar geç eklenirse geriye dönük veri o kadar az.
+2. **Oyun havuzu devri:** aynı ülke üst üste gelmesin (seed'li karıştırma, 196 günde bir tur).
+3. **Çarpıştırma kodu sürüm öneki** ve eski kod için "güncelle" uyarısı.
+4. **Veri içe aktarma** (dışa aktarma var, geri yükleme yok) veya isteğe bağlı iCloud yedeği.
+5. **Erişilebilirlik turu:** etiketler, küre için alternatif ülke listesi, hareket azaltma.
+6. **`expo-image`** ile görsel önbelleği.
+7. **Widget** (ülke sayısı, seri, geri sayım). WidgetKit hedefi ve config plugin gerekir.
+8. **Çeviri sistemine geçiş**, ardından DE/ES.
+9. Büyük dosyaları böl (`OnboardingScreen`, `AuthScreen`, `PassportScreen`, `HomeScreen`).
+10. Kök temizliği: `ATLAS_GLOBE_PROMPT.md`, `atls.png`, `web_prototype/`.
+11. Bileşen testleri (şu an yalnızca saf mantık ve store).
+12. Mağaza görsellerini gerekirse yeniden üret; artık depoda değil.

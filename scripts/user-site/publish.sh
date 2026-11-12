@@ -9,25 +9,27 @@ REPO="$USER_NAME/$USER_NAME.github.io"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-cp -R "$ROOT/scripts/user-site/site/." "$TMP/"
-cat > "$TMP/README.md" <<README
-# $USER_NAME.github.io
-
-GitHub kullanıcı sitesinin kökü. \`/.well-known/apple-app-site-association\` dosyasını sunar; Apple bunu
-**atls.** iOS uygulamasının evrensel bağlantıları için alan adı kökünde ister.
-Uygulamanın sayfaları [atls](https://github.com/$USER_NAME/atls) deposundadır (\`public_docs/\`, \`/atls/\` altında yayınlanır).
-README
-
-cd "$TMP"
-git init -q -b main
-git add -A
-git -c user.name="$(git -C "$ROOT" config user.name)" -c user.email="$(git -C "$ROOT" config user.email)" \
-  commit -q -m "chore: apple-app-site-association for atls. universal links"
-
+REPO_URL="https://github.com/$REPO.git"
 if gh repo view "$REPO" >/dev/null 2>&1; then
-  git remote add origin "https://github.com/$REPO.git"
-  git push -q --force origin main
+  # Depo varsa mevcut içeriği (kendi index.html gibi) ezme: yalnızca AASA dosyalarını ekle.
+  git clone -q "$REPO_URL" "$TMP/repo"
+  cd "$TMP/repo"
+  mkdir -p .well-known
+  cp "$ROOT/scripts/user-site/site/.well-known/apple-app-site-association" .well-known/
+  cp "$ROOT/scripts/user-site/site/.nojekyll" .
+  git add -A
+  if git diff --cached --quiet; then echo "Değişiklik yok."; else
+    git -c user.name="$(git -C "$ROOT" config user.name)" -c user.email="$(git -C "$ROOT" config user.email)" \
+      commit -q -m "chore: apple-app-site-association for atls. universal links"
+    git push -q origin main
+  fi
 else
+  cp -R "$ROOT/scripts/user-site/site/." "$TMP/"
+  cd "$TMP"
+  git init -q -b main
+  git add -A
+  git -c user.name="$(git -C "$ROOT" config user.name)" -c user.email="$(git -C "$ROOT" config user.email)" \
+    commit -q -m "chore: apple-app-site-association for atls. universal links"
   gh repo create "$REPO" --public --source=. --push \
     --description "GitHub user site root: Apple app-site-association for atls. universal links"
 fi

@@ -3,6 +3,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ShieldAlert, RotateCcw } from 'lucide-react-native';
 import { theme } from '../theme';
+import { reportError } from '../services/crashReporting';
 
 interface Props {
   children: ReactNode;
@@ -26,6 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[ErrorBoundary] Caught unhandled error:', error, errorInfo);
+    reportError(error, 'ErrorBoundary');
   }
 
   private handleReset = () => {

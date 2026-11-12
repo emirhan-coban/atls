@@ -31,7 +31,6 @@ ios/build/
 # not part of the app bundle: store assets, docs, helper scripts
 /store
 /public_docs
-/scripts/store-shots
 /scripts/user-site
 /web_prototype
 *.md
