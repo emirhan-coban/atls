@@ -81,6 +81,8 @@ Three iOS widgets: `PassportWidget` (small, medium), `GameWidget` (small plus lo
 
 ### Big screens
 
+Home sheet and Passport layout (after the Nov 2026 redesign): the home globe, `GlobeOverlay` and `HomeSheet` are untouched; the sheet holds only the search bar, `home/TodayStrip.tsx` (Secret Country result and next-trip countdown, texts from `gameProps`/`tripProps` in `widgets/widgetData.ts` so app and widgets agree), `RecentList` and `DiscoverBanner`. The old hero carousel, map card, journey and plan cards are gone; the journal opens from the Passport tabs. `PassportScreen` is a compact `PassportHeader` (cover colours, avatar, edit, share) plus `SegmentTabs` (`PassportSegment`: stats / countries / trips): `StatsPanel` (Skia `PassportMiniMap` over `utils/mapShapes`, six tiles from `utils/passportStats.ts`, latest trips), `CountryFilter` + `CountryList` (visited / lived / wishlist / all), `TripsPanel`. Styles for the new passport pieces live in `passport/Panels.styles.ts`; texts in `localization/screens/PassportScreen.ts`.
+
 `OnboardingScreen`, `AuthScreen`, `PassportScreen` and `HomeScreen` are thin shells. Each splits into a hook that owns the state and handlers (`onboarding/useOnboarding.tsx`, `auth/useAuthScreen.tsx`, `passport/usePassportScreen.tsx`, `home/useHomeScreen.tsx`), section components that take `{ ctx }` (the hook's return value, typed with `ReturnType<typeof useX>`), a `shared.tsx` with module-level helpers and prop types, and `<Name>.styles.ts`. To add UI to a screen, put it in a section component and read what it needs from `ctx`; if it needs new state, add it to the hook and return it. The split was done with an AST tool, so the code reads like the original (comments and all), not like hand-written modules.
 
 ### Backup
