@@ -28,6 +28,21 @@ const strings = {
   permanently_delete_account: { tr: "Hesabı Kalıcı Olarak Sil", en: "Permanently Delete Account" },
   are_you_sure_you_want_to_delete_yo: { tr: "Hesabınızı silmek istediğinize emin misiniz? Tüm seyahatleriniz, pasaportunuz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.", en: "Are you sure you want to delete your account? All your travels, passport, and profile data will be permanently wiped. This action cannot be undone." },
   delete_account: { tr: "Hesabı Sil", en: "Delete Account" },
+  tab_stats: { tr: "İstatistik", en: "Stats" },
+  tab_countries: { tr: "Ülkeler", en: "Countries" },
+  tab_trips: { tr: "Geziler", en: "Trips" },
+  filter_all: { tr: "Tümü", en: "All" },
+  stat_countries: { tr: "Ülke", en: "Countries" },
+  stat_continents: { tr: "Kıta", en: "Continents" },
+  stat_trips: { tr: "Gezi", en: "Trips" },
+  stat_days: { tr: "Gün yolda", en: "Days away" },
+  stat_farthest: { tr: "km en uzak", en: "km farthest" },
+  stat_world: { tr: "Dünya", en: "World" },
+  world_reach: { tr: "Dünyanın %{percent} kadarını keşfettin", en: "You have explored {percent}% of the world" },
+  recent_trips: { tr: "SON GEZİLER", en: "RECENT TRIPS" },
+  no_trips_yet: { tr: "Henüz gezi eklemedin. Bir ülkeyi işaretleyince gezilerin burada görünür.", en: "No trips yet. Mark a country and your trips show up here." },
+  trip_days: { tr: "{n} gün", en: "{n} days" },
+  see_all_trips: { tr: "Tüm gezileri gör", en: "See all trips" },
 };
 
 export const tPassportScreen = createT(strings);

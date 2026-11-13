@@ -4,14 +4,17 @@ import { useTripStore } from '../../stores/useTripStore';
 import { exportAndShare } from '../../utils/exportFiles';
 import { pickAndImportBackup } from '../../utils/importFiles';
 import { jt } from '../../localization/journey';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { PASSPORT_THEMES, PassportThemeKey } from '../../theme/passportThemes';
 import { Country } from '../../stores/types';
 import { getDynamicLocation } from '../../utils/locationHelper';
 import { useStyles } from '../PassportScreen.styles';
-import { PassportScreenProps } from './shared';
+import { PassportScreenProps, PassportSegment } from './shared';
+import { availableCatalog } from '../../data/travelData';
+import { resolveHomeCountry } from '../../globe/homeCountry';
+import { computePassportStats, sortTripsNewestFirst } from '../../utils/passportStats';
 
 export function usePassportScreen({
   profile,
@@ -79,7 +82,8 @@ export function usePassportScreen({
 
   const themePreference = useAppStore((state) => state.themePreference);
   const setThemePreference = useAppStore((state) => state.setThemePreference);
-  const [activeTab, setActiveTab] = useState('all');
+  const [segment, setSegment] = useState<PassportSegment>('stats');
+  const [activeTab, setActiveTab] = useState('visited');
   const [isEditing, setIsEditing] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [internalAccountModalOpen, setInternalAccountModalOpen] = useState(false);
@@ -135,7 +139,14 @@ export function usePassportScreen({
 
   const locationInfo = getDynamicLocation(profile, countries, currentLang);
 
-  return { activeTab, colors, countries, currentLang, currentTheme, getFilteredList, handleExport, handleImport, handleShare, handleTabPress, isAccountModalOpen, isEditProfileOpen, isEditing, livedCountries, locationInfo, mrzCodeString, onCreateAccount, onDeleteAccount, onLogout, onOpenAddModal, onOpenJourney, onOpenPlanner, onRemoveCountry, onSelectCountry, onUpdateCountry, onUpdateProfile, profile, selectedCountryToEdit, setIsAccountModalOpen, setIsEditProfileOpen, setIsEditing, setSelectedCountryToEdit, setThemePreference, styles, t, themePreference, visitedCountries, wantCountries };
+  const homeIso = resolveHomeCountry(profile, availableCatalog).iso2;
+  const stats = useMemo(
+    () => computePassportStats(countries, allTrips, homeIso, availableCatalog.length),
+    [countries, allTrips, homeIso]
+  );
+  const trips = useMemo(() => sortTripsNewestFirst(allTrips), [allTrips]);
+
+  return { activeTab, segment, setSegment, setActiveTab, stats, trips, colors, countries, currentLang, currentTheme, getFilteredList, handleExport, handleImport, handleShare, handleTabPress, isAccountModalOpen, isEditProfileOpen, isEditing, livedCountries, locationInfo, mrzCodeString, onCreateAccount, onDeleteAccount, onLogout, onOpenAddModal, onOpenJourney, onOpenPlanner, onRemoveCountry, onSelectCountry, onUpdateCountry, onUpdateProfile, profile, selectedCountryToEdit, setIsAccountModalOpen, setIsEditProfileOpen, setIsEditing, setSelectedCountryToEdit, setThemePreference, styles, t, themePreference, visitedCountries, wantCountries };
 }
 
 export type PassportCtx = ReturnType<typeof usePassportScreen>;

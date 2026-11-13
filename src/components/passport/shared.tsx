@@ -21,3 +21,5 @@ export interface PassportScreenProps {
   onCloseAccountModal?: () => void;
   [key: string]: any;
 }
+
+export type PassportSegment = 'stats' | 'countries' | 'trips';

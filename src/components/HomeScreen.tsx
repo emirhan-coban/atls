@@ -1,21 +1,15 @@
-import JourneyCard from './JourneyCard';
-import PlanCard from './PlanCard';
-import DailyGameCard from './DailyGameCard';
 import { ForceDarkTheme } from '../theme/ThemeContext';
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Search, Plus, Plane } from 'lucide-react-native';
+import { Search, Plus } from 'lucide-react-native';
 import GlobeView from '../globe/GlobeView';
 import HomeSheet from '../globe/HomeSheet';
 import GlobeOverlay from '../globe/GlobeOverlay';
 import CountryPanel from '../globe/CountryPanel';
-import AnimatedCounter from './AnimatedCounter';
-import Heading from './ui/Heading';
 import { useHomeScreen } from './home/useHomeScreen';
-import { HeroCard } from './home/HeroCard';
-import { MapCard } from './home/MapCard';
 import { RecentList } from './home/RecentList';
+import { TodayStrip } from './home/TodayStrip';
 import { DiscoverBanner } from './home/DiscoverBanner';
 import { HomeScreenProps, DOCK } from './home/shared';
 
@@ -39,7 +33,7 @@ function HomeScreen({
   isModalOpen = false,
   onEditCountry }: HomeScreenProps) {
   const ctx = useHomeScreen({ countries, profile, onOpenAddModal, onSelectCountry, onNavigateToPassport, onNavigateToExplore, t, currentLang, onToggleLang, onOpenAuth, tripCount, onOpenJourney, onOpenPlanner, onOpenGame, isActive, isCovered, isModalOpen, onEditCountry });
-  const { area, closeCountry, colors, earthPercentage, extraLift, gestureEpoch, globeRef, handleSnapChange, hasCountries, homeTarget, introDone, peekH, peekSummary, reduceMotion, running, selectCountry, selectedIso, setArea, setIntroDone, sheetName, sheetRef, sheetVisible, styles, totalMarked } = ctx;
+  const { area, closeCountry, colors, extraLift, gestureEpoch, globeRef, handleSnapChange, homeTarget, introDone, peekH, peekSummary, reduceMotion, running, selectCountry, selectedIso, setArea, setIntroDone, sheetName, sheetRef, sheetVisible, styles, totalMarked } = ctx;
 
   return (
     <View
@@ -99,53 +93,8 @@ function HomeScreen({
         </TouchableOpacity>
 
 
-        {/* HERO CARD: Empty State OR Visited Country Highlight */}
-        <HeroCard ctx={ctx} />
-
-        {/* SECTION: Planetary Reach */}
-        <View style={styles.sectionHeader}>
-          <Heading style={styles.sectionTitle}>{t.planetaryReach}</Heading>
-          <View style={styles.reachBadge}>
-            <Plane size={11} color={colors.status.visited.bright} style={{ transform: [{ rotate: '45deg' }] }} />
-          <AnimatedCounter
-            value={Number(earthPercentage) || 0}
-            formatter={(v) => {
-              const valStr = v.toFixed(1);
-              return t.reachBadgeText ? t.reachBadgeText.replace('{percent}', valStr) : `${valStr}%`;
-            }}
-            style={styles.reachBadgeText}
-          />
-        </View>
-      </View>
-
-      {/* Map Card */}
-      <MapCard ctx={ctx} />
-
-      {/* Daily secret-country game */}
-      {onOpenGame && (
-        <View>
-          <DailyGameCard currentLang={currentLang} onPress={onOpenGame} />
-        </View>
-      )}
-
-      {/* Travel journal: level, trips and badges */}
-      {onOpenJourney && hasCountries && (
-        <View>
-          <JourneyCard
-            countries={countries}
-            tripCount={tripCount}
-            currentLang={currentLang}
-            onPress={onOpenJourney}
-          />
-        </View>
-      )}
-
-      {/* Trip planner: countdown to the next trip */}
-      {onOpenPlanner && (
-        <View>
-          <PlanCard currentLang={currentLang} onPress={onOpenPlanner} />
-        </View>
-      )}
+        {/* TODAY: Secret Country result and countdown to the next trip */}
+        <TodayStrip ctx={ctx} />
 
       {/* SECTION: Recent trips */}
       <View style={styles.sectionHeader}>
